@@ -5,13 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "server": "node server/index.js",
-    "start": "node server/index.js",
-    "test": "node tests/settlement.test.mjs",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node tests/settlement.test.mjs",
+    "golden": "node scripts/golden.mjs",
+    "migrate": "node scripts/migrate.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.119.0",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "lucide-react": "^1.16.0",

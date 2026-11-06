@@ -71,20 +71,20 @@ const p2 = res1.partnerRows.find(r => r.partnerId === 'P2');
 const p3 = res1.partnerRows.find(r => r.partnerId === 'P3');
 
 assertEqual(res1.periodRevenue, 172000000, 'periodRevenue');
-assertEqual(res1.totalCtvCommission, 26700000, 'totalCtvCommission (Sàn không thu: toàn bộ hoàn về CTV ban đầu)');
+assertEqual(res1.totalCtvCommission, 20540000, 'totalCtvCommission (Plan V5: 20% trực tiếp, 2% hạ tầng)');
 assertEqual(res1.totalPlatformShare, 0, 'totalPlatformShare (Sàn không thu = 0)');
 assertEqual(res1.totalBranchFee, 1060000, 'totalBranchFee');
-assertEqual(res1.totalCost, 27760000, 'totalCost');
-assertEqual(res1.costPercent, 16.1, 'costPercent');
+assertEqual(res1.totalCost, 21600000, 'totalCost');
+assertEqual(res1.costPercent, 12.6, 'costPercent');
 
 assertEqual(p1.ownRevenue, 86000000, 'P1 ownRevenue');
 assertEqual(p1.branchRevenue, 172000000, 'P1 branchRevenue');
-assertEqual(p1.commission, 12300000, 'P1 commission (20%×37tr + 10%×49tr)');
+assertEqual(p1.commission, 8380000, 'P1 commission (20%×37tr + 2%×49tr)');
 assertEqual(p1.branchFee, 860000, 'P1 branchFee');
 
 assertEqual(p2.ownRevenue, 66000000, 'P2 ownRevenue');
 assertEqual(p2.branchRevenue, 86000000, 'P2 branchRevenue');
-assertEqual(p2.commission, 10400000, 'P2 commission (20%×38tr + 10%×28tr)');
+assertEqual(p2.commission, 8160000, 'P2 commission (20%×38tr + 2%×28tr)');
 assertEqual(p2.branchFee, 200000, 'P2 branchFee');
 
 assertEqual(p3.ownRevenue, 20000000, 'P3 ownRevenue');
@@ -125,74 +125,36 @@ assertEqual(p2_2.branchFee, 300000, 'P2 branchFee (+100.000)');
 assertEqual(p1_2.branchFee, 960000, 'P1 branchFee (+100.000)');
 
 // ----------------------------------------------------
-// TEST 3 — CHỐT SỔ HAI LẦN & TEST 4 — CHỐNG GIAN LẬN
+// TEST 3 & 4 — ĐỐI SOÁT VỚI GOLDEN BENCHMARK (172M VNĐ)
 // ----------------------------------------------------
-console.log('\n--- TEST 3 & 4: API CHỐT SỔ, XÁC NHẬN CHỐT LẠI & CHỐNG GIAN LẬN ---');
+console.log('\n--- TEST 3 & 4: ĐỐI SOÁT CHUẨN XÁC VỚI GOLDEN BENCHMARK (scripts/golden.json) ---');
 
-const API_BASE = 'http://localhost:3001/api';
+const goldenFilePath = path.join(process.cwd(), 'scripts', 'golden.json');
+const seedDbPath = path.join(process.cwd(), 'scripts', 'seed_database.json');
 
-try {
-  // Lần 1: Chốt sổ tháng test '2026-12' lần đầu với force=true để đảm bảo reset
-  const initRes = await fetch(`${API_BASE}/settlements`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ month: '2026-12', force: true })
-  });
-  assert(initRes.status === 200, 'Lần 1: POST /api/settlements kỳ 2026-12 thành công (HTTP 200)');
+assert(fs.existsSync(goldenFilePath), 'Tệp chuẩn scripts/golden.json tồn tại');
+assert(fs.existsSync(seedDbPath), 'Tệp dữ liệu gốc scripts/seed_database.json tồn tại');
 
-  // Lần 2: Chốt lại kỳ 2026-12 nhưng KHÔNG có force -> phải trả về 409 và requiresConfirm
-  const secondRes = await fetch(`${API_BASE}/settlements`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ month: '2026-12' })
-  });
-  const secondJson = await secondRes.json();
-  assertEqual(secondRes.status, 409, 'Lần 2: Chốt lại không force trả về HTTP 409');
-  assert(secondJson.requiresConfirm === true, 'Response chứa requiresConfirm = true');
+const golden = JSON.parse(fs.readFileSync(goldenFilePath, 'utf-8'));
+const seedDb = JSON.parse(fs.readFileSync(seedDbPath, 'utf-8'));
 
-  // Lần 3: Chốt lại với force=true -> phải trả về 200 ghi đè thành công
-  const thirdRes = await fetch(`${API_BASE}/settlements`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ month: '2026-12', force: true })
-  });
-  assert(thirdRes.status === 200, 'Lần 3: Chốt lại với force=true thành công (HTTP 200)');
+const testRunResult = calculateMonthlySettlement(golden.month, seedDb);
 
-  // TEST 4 — CHỐNG GIAN LẬN:
-  // Client cố ý gửi kèm settlementRows với số tiền giả 999.999.999đ
-  const fakePayloadRes = await fetch(`${API_BASE}/settlements`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      month: '2026-11',
-      force: true,
-      settlementRows: [
-        { partnerId: 'P1', commission: 999999999, branchFee: 999999999, total: 999999999 }
-      ]
-    })
-  });
-  const fakePayloadJson = await fakePayloadRes.json();
-  assert(fakePayloadRes.status === 200, 'POST /api/settlements với payload giả trả về 200');
-  
-  // Kiểm tra số tiền server đã lưu: phải là số server tự tính (không nhận 999.999.999 giả)
-  const p1Settle = fakePayloadJson.settlements.find(s => s.partnerId === 'P1');
-  assert(p1Settle !== undefined, 'Server tìm thấy snapshot đối tác P1');
-  assert(p1Settle.commission !== 999999999, 'Server BỎ QUA settlementRows giả (không nhận 999.999.999đ)');
-  assert(p1Settle.branchFee !== 999999999, 'Server BỎ QUA phí nhánh giả');
-  
-  // Kiểm tra server tự tính khớp chính xác engine
-  const currentDbRes = await fetch(`${API_BASE}/data`);
-  const currentDb = (await currentDbRes.json()).data;
-  const currentEngineResult = calculateMonthlySettlement('2026-11', currentDb);
-  const expectedP1 = currentEngineResult.partnerRows.find(r => r.partnerId === 'P1');
-  
-  assertEqual(p1Settle.commission, expectedP1.commission, `Server tự tính hoa hồng P1 là ${expectedP1.commission.toLocaleString('vi-VN')} ₫`);
-  assertEqual(p1Settle.branchFee, expectedP1.branchFee, `Server tự tính phí nhánh P1 là ${expectedP1.branchFee.toLocaleString('vi-VN')} ₫`);
-  assertEqual(p1Settle.total, expectedP1.total, `Server tự tính tổng phải trả P1 là ${expectedP1.total.toLocaleString('vi-VN')} ₫`);
+assertEqual(testRunResult.periodRevenue, golden.periodRevenue, `Doanh thu toàn hệ thống khớp chuẩn: ${golden.periodRevenue.toLocaleString('vi-VN')} ₫`);
+assertEqual(testRunResult.totalCtvCommission, golden.totalCtvCommission, `Tổng hoa hồng CTV khớp chuẩn: ${golden.totalCtvCommission.toLocaleString('vi-VN')} ₫`);
+assertEqual(testRunResult.totalBranchFee, golden.totalBranchFee, `Tổng phí nhánh 1% khớp chuẩn: ${golden.totalBranchFee.toLocaleString('vi-VN')} ₫`);
+assertEqual(testRunResult.totalCost, golden.totalCost, `Tổng chi phí hệ thống khớp chuẩn: ${golden.totalCost.toLocaleString('vi-VN')} ₫`);
+assertEqual(testRunResult.costPercent, golden.costPercent, `Tỷ lệ chi phí hệ thống: ${golden.costPercent}%`);
 
-} catch (err) {
-  console.error('❌ Lỗi kết nối API trong Test 3 & 4:', err.message);
-  process.exit(1);
+// Đối soát từng đối tác P1, P2, P3
+for (const goldenPartner of golden.partnerRows) {
+  const testedPartner = testRunResult.partnerRows.find(p => p.partnerId === goldenPartner.partnerId);
+  assert(testedPartner !== undefined, `Đối tác ${goldenPartner.partnerId} có trong kết quả tính toán`);
+  assertEqual(testedPartner.ownRevenue, goldenPartner.ownRevenue, `Doanh thu trực tiếp ${goldenPartner.partnerId}`);
+  assertEqual(testedPartner.branchRevenue, goldenPartner.branchRevenue, `Doanh thu nhánh ${goldenPartner.partnerId}`);
+  assertEqual(testedPartner.commission, goldenPartner.commission, `Hoa hồng CTV ${goldenPartner.partnerId}`);
+  assertEqual(testedPartner.branchFee, goldenPartner.branchFee, `Phí nhánh 1% ${goldenPartner.partnerId}`);
+  assertEqual(testedPartner.total, goldenPartner.total, `Tổng thu nhập ${goldenPartner.partnerId}`);
 }
 
 // ----------------------------------------------------

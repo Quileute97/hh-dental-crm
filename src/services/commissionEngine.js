@@ -31,15 +31,11 @@
  */
 export function getCommissionRatesByCustomerDepth(depth) {
   const d = Math.max(1, parseInt(depth, 10) || 1);
-  if (d === 1) {
+  if (d <= 1) {
     return { ctvRate: 20, platformRate: 0 };
   }
-  if (d === 2) {
-    // Sàn không thu, toàn bộ 10% hoàn về CTV giới thiệu ban đầu
-    return { ctvRate: 10, platformRate: 0 };
-  }
-  // depth >= 3: Sàn không thu, toàn bộ 5% hoàn về CTV giới thiệu ban đầu
-  return { ctvRate: 5, platformRate: 0 };
+  // Plan V5: 2% CTV hạ tầng (depth >= 2)
+  return { ctvRate: 2, platformRate: 0 };
 }
 
 /**

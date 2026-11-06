@@ -15,6 +15,7 @@ import SettlementView from './components/Commissions/SettlementView';
 import ReportsView from './components/Reports/ReportsView';
 import AuditLogModal from './components/Audit/AuditLogModal';
 import ServicePackageModal from './components/Services/ServicePackageModal';
+import LoginScreen from './components/Auth/LoginScreen';
 
 import { 
   fetchAllData, 
@@ -27,13 +28,17 @@ import {
   apiDeleteService,
   apiSaveSettlement,
   apiResetData, 
-  apiFetchAuditLogs 
+  apiFetchAuditLogs,
+  apiComputeMonth
 } from './services/api';
 import { calculateMonthlySettlement } from './services/commissionEngine';
+import { useAuth } from './context/AuthContext';
 import { formatVND } from './utils/formatters';
 import { CheckCircle2, Network, List } from 'lucide-react';
 
 export default function App() {
+  const { role, partnerId, isAdmin, isAccountant, isFrontdesk, isPartner } = useAuth();
+
   const [data, setData] = useState({
     partners: [],
     services: [],
@@ -46,10 +51,14 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [partnerViewMode, setPartnerViewMode] = useState('tree');
 
-  // 3.1 Chọn kỳ đối soát (mặc định '2026-11' khớp tập dữ liệu mẫu và thời điểm hiện tại)
+  // 3.1 Chọn kỳ đối soát (mặc định '2026-11' khớp tập dữ liệu mẫu chuẩn 172.000.000 VNĐ)
   const [selectedMonth, setSelectedMonth] = useState('2026-11');
 
+  // Kết quả tính toán từ Supabase Postgres RPC (compute_month)
+  const [rpcRows, setRpcRows] = useState(null);
+
   // Modals
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [partnerModalOpen, setPartnerModalOpen] = useState(false);
   const [partnerToEdit, setPartnerToEdit] = useState(null);
   const [defaultParentId, setDefaultParentId] = useState(null);
@@ -71,7 +80,7 @@ export default function App() {
   // Toast notification
   const [toastMessage, setToastMessage] = useState(null);
 
-  // Khởi tạo và nạp dữ liệu từ Backend Server / Local fallback
+  // Khởi tạo và nạp dữ liệu từ Backend Supabase Postgres
   useEffect(() => {
     async function loadInitial() {
       const { data: initialData, isServer } = await fetchAllData();
@@ -81,12 +90,32 @@ export default function App() {
     loadInitial();
   }, []);
 
-  // Đồng bộ lưu trữ
+  // Gọi Postgres RPC compute_month trên Supabase khi thay đổi tháng hoặc dữ liệu
   useEffect(() => {
-    if (data.partners && data.partners.length > 0) {
-      syncSaveData(data);
+    let cancelled = false;
+    async function loadRpcCompute() {
+      const res = await apiComputeMonth(selectedMonth);
+      if (!cancelled && res.ok && res.rows && res.rows.length > 0) {
+        setRpcRows(res.rows);
+      }
     }
-  }, [data]);
+    loadRpcCompute();
+    return () => { cancelled = true; };
+  }, [selectedMonth, data]);
+
+  // Kiểm tra phân quyền chuyển Tab
+  useEffect(() => {
+    const rolePermissions = {
+      admin: ['dashboard', 'partners', 'customers', 'commissions', 'reports'],
+      accountant: ['dashboard', 'partners', 'customers', 'commissions', 'reports'],
+      frontdesk: ['dashboard', 'partners', 'customers'],
+      partner: ['dashboard', 'customers', 'commissions']
+    };
+    const allowed = rolePermissions[role] || rolePermissions.admin;
+    if (!allowed.includes(activeTab)) {
+      setActiveTab('dashboard');
+    }
+  }, [role, activeTab]);
 
   function showToast(message, type = 'success') {
     setToastMessage({ message, type });
@@ -96,16 +125,88 @@ export default function App() {
   }
 
   // --------------------------------------------------------------------------
-  // TÍNH TOÁN THEO KỲ THÁNG (PLAN V5 ENGINE)
+  // TÍNH TOÁN THEO KỲ THÁNG (POSTGRES RPC + ENGINE FALLBACK)
   // --------------------------------------------------------------------------
   const settlementResult = useMemo(() => {
-    return calculateMonthlySettlement(selectedMonth, {
+    const local = calculateMonthlySettlement(selectedMonth, {
       partners: data.partners,
       customers: data.customers,
       visits: data.visits,
       settlements: data.settlements
     });
-  }, [selectedMonth, data]);
+
+    if (!rpcRows || rpcRows.length === 0) {
+      return local;
+    }
+
+    // Kết hợp số liệu trực tiếp từ Postgres RPC compute_month
+    const rpcMap = new Map(rpcRows.map(r => [r.partnerId, r]));
+    const updatedPartnerRows = local.partnerRows.map(row => {
+      const rpc = rpcMap.get(row.partnerId);
+      if (!rpc) return row;
+      return {
+        ...row,
+        ownRevenue: rpc.ownRevenue,
+        branchRevenue: rpc.branchRevenue,
+        commission: rpc.commission,
+        branchFee: rpc.branchFee,
+        total: rpc.total
+      };
+    });
+
+    const totalRevenue = updatedPartnerRows.reduce((sum, r) => sum + r.ownRevenue, 0);
+    const totalCommission = updatedPartnerRows.reduce((sum, r) => sum + r.commission, 0);
+    const totalBranchFee = updatedPartnerRows.reduce((sum, r) => sum + r.branchFee, 0);
+
+    return {
+      ...local,
+      partnerRows: updatedPartnerRows,
+      summary: {
+        ...local.summary,
+        totalRevenue: totalRevenue || local.summary.totalRevenue,
+        totalCommission,
+        totalBranchFee,
+        systemNetRevenue: (totalRevenue || local.summary.totalRevenue) - (totalCommission + totalBranchFee),
+        systemCostRatio: (totalRevenue || local.summary.totalRevenue) > 0
+          ? Math.round(((totalCommission + totalBranchFee) / (totalRevenue || local.summary.totalRevenue)) * 1000) / 10
+          : 0
+      }
+    };
+  }, [selectedMonth, data, rpcRows]);
+
+  // --------------------------------------------------------------------------
+  // PHÂN QUYỀN VIEW: LỌC CÂY VÀ KHÁCH THEO ROLE PARTNER
+  // --------------------------------------------------------------------------
+  const displayedPartners = useMemo(() => {
+    if (!isPartner || !partnerId) return data.partners;
+    const subtree = new Set([partnerId]);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const p of data.partners) {
+        if (p.parentId && subtree.has(p.parentId) && !subtree.has(p.id)) {
+          subtree.add(p.id);
+          changed = true;
+        }
+      }
+    }
+    return data.partners.filter(p => subtree.has(p.id));
+  }, [data.partners, isPartner, partnerId]);
+
+  const displayedCustomers = useMemo(() => {
+    if (!isPartner || !partnerId) return data.customers;
+    const allowedPartnerIds = new Set(displayedPartners.map(p => p.id));
+    return data.customers.filter(c => allowedPartnerIds.has(c.ownerPartnerId));
+  }, [data.customers, displayedPartners, isPartner, partnerId]);
+
+  const displayedSettlementResult = useMemo(() => {
+    if (!isPartner || !partnerId) return settlementResult;
+    const allowedPartnerIds = new Set(displayedPartners.map(p => p.id));
+    return {
+      ...settlementResult,
+      partnerRows: settlementResult.partnerRows.filter(r => allowedPartnerIds.has(r.partnerId))
+    };
+  }, [settlementResult, displayedPartners, isPartner, partnerId]);
 
   // --------------------------------------------------------------------------
   // HANDLERS: ĐỐI TÁC (PARTNERS)
@@ -217,7 +318,7 @@ export default function App() {
   }
 
   // --------------------------------------------------------------------------
-  // HANDLERS: QUYẾT TOÁN & CHỐT SỔ THÁNG (SETTLEMENTS - SERVER TỰ TÍNH)
+  // HANDLERS: QUYẾT TOÁN & CHỐT SỔ THÁNG (SUPABASE RPC: settle_month)
   // --------------------------------------------------------------------------
   async function handleConfirmSettlement(month, force = false) {
     const res = await apiSaveSettlement(month, force);
@@ -242,7 +343,7 @@ export default function App() {
       }));
     }
 
-    showToast(`Đã chốt sổ thành công kỳ ${month}!`);
+    showToast(`Đã chốt sổ thành công kỳ ${month} trên Postgres!`);
   }
 
   // --------------------------------------------------------------------------
@@ -268,9 +369,10 @@ export default function App() {
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        settlementStatus={settlementResult}
+        settlementStatus={displayedSettlementResult}
         onResetData={handleResetData}
         onOpenAuditLogs={handleOpenAuditLogs}
+        onOpenLogin={() => setLoginModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -290,21 +392,21 @@ export default function App() {
           {/* TAB 1: DASHBOARD */}
           {activeTab === 'dashboard' && (
             <div className="space-y-6">
-              {/* 3.2 4 Chỉ số: Doanh thu kỳ · Hoa hồng CTV · Phần nền tảng · Phí nhánh 1% */}
-              <StatCards settlementResult={settlementResult} />
+              {/* 4 Chỉ số: Doanh thu kỳ · Hoa hồng CTV · Phần nền tảng · Phí nhánh 1% */}
+              <StatCards settlementResult={displayedSettlementResult} />
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2">
                   <RecentReferrals
-                    settlementResult={settlementResult}
+                    settlementResult={displayedSettlementResult}
                     onNavigateTab={setActiveTab}
                     onViewCustomerProfile={handleViewCustomerProfile}
-                    customers={data.customers}
+                    customers={displayedCustomers}
                   />
                 </div>
                 <div className="lg:col-span-1">
                   <TopPartners
-                    settlementResult={settlementResult}
+                    settlementResult={displayedSettlementResult}
                     onNavigateTab={setActiveTab}
                   />
                 </div>
@@ -353,15 +455,15 @@ export default function App() {
 
               {partnerViewMode === 'tree' ? (
                 <PartnerTree
-                  partners={data.partners}
-                  settlementResult={settlementResult}
+                  partners={displayedPartners}
+                  settlementResult={displayedSettlementResult}
                   onAddPartner={handleOpenNewPartner}
                   onSelectPartner={handleEditPartner}
                 />
               ) : (
                 <PartnerList
-                  partners={data.partners}
-                  settlementResult={settlementResult}
+                  partners={displayedPartners}
+                  settlementResult={displayedSettlementResult}
                   onAddPartner={handleOpenNewPartner}
                   onEditPartner={handleEditPartner}
                   onToggleStatus={handleTogglePartnerStatus}
@@ -381,9 +483,9 @@ export default function App() {
               </div>
 
               <CustomerList
-                customers={data.customers}
+                customers={displayedCustomers}
                 visits={data.visits}
-                partners={data.partners}
+                partners={displayedPartners}
                 onNewCustomer={() => setCustomerModalOpen(true)}
                 onOpenAddVisit={handleOpenAddVisit}
                 onViewCustomerProfile={handleViewCustomerProfile}
@@ -396,7 +498,7 @@ export default function App() {
             <div className="space-y-4">
               <SettlementView
                 month={selectedMonth}
-                settlementResult={settlementResult}
+                settlementResult={displayedSettlementResult}
                 onConfirmSettlement={handleConfirmSettlement}
               />
             </div>
@@ -425,6 +527,16 @@ export default function App() {
       </div>
 
       {/* MODALS */}
+      {loginModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <LoginScreen
+            isModal={true}
+            onClose={() => setLoginModalOpen(false)}
+            onLoginSuccess={() => setLoginModalOpen(false)}
+          />
+        </div>
+      )}
+
       <PartnerModal
         isOpen={partnerModalOpen}
         onClose={() => setPartnerModalOpen(false)}

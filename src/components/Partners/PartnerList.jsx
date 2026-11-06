@@ -2,19 +2,19 @@ import React, { useState } from 'react';
 import { Search, Plus, Edit2, CheckCircle2, XCircle, Clock, ShieldCheck, CreditCard } from 'lucide-react';
 import { formatVND } from '../../utils/formatters';
 
-export default function PartnerList({ 
-  partners, 
-  settlementResult, 
-  onAddPartner, 
-  onEditPartner, 
-  onToggleStatus 
+export default function PartnerList({
+  partners,
+  settlementResult,
+  onAddPartner,
+  onEditPartner,
+  onToggleStatus
 }) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const partnerRows = settlementResult?.partnerRows || [];
 
   const filteredRows = partnerRows.filter(p => {
-    const matchesSearch = 
+    const matchesSearch =
       p.partnerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.partnerCode.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
@@ -144,9 +144,8 @@ export default function PartnerList({
                         </button>
                         <button
                           onClick={() => onToggleStatus(row.partnerId)}
-                          className={`p-1.5 rounded transition-colors ${
-                            isActive ? 'text-emerald-600 hover:bg-emerald-50' : 'text-slate-400 hover:bg-slate-100'
-                          }`}
+                          className={`p-1.5 rounded transition-colors ${isActive ? 'text-emerald-600 hover:bg-emerald-50' : 'text-slate-400 hover:bg-slate-100'
+                            }`}
                           title={isActive ? 'Đang hoạt động (Bấm để tạm dừng)' : 'Đang tạm dừng (Bấm để kích hoạt)'}
                         >
                           {isActive ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}

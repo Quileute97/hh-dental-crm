@@ -1,5 +1,6 @@
 import React from 'react';
-import { Plus, Building2, Calendar, Users, PackagePlus } from 'lucide-react';
+import { Plus, Calendar, Users, PackagePlus } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function Header({ 
   selectedMonth, 
@@ -8,6 +9,8 @@ export default function Header({
   onOpenNewPartner,
   onOpenServicePackages 
 }) {
+  const { role, isAdmin, isAccountant, isFrontdesk } = useAuth();
+
   return (
     <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0">
       <div className="flex items-center gap-3">
@@ -36,31 +39,39 @@ export default function Header({
           />
         </div>
 
-        {/* Nút Thêm Gói dịch vụ */}
-        <button
-          onClick={onOpenServicePackages}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-sky-700 bg-sky-50 border border-sky-200 hover:bg-sky-100 rounded-md transition-colors shadow-2xs"
-          title="Quản lý và thêm gói dịch vụ điều trị nha khoa"
-        >
-          <PackagePlus className="w-3.5 h-3.5 text-sky-600" />
-          <span>Thêm Gói dịch vụ</span>
-        </button>
+        {/* Nút Thêm Gói dịch vụ - Chỉ Admin/Accountant/Frontdesk */}
+        {(isAdmin || isAccountant || isFrontdesk) && (
+          <button
+            onClick={onOpenServicePackages}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-sky-700 bg-sky-50 border border-sky-200 hover:bg-sky-100 rounded-md transition-colors shadow-2xs"
+            title="Quản lý và thêm gói dịch vụ điều trị nha khoa"
+          >
+            <PackagePlus className="w-3.5 h-3.5 text-sky-600" />
+            <span>Thêm Gói dịch vụ</span>
+          </button>
+        )}
 
-        <button
-          onClick={onOpenNewPartner}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-md transition-colors"
-        >
-          <Plus className="w-3.5 h-3.5 text-slate-500" />
-          <span>Thêm đối tác</span>
-        </button>
+        {/* Nút Thêm đối tác - Chỉ Admin */}
+        {isAdmin && (
+          <button
+            onClick={onOpenNewPartner}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-md transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5 text-slate-500" />
+            <span>Thêm đối tác</span>
+          </button>
+        )}
 
-        <button
-          onClick={onOpenNewCustomer}
-          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors shadow-sm"
-        >
-          <Users className="w-3.5 h-3.5" />
-          <span>+ Khách hàng mới</span>
-        </button>
+        {/* Nút Khách hàng mới - Admin & Frontdesk */}
+        {(isAdmin || isFrontdesk) && (
+          <button
+            onClick={onOpenNewCustomer}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors shadow-sm"
+          >
+            <Users className="w-3.5 h-3.5" />
+            <span>+ Khách hàng mới</span>
+          </button>
+        )}
       </div>
     </header>
   );

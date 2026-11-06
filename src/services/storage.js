@@ -1,12 +1,12 @@
-import { 
-  INITIAL_PARTNERS, 
-  INITIAL_SERVICES, 
-  INITIAL_CUSTOMERS, 
-  INITIAL_VISITS, 
+import {
+  INITIAL_PARTNERS,
+  INITIAL_SERVICES,
+  INITIAL_CUSTOMERS,
+  INITIAL_VISITS,
   INITIAL_SETTLEMENTS,
-  INITIAL_REFERRALS, 
+  INITIAL_REFERRALS,
   INITIAL_COMMISSIONS,
-  migrateDatabase 
+  migrateDatabase
 } from '../data/initialData';
 
 const STORAGE_KEY = 'dental_crm_multilevel_v2';

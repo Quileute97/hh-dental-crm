@@ -9,22 +9,29 @@ import {
   Sparkles,
   ClipboardList,
   GitFork,
-  CheckCircle2
+  LogOut,
+  ShieldCheck,
+  UserCheck
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function Sidebar({ 
   activeTab, 
   setActiveTab, 
   settlementStatus, 
   onResetData,
-  onOpenAuditLogs
+  onOpenAuditLogs,
+  onOpenLogin
 }) {
-  const menuItems = [
+  const { user, profile, role, logout, demoLogin, isAdmin, isAccountant } = useAuth();
+
+  const allMenuItems = [
     {
       id: 'dashboard',
       label: 'Tổng quan điều hành',
       icon: LayoutDashboard,
       badge: null,
+      roles: ['admin', 'accountant', 'frontdesk', 'partner'],
     },
     {
       id: 'partners',
@@ -32,6 +39,7 @@ export default function Sidebar({
       icon: Network,
       badge: 'Phí 1%',
       badgeColor: 'sky',
+      roles: ['admin', 'accountant', 'frontdesk'],
     },
     {
       id: 'customers',
@@ -39,6 +47,7 @@ export default function Sidebar({
       icon: Users,
       badge: 'Độ sâu',
       badgeColor: 'emerald',
+      roles: ['admin', 'accountant', 'frontdesk', 'partner'],
     },
     {
       id: 'commissions',
@@ -46,6 +55,7 @@ export default function Sidebar({
       icon: Coins,
       badge: settlementStatus?.isFullySettled ? 'Đã chốt' : 'Cần chốt',
       badgeColor: settlementStatus?.isFullySettled ? 'emerald' : 'amber',
+      roles: ['admin', 'accountant', 'partner'],
     },
     {
       id: 'reports',
@@ -53,8 +63,21 @@ export default function Sidebar({
       icon: FileSpreadsheet,
       badge: 'BOM UTF-8',
       badgeColor: 'slate',
+      roles: ['admin', 'accountant'],
     },
   ];
+
+  // Lọc Menu theo Role Supabase Auth
+  const visibleMenuItems = allMenuItems.filter(item => item.roles.includes(role || 'admin'));
+
+  const roleLabels = {
+    admin: { label: 'Quản Trị Viên', color: 'bg-sky-100 text-sky-800 border-sky-300' },
+    accountant: { label: 'Kế Toán Trưởng', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+    frontdesk: { label: 'Lễ Tân Tiếp Đón', color: 'bg-amber-100 text-amber-800 border-amber-300' },
+    partner: { label: 'Đối Tác CTV', color: 'bg-purple-100 text-purple-800 border-purple-300' },
+  };
+
+  const currentRoleInfo = roleLabels[role] || roleLabels.admin;
 
   return (
     <aside className="w-64 bg-white border-r border-slate-200 flex flex-col shrink-0 min-h-screen">
@@ -75,10 +98,16 @@ export default function Sidebar({
 
       {/* Navigation menu */}
       <nav className="flex-1 px-3 py-4 space-y-1">
-        <p className="px-3 pb-2 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
-          Phân Hệ Quản Trị
-        </p>
-        {menuItems.map(item => {
+        <div className="px-3 pb-2 flex items-center justify-between">
+          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+            Phân Hệ Quản Trị
+          </p>
+          <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded border ${currentRoleInfo.color}`}>
+            {currentRoleInfo.label}
+          </span>
+        </div>
+
+        {visibleMenuItems.map(item => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
           return (
@@ -112,15 +141,17 @@ export default function Sidebar({
           );
         })}
 
-        <div className="pt-2">
-          <button
-            onClick={onOpenAuditLogs}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
-          >
-            <ClipboardList className="w-4 h-4 text-slate-500" />
-            <span>Sổ kiểm toán (Audit Log)</span>
-          </button>
-        </div>
+        {isAdmin && (
+          <div className="pt-2">
+            <button
+              onClick={onOpenAuditLogs}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+            >
+              <ClipboardList className="w-4 h-4 text-slate-500" />
+              <span>Sổ kiểm toán (Audit Log)</span>
+            </button>
+          </div>
+        )}
       </nav>
 
       {/* Policy card: Plan V5 Two Independent Systems */}
@@ -130,24 +161,19 @@ export default function Sidebar({
             <GitFork className="w-3.5 h-3.5 text-sky-600" />
             <span>Chính sách Plan V5</span>
           </span>
-          <span className="text-[10px] text-sky-700 bg-white px-1.5 py-0.5 rounded border border-sky-300 font-bold">2 Hệ thống</span>
+          <span className="text-[10px] text-sky-700 bg-white px-1.5 py-0.5 rounded border border-sky-300 font-bold">Postgres RPC</span>
         </div>
         
         {/* Hệ thống 1: Chuỗi khách */}
         <div className="space-y-1 text-[11px] text-slate-600 border-b border-slate-200 pb-2 mb-2">
-          <div className="font-semibold text-slate-800 text-[10px] uppercase">1. Chuỗi khách (Theo độ sâu)</div>
-          <div className="text-[10px] text-emerald-700 font-medium">Sàn không thu &bull; Hoàn toàn bộ về CTV:</div>
+          <div className="font-semibold text-slate-800 text-[10px] uppercase">1. Chuỗi khách (Độ sâu)</div>
           <div className="flex justify-between">
-            <span>Độ sâu 1 (Trực tiếp):</span>
+            <span>Tầng 1 (Trực tiếp):</span>
             <span className="font-bold text-sky-700">CTV 20%</span>
           </div>
           <div className="flex justify-between">
-            <span>Độ sâu 2:</span>
-            <span className="font-bold text-sky-700">CTV 10%</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Độ sâu 3+:</span>
-            <span className="font-bold text-sky-700">CTV 5%</span>
+            <span>Tầng 2+ (Hạ tầng):</span>
+            <span className="font-bold text-sky-700">CTV 2%</span>
           </div>
         </div>
 
@@ -158,22 +184,43 @@ export default function Sidebar({
             <span>Phí nhánh cấp trên:</span>
             <span className="bg-emerald-100 text-emerald-800 px-1 rounded font-bold">1% nhánh</span>
           </div>
-          <div className="text-[10px] text-slate-500 italic">
-            Áp dụng trên toàn bộ doanh thu cây con trực tiếp
-          </div>
         </div>
       </div>
 
-      {/* Reset seed data button */}
-      <div className="p-3 border-t border-slate-200">
-        <button
-          onClick={onResetData}
-          className="w-full flex items-center justify-center gap-1.5 py-2 px-3 text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors border border-slate-200"
-          title="Khôi phục lại dữ liệu mẫu chuẩn Plan V5 (172.000.000 VNĐ)"
-        >
-          <RotateCcw className="w-3.5 h-3.5 text-slate-600" />
-          <span>Đặt lại dữ liệu mẫu V5</span>
-        </button>
+      {/* User profile & Switcher / Logout */}
+      <div className="p-3 border-t border-slate-200 bg-slate-50/50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-7 h-7 rounded-full bg-sky-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+              {(profile?.full_name || role)?.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <div className="font-bold text-slate-800 text-xs truncate">
+                {profile?.full_name || (user ? user.email : 'Quản Trị Viên')}
+              </div>
+              <div className="text-[10px] text-slate-500 truncate">
+                Role: <strong>{role}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => onOpenLogin && onOpenLogin()}
+              className="p-1 rounded text-slate-400 hover:text-sky-600 hover:bg-slate-100 transition-colors"
+              title="Chuyển đổi tài khoản / Role"
+            >
+              <UserCheck className="w-4 h-4" />
+            </button>
+            <button
+              onClick={logout}
+              className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-slate-100 transition-colors"
+              title="Đăng xuất"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       </div>
     </aside>
   );

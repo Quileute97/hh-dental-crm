@@ -205,13 +205,6 @@
   ],
   "visits": [
     {
-      "id": "VISIT-1793955979269-bmat",
-      "customerId": "CUST-001",
-      "amount": 4000000,
-      "note": "Tẩy trắng răng Philips Zoom WhiteSpeed",
-      "occurredAt": "2026-11-06T00:00:00.000Z"
-    },
-    {
       "id": "VISIT-001-1",
       "customerId": "CUST-001",
       "amount": 32000000,

@@ -1,0 +1,72 @@
+{
+  "month": "2026-11",
+  "generatedAt": "2026-11-06T13:23:46.540Z",
+  "periodRevenue": 172000000,
+  "totalCtvCommission": 20540000,
+  "totalPlatformShare": 0,
+  "totalBranchFee": 1060000,
+  "totalCost": 21600000,
+  "costPercent": 12.6,
+  "partnerRows": [
+    {
+      "partnerId": "P1",
+      "partnerCode": "REF-A-FOUNDER",
+      "partnerName": "Bs. Nguyễn Văn A",
+      "ownRevenue": 86000000,
+      "branchRevenue": 172000000,
+      "commission": 8380000,
+      "branchFee": 860000,
+      "total": 9240000
+    },
+    {
+      "partnerId": "P2",
+      "partnerCode": "REF-B-LEVEL4",
+      "partnerName": "Trần Thị B",
+      "ownRevenue": 66000000,
+      "branchRevenue": 86000000,
+      "commission": 8160000,
+      "branchFee": 200000,
+      "total": 8360000
+    },
+    {
+      "partnerId": "P3",
+      "partnerCode": "REF-C-LEVEL3",
+      "partnerName": "Lê Hoàng C",
+      "ownRevenue": 20000000,
+      "branchRevenue": 20000000,
+      "commission": 4000000,
+      "branchFee": 0,
+      "total": 4000000
+    },
+    {
+      "partnerId": "P4",
+      "partnerCode": "REF-D-LEVEL2",
+      "partnerName": "Phạm Minh D",
+      "ownRevenue": 0,
+      "branchRevenue": 0,
+      "commission": 0,
+      "branchFee": 0,
+      "total": 0
+    },
+    {
+      "partnerId": "P5",
+      "partnerCode": "REF-D2-LEVEL2",
+      "partnerName": "Vũ Thảo D2",
+      "ownRevenue": 0,
+      "branchRevenue": 0,
+      "commission": 0,
+      "branchFee": 0,
+      "total": 0
+    },
+    {
+      "partnerId": "P6",
+      "partnerCode": "REF-E-LEVEL1",
+      "partnerName": "Đặng Quốc E (CTV)",
+      "ownRevenue": 0,
+      "branchRevenue": 0,
+      "commission": 0,
+      "branchFee": 0,
+      "total": 0
+    }
+  ]
+}
