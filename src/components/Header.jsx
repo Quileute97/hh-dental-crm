@@ -2,12 +2,12 @@ import React from 'react';
 import { Plus, Calendar, Users, PackagePlus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-export default function Header({ 
-  selectedMonth, 
-  onMonthChange, 
-  onOpenNewCustomer, 
+export default function Header({
+  selectedMonth,
+  onMonthChange,
+  onOpenNewCustomer,
   onOpenNewPartner,
-  onOpenServicePackages 
+  onOpenServicePackages
 }) {
   const { role, isAdmin, isAccountant, isFrontdesk } = useAuth();
 
@@ -15,9 +15,9 @@ export default function Header({
     <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0">
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2.5">
-          <img 
-            src="/logo.png" 
-            alt="HH Dental Clinic Logo" 
+          <img
+            src="/logo.png"
+            alt="HH Dental Clinic Logo"
             className="h-8 w-auto object-contain mix-blend-multiply"
           />
           <span className="font-bold text-slate-800 text-sm tracking-tight hidden sm:inline">

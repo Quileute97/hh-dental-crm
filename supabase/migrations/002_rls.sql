@@ -69,3 +69,4 @@ create policy audit_write on audit_logs for insert with check (auth.uid() is not
 -- 7. Bảng profiles
 create policy profiles_read on profiles for select using (user_id = auth.uid() or my_role() = 'admin');
 create policy profiles_write on profiles for all using (my_role() = 'admin');
+

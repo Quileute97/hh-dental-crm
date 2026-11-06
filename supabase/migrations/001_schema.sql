@@ -96,3 +96,4 @@ create table profiles (
   full_name text,
   created_at timestamptz not null default now()
 );
+

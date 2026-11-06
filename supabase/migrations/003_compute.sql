@@ -99,3 +99,4 @@ end $$;
 
 -- Thu hồi quyền thực thi trực tiếp từ anon
 revoke all on function settle_month(text, boolean) from anon;
+
