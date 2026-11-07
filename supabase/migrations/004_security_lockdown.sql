@@ -126,7 +126,7 @@ begin
     join branch b on b.pid = p.id
     join comm c on c.pid = p.id
     left join fee f on f.pid = p.id
-    where p.id in (select partner_subtree(v_pid));
+    where p.id = v_pid;
   else
     raise exception 'Không có quyền truy cập dữ liệu tính toán hoa hồng.';
   end if;
