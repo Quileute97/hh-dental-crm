@@ -65,7 +65,7 @@ export default function AuditLogModal({ isOpen, onClose, logs }) {
         </div>
 
         <div className="px-5 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between shrink-0 text-xs text-slate-500">
-          <span>Ghi đè file bất biến: <code>server/data/audit.log</code></span>
+          <span>Nhật ký ghi trên Postgres (<code>audit_logs</code>)</span>
           <button
             onClick={onClose}
             className="px-4 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 rounded transition-colors"
