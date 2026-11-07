@@ -20,7 +20,7 @@ returns table(
   total bigint
 )
 language sql stable security definer set search_path = public as $$
-with
+with recursive
 period as (
   select v.*, c.depth, c.owner_partner_id
   from visits v join customers c on c.id = v.customer_id

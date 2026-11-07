@@ -200,7 +200,7 @@ returns table(
   total bigint
 )
 language sql stable security definer set search_path = public as $$
-with
+with recursive
 period as (
   select v.*, c.depth, c.owner_partner_id
   from visits v join customers c on c.id = v.customer_id
@@ -280,3 +280,4 @@ end $$;
 grant execute on function compute_month(text) to authenticated, anon;
 grant execute on function settle_month(text, boolean) to authenticated;
 revoke all on function settle_month(text, boolean) from anon;
+
