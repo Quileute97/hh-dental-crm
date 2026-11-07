@@ -88,3 +88,4 @@ after insert or update or delete on settlements
 for each row execute function fn_audit_log_trigger();
 
 commit;
+
