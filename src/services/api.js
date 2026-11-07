@@ -108,13 +108,31 @@ export async function fetchAllData() {
   };
 }
 
+function isForbiddenError(error) {
+  if (!error) return false;
+  const code = error.code || '';
+  const msg = (error.message || '').toLowerCase();
+  return (
+    code === 'P0001' ||
+    code === '42501' ||
+    msg.includes('không có quyền') ||
+    msg.includes('yêu cầu đăng nhập') ||
+    msg.includes('permission denied')
+  );
+}
+
 // ----------------------------------------------------------------------------
 // 2. SERVER-SIDE RPC: TÍNH HOA HỒNG & PHÍ NHÁNH TRÊN POSTGRES (KHÔNG TÍNH CLIENT)
 // ----------------------------------------------------------------------------
 export async function apiComputeMonth(month) {
   try {
     const { data, error } = await supabase.rpc('compute_month', { p_month: month });
-    if (error) throw error;
+    if (error) {
+      if (isForbiddenError(error)) {
+        return { ok: false, reason: 'forbidden', rows: [] };
+      }
+      throw error;
+    }
     if (data && Array.isArray(data)) {
       return {
         ok: true,
@@ -129,7 +147,10 @@ export async function apiComputeMonth(month) {
       };
     }
   } catch (err) {
-    console.error('[Supabase RPC] compute_month error:', err);
+    if (isForbiddenError(err)) {
+      return { ok: false, reason: 'forbidden', rows: [] };
+    }
+    console.warn('[Supabase RPC] compute_month fallback:', err?.message || err);
   }
   return { ok: false, rows: [] };
 }
@@ -145,6 +166,14 @@ export async function apiSettleMonth(month, force = false) {
     });
 
     if (error) {
+      if (isForbiddenError(error)) {
+        return {
+          ok: false,
+          reason: 'forbidden',
+          status: 403,
+          error: error.message || 'Không có quyền thực hiện chốt sổ.'
+        };
+      }
       const msg = error.message || '';
       const isAlreadySettled = msg.includes('đã chốt') || msg.includes('p_force = true');
       return {
@@ -174,6 +203,14 @@ export async function apiSettleMonth(month, force = false) {
       }
     };
   } catch (err) {
+    if (isForbiddenError(err)) {
+      return {
+        ok: false,
+        reason: 'forbidden',
+        status: 403,
+        error: err?.message || 'Không có quyền thực hiện chốt sổ.'
+      };
+    }
     return { ok: false, status: 500, error: err.message };
   }
 }
