@@ -6,12 +6,11 @@ Hệ thống quản lý đối tác và bệnh nhân phòng khám **HH Dental Cl
 
 ---
 
-## 1. Công Thức & Chính Sách Hoa Hồng
+## 1. Công Thức & Chính Sách Hoa Hồng Chuẩn
 
 ### Hệ Thống 1: Chuỗi Khách Hàng (Sàn 0% — Toàn Bộ Hoàn Về CTV Ban Đầu)
 * **Tầng 1 (Khách trực tiếp):** CTV hưởng **20%**, Sàn **0%**.
-* **Tầng 2 (Khách F1 giới thiệu):** CTV hưởng **10%**, Sàn **0%** *(toàn bộ 10% hoàn về CTV giới thiệu ban đầu)*.
-* **Tầng 3+ (Khách từ F2 trở đi):** CTV hưởng **5%**, Sàn **0%** *(toàn bộ 5% hoàn về CTV giới thiệu ban đầu)*.
+* **Tầng 2+ (Khách từ F1 trở đi - Hạ tầng giới thiệu):** CTV hưởng **2%**, Sàn **0%**.
 * *Chủ sở hữu khách (CTV ban đầu):* `customer.ownerPartnerId` kế thừa tự động từ khách giới thiệu ban đầu.
 * *Doanh thu trọn đời:* Bảng `visits` lưu từng lần khám (gói đầu tiên, tái điều trị...).
 * *Credit dịch vụ cho khách:* Khách được giới thiệu đến khám (+200.000 ₫), hoàn tất (+500.000 ₫). Không trừ vào hoa hồng đối tác.
@@ -27,29 +26,40 @@ Hệ thống quản lý đối tác và bệnh nhân phòng khám **HH Dental Cl
 
 ## 2. Kết Quả Kiểm Thử Tiêu Chuẩn (172.000.000 VNĐ)
 
-Kịch bản 3 đối tác P1 $\to$ P2 $\to$ P3 và 6 khách hàng trong kỳ tháng 2026-11:
+Kịch bản chuẩn kỳ tháng 2026-11 (đối chiếu 3 nguồn: engine client, Postgres RPC `compute_month`, `scripts/golden.json`):
 * **Doanh thu kỳ:** 172.000.000 ₫
-* **Sổ khách P1:** 86.000.000 ₫ | **Doanh thu nhánh P1:** 172.000.000 ₫ | **Hoa hồng P1:** 12.300.000 ₫ (20%×37tr + 10%×49tr) | **Phí nhánh P1:** 860.000 ₫ | **Tổng nhận:** 13.160.000 ₫
-* **Sổ khách P2:** 66.000.000 ₫ | **Doanh thu nhánh P2:** 86.000.000 ₫ | **Hoa hồng P2:** 10.400.000 ₫ (20%×38tr + 10%×28tr) | **Phí nhánh P2:** 200.000 ₫ | **Tổng nhận:** 10.600.000 ₫
+* **Sổ khách P1:** 86.000.000 ₫ | **Doanh thu nhánh P1:** 172.000.000 ₫ | **Hoa hồng P1:** 8.380.000 ₫ (20%×37tr + 2%×49tr) | **Phí nhánh P1:** 860.000 ₫ | **Tổng nhận:** 9.240.000 ₫
+* **Sổ khách P2:** 66.000.000 ₫ | **Doanh thu nhánh P2:** 86.000.000 ₫ | **Hoa hồng P2:** 8.160.000 ₫ (20%×38tr + 2%×28tr) | **Phí nhánh P2:** 200.000 ₫ | **Tổng nhận:** 8.360.000 ₫
 * **Sổ khách P3:** 20.000.000 ₫ | **Doanh thu nhánh P3:** 20.000.000 ₫ | **Hoa hồng P3:** 4.000.000 ₫ (20%×20tr) | **Phí nhánh P3:** 0 ₫ | **Tổng nhận:** 4.000.000 ₫
-* **Tổng hoa hồng CTV:** 26.700.000 ₫
+* **Tổng hoa hồng CTV:** 20.540.000 ₫
 * **Phần nền tảng (Sàn):** 0 ₫ *(Sàn không thu)*
 * **Phí nhánh 1%:** 1.060.000 ₫
-* **Tổng chi phí hệ thống:** 27.760.000 ₫ (**16,1%** doanh thu)
+* **Tổng chi phí hệ thống:** 21.600.000 ₫ (**12,6%** doanh thu)
 
 ---
 
-## 3. Khởi Chạy Ứng Dụng
+## 3. Cấu Hình Biến Môi Trường (Cloudflare Deployment)
+
+Trên Cloudflare Dashboard (**Workers & Pages > Settings > Variables and Secrets**), bắt buộc phải thiết lập 2 biến môi trường tại thời điểm build:
+- `VITE_SUPABASE_URL`: `https://your-project-ref.supabase.co`
+- `VITE_SUPABASE_ANON_KEY`: `eyJhbGciOi...`
+
+> ⚠️ **CẢNH BÁO QUAN TRỌNG**: Nếu thiếu 2 biến môi trường này, ứng dụng sẽ hiển thị màn hình thông báo *"Thiếu cấu hình Supabase — liên hệ quản trị"* và từ chối tải giao diện nhằm đảm bảo an toàn, không bao giờ để xảy ra lỗi sập trắng trang.
+
+---
+
+## 4. Lệnh Khởi Chạy & Kiểm Thử
 
 ```bash
-# 1. Chạy bộ kiểm thử tự động
+# 1. Chạy bộ kiểm thử tự động (5 bộ test PASS 100%)
 npm test
 
-# 2. Khởi động Backend Server (Cổng 3001)
-npm run server
+# 2. Chạy đối soát golden benchmark
+npm run golden
 
-# 3. Khởi động Frontend React + Vite (Cổng 3000)
+# 3. Khởi động môi trường phát triển (cổng 3000)
 npm run dev
 
-# Mở trình duyệt tại: http://localhost:3000
+# 4. Build sản phẩm (dist/)
+npm run build
 ```
