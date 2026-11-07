@@ -265,3 +265,4 @@ create policy profiles_read on profiles for select using (
 create policy profiles_write on profiles for all
   using (auth.uid() is not null and my_role() = 'admin')
   with check (auth.uid() is not null and my_role() = 'admin');
+

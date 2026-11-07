@@ -17,16 +17,16 @@ import AuditLogModal from './components/Audit/AuditLogModal';
 import ServicePackageModal from './components/Services/ServicePackageModal';
 import LoginScreen from './components/Auth/LoginScreen';
 
-import { 
-  fetchAllData, 
-  apiSavePartner, 
-  apiTogglePartnerStatus, 
+import {
+  fetchAllData,
+  apiSavePartner,
+  apiTogglePartnerStatus,
   apiSaveCustomer,
   apiAddVisit,
   apiSaveService,
   apiDeleteService,
   apiSaveSettlement,
-  apiResetData, 
+  apiResetData,
   apiFetchAuditLogs,
   apiComputeMonth
 } from './services/api';
@@ -282,9 +282,9 @@ export default function App() {
   async function handleTogglePartnerStatus(partnerId) {
     setData(prev => ({
       ...prev,
-      partners: prev.partners.map(p => 
-        p.id === partnerId 
-          ? { ...p, status: p.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE' } 
+      partners: prev.partners.map(p =>
+        p.id === partnerId
+          ? { ...p, status: p.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE' }
           : p
       )
     }));
@@ -418,7 +418,7 @@ export default function App() {
   }
 
   if (!user) {
-    return <LoginScreen onLoginSuccess={() => {}} />;
+    return <LoginScreen onLoginSuccess={() => { }} />;
   }
 
   return (
@@ -488,22 +488,20 @@ export default function App() {
                 <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-md p-1 text-xs">
                   <button
                     onClick={() => setPartnerViewMode('tree')}
-                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded transition-colors ${
-                      partnerViewMode === 'tree'
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded transition-colors ${partnerViewMode === 'tree'
                         ? 'bg-sky-50 text-sky-700 font-semibold'
                         : 'text-slate-600 hover:text-slate-900'
-                    }`}
+                      }`}
                   >
                     <Network className="w-3.5 h-3.5" />
                     <span>Dạng Cây (Tree)</span>
                   </button>
                   <button
                     onClick={() => setPartnerViewMode('list')}
-                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded transition-colors ${
-                      partnerViewMode === 'list'
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded transition-colors ${partnerViewMode === 'list'
                         ? 'bg-sky-50 text-sky-700 font-semibold'
                         : 'text-slate-600 hover:text-slate-900'
-                    }`}
+                      }`}
                   >
                     <List className="w-3.5 h-3.5" />
                     <span>Dạng Bảng (List)</span>
