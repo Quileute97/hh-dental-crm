@@ -1,21 +1,23 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import StatCards from './components/Dashboard/StatCards';
 import RecentReferrals from './components/Dashboard/RecentReferrals';
 import TopPartners from './components/Dashboard/TopPartners';
-import PartnerTree from './components/Partners/PartnerTree';
-import PartnerList from './components/Partners/PartnerList';
 import PartnerModal from './components/Partners/PartnerModal';
-import CustomerList from './components/Customers/CustomerList';
 import CustomerModal from './components/Customers/CustomerModal';
 import AddVisitModal from './components/Customers/AddVisitModal';
 import CustomerProfileModal from './components/Customers/CustomerProfileModal';
-import SettlementView from './components/Commissions/SettlementView';
-import ReportsView from './components/Reports/ReportsView';
 import AuditLogModal from './components/Audit/AuditLogModal';
 import ServicePackageModal from './components/Services/ServicePackageModal';
 import LoginScreen from './components/Auth/LoginScreen';
+
+// Code-split các Tab view lớn bằng React.lazy
+const PartnerTree = React.lazy(() => import('./components/Partners/PartnerTree'));
+const PartnerList = React.lazy(() => import('./components/Partners/PartnerList'));
+const CustomerList = React.lazy(() => import('./components/Customers/CustomerList'));
+const SettlementView = React.lazy(() => import('./components/Commissions/SettlementView'));
+const ReportsView = React.lazy(() => import('./components/Reports/ReportsView'));
 
 import {
   fetchAllData,
@@ -30,10 +32,10 @@ import {
   apiFetchAuditLogs,
   apiComputeMonth
 } from './services/api';
-import { calculateMonthlySettlement } from './services/commissionEngine';
+import { calculateMonthlySettlement, COMMISSION_POLICY } from './services/commissionEngine';
 import { useAuth } from './context/AuthContext';
 import { formatVND } from './utils/formatters';
-import { CheckCircle2, Network, List } from 'lucide-react';
+import { CheckCircle2, Network, List, Info } from 'lucide-react';
 
 export default function App() {
   const { user, loading: authLoading, role, partnerId, isAdmin, isAccountant, isFrontdesk, isPartner } = useAuth();
@@ -55,6 +57,8 @@ export default function App() {
 
   // Kết quả tính toán từ Supabase Postgres RPC (compute_month)
   const [rpcRows, setRpcRows] = useState(null);
+  // Trạng thái nếu RPC bị từ chối quyền (ví dụ frontdesk)
+  const [isRpcForbidden, setIsRpcForbidden] = useState(false);
 
   // Modals
   const [loginModalOpen, setLoginModalOpen] = useState(false);
@@ -100,8 +104,17 @@ export default function App() {
     async function loadRpcCompute() {
       if (!user) return;
       const res = await apiComputeMonth(selectedMonth);
-      if (!cancelled && res.ok && res.rows && res.rows.length > 0) {
+      if (cancelled) return;
+      if (res.reason === 'forbidden') {
+        setIsRpcForbidden(true);
+        setRpcRows(null);
+        return;
+      }
+      setIsRpcForbidden(false);
+      if (res.ok && res.rows && res.rows.length > 0) {
         setRpcRows(res.rows);
+      } else {
+        setRpcRows(null);
       }
     }
     loadRpcCompute();
@@ -216,37 +229,89 @@ export default function App() {
 
   // --------------------------------------------------------------------------
   // PHÂN QUYỀN VIEW: LỌC CÂY VÀ KHÁCH THEO ROLE PARTNER
+  // Đối tác chỉ xem dữ liệu sổ khách & hoa hồng của chính mình, không lộ số toàn phòng khám
   // --------------------------------------------------------------------------
-  const displayedPartners = useMemo(() => {
-    if (!isPartner || !partnerId) return data.partners;
-    const subtree = new Set([partnerId]);
-    let changed = true;
-    while (changed) {
-      changed = false;
-      for (const p of data.partners) {
-        if (p.parentId && subtree.has(p.parentId) && !subtree.has(p.id)) {
-          subtree.add(p.id);
-          changed = true;
-        }
-      }
-    }
-    return data.partners.filter(p => subtree.has(p.id));
+  const currentPartner = useMemo(() => {
+    if (!isPartner) return null;
+    return (data.partners || []).find(p => 
+      (partnerId && (p.id === partnerId || p.code === partnerId)) ||
+      (!partnerId && (p.id === 'P1' || p.code === 'REF-A-FOUNDER'))
+    ) || null;
   }, [data.partners, isPartner, partnerId]);
 
+  const displayedPartners = useMemo(() => {
+    if (!isPartner) return data.partners;
+    if (!currentPartner) return [];
+    return [currentPartner];
+  }, [data.partners, isPartner, currentPartner]);
+
   const displayedCustomers = useMemo(() => {
-    if (!isPartner || !partnerId) return data.customers;
+    if (!isPartner) return data.customers;
     const allowedPartnerIds = new Set(displayedPartners.map(p => p.id));
-    return data.customers.filter(c => allowedPartnerIds.has(c.ownerPartnerId));
-  }, [data.customers, displayedPartners, isPartner, partnerId]);
+    return (data.customers || []).filter(c => allowedPartnerIds.has(c.ownerPartnerId));
+  }, [data.customers, displayedPartners, isPartner]);
 
   const displayedSettlementResult = useMemo(() => {
-    if (!isPartner || !partnerId) return settlementResult;
-    const allowedPartnerIds = new Set(displayedPartners.map(p => p.id));
+    if (!isPartner) return settlementResult;
+
+    // Tìm dòng tính toán của đối tác hiện tại
+    const partnerRow = (settlementResult.partnerRows || []).find(
+      r => (currentPartner && (r.partnerId === currentPartner.id || r.partnerCode === currentPartner.code)) ||
+           (partnerId && (r.partnerId === partnerId || r.partnerCode === partnerId)) ||
+           r.partnerId === 'P1'
+    );
+
+    if (!partnerRow) {
+      return {
+        ...settlementResult,
+        periodRevenue: 0,
+        totalCtvCommission: 0,
+        totalPlatformShare: 0,
+        totalBranchFee: 0,
+        totalCost: 0,
+        costPercent: 0,
+        partnerRows: [],
+        visitBreakdowns: [],
+        summary: {
+          totalRevenue: 0,
+          totalCommission: 0,
+          totalBranchFee: 0,
+          systemNetRevenue: 0,
+          systemCostRatio: 0
+        }
+      };
+    }
+
+    const pRev = partnerRow.ownRevenue || 0;
+    const comm = partnerRow.commission || 0;
+    const fee = partnerRow.branchFee || 0;
+    const total = partnerRow.total || (comm + fee);
+    const costRatio = pRev > 0 ? Math.round((total / pRev) * 1000) / 10 : 0;
+
+    const allowedCustIds = new Set((displayedCustomers || []).map(c => c.id));
+    const filteredVisits = (settlementResult.visitBreakdowns || []).filter(v =>
+      allowedCustIds.has(v.customerId) || (currentPartner && v.ownerPartnerId === currentPartner.id)
+    );
+
     return {
       ...settlementResult,
-      partnerRows: (settlementResult.partnerRows || []).filter(r => allowedPartnerIds.has(r.partnerId))
+      periodRevenue: pRev,
+      totalCtvCommission: comm,
+      totalPlatformShare: 0,
+      totalBranchFee: fee,
+      totalCost: total,
+      costPercent: costRatio,
+      partnerRows: [partnerRow],
+      visitBreakdowns: filteredVisits,
+      summary: {
+        totalRevenue: pRev,
+        totalCommission: comm,
+        totalBranchFee: fee,
+        systemNetRevenue: 0,
+        systemCostRatio: costRatio
+      }
     };
-  }, [settlementResult, displayedPartners, isPartner, partnerId]);
+  }, [settlementResult, isPartner, partnerId, currentPartner, displayedCustomers]);
 
   // --------------------------------------------------------------------------
   // HANDLERS: ĐỐI TÁC (PARTNERS)
@@ -363,6 +428,10 @@ export default function App() {
   async function handleConfirmSettlement(month, force = false) {
     const res = await apiSaveSettlement(month, force);
     if (!res.ok) {
+      if (res.reason === 'forbidden') {
+        showToast('Bạn không có quyền chốt sổ kỳ này.', 'error');
+        return;
+      }
       if (res.status === 409 && res.requiresConfirm) {
         if (window.confirm('Kỳ này đã chốt sổ trước đó. Chốt lại sẽ tính toán lại từ đầu và ghi đè số cũ?')) {
           return handleConfirmSettlement(month, true);
@@ -447,6 +516,14 @@ export default function App() {
 
         {/* Dynamic Page Content */}
         <main className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Banner thông báo chế độ offline khi bị từ chối quyền RPC */}
+          {isRpcForbidden && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 px-3.5 py-2.5 rounded-lg text-xs flex items-center gap-2">
+              <Info className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>Đang tính offline — không có quyền truy vấn server</span>
+            </div>
+          )}
+
           {/* TAB 1: DASHBOARD */}
           {activeTab === 'dashboard' && (
             <div className="space-y-6">
@@ -472,113 +549,115 @@ export default function App() {
             </div>
           )}
 
-          {/* TAB 2: ĐỐI TÁC (PARTNERS) */}
-          {activeTab === 'partners' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
+          <Suspense fallback={<div className="p-8 text-center text-slate-400 text-xs">Đang nạp dữ liệu phân hệ...</div>}>
+            {/* TAB 2: ĐỐI TÁC (PARTNERS) */}
+            {activeTab === 'partners' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-base font-bold text-slate-900">
+                      Cây Đối Tác & Phí Nhánh 1% (Kỳ {selectedMonth})
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Mạng lưới đối tác không giới hạn độ sâu — Phí nhánh 1% tính trên toàn bộ cây con trực tiếp
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-md p-1 text-xs">
+                    <button
+                      onClick={() => setPartnerViewMode('tree')}
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded transition-colors ${partnerViewMode === 'tree'
+                          ? 'bg-sky-50 text-sky-700 font-semibold'
+                          : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                    >
+                      <Network className="w-3.5 h-3.5" />
+                      <span>Dạng Cây (Tree)</span>
+                    </button>
+                    <button
+                      onClick={() => setPartnerViewMode('list')}
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded transition-colors ${partnerViewMode === 'list'
+                          ? 'bg-sky-50 text-sky-700 font-semibold'
+                          : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                    >
+                      <List className="w-3.5 h-3.5" />
+                      <span>Dạng Bảng (List)</span>
+                    </button>
+                  </div>
+                </div>
+
+                {partnerViewMode === 'tree' ? (
+                  <PartnerTree
+                    partners={displayedPartners}
+                    settlementResult={displayedSettlementResult}
+                    onAddPartner={handleOpenNewPartner}
+                    onSelectPartner={handleEditPartner}
+                  />
+                ) : (
+                  <PartnerList
+                    partners={displayedPartners}
+                    settlementResult={displayedSettlementResult}
+                    onAddPartner={handleOpenNewPartner}
+                    onEditPartner={handleEditPartner}
+                    onToggleStatus={handleTogglePartnerStatus}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* TAB 3: KHÁCH HÀNG (CUSTOMERS) */}
+            {activeTab === 'customers' && (
+              <div className="space-y-4">
                 <div>
-                  <h2 className="text-base font-bold text-slate-900">
-                    Cây Đối Tác & Phí Nhánh 1% (Kỳ {selectedMonth})
-                  </h2>
+                  <h2 className="text-base font-bold text-slate-900">Chuỗi Khách Hàng & Doanh Thu Trọn Đời</h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Mạng lưới đối tác không giới hạn độ sâu — Phí nhánh 1% tính trên toàn bộ cây con trực tiếp
+                    Hoa hồng tính theo độ sâu của khách (T1: {COMMISSION_POLICY.depth1}%, T2+: {COMMISSION_POLICY.depth2Plus}%) &bull; Phí nhánh {COMMISSION_POLICY.branchFee}% &bull; Ghi nhận nhiều lần tái khám
                   </p>
                 </div>
 
-                <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-md p-1 text-xs">
-                  <button
-                    onClick={() => setPartnerViewMode('tree')}
-                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded transition-colors ${partnerViewMode === 'tree'
-                        ? 'bg-sky-50 text-sky-700 font-semibold'
-                        : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                  >
-                    <Network className="w-3.5 h-3.5" />
-                    <span>Dạng Cây (Tree)</span>
-                  </button>
-                  <button
-                    onClick={() => setPartnerViewMode('list')}
-                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded transition-colors ${partnerViewMode === 'list'
-                        ? 'bg-sky-50 text-sky-700 font-semibold'
-                        : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                  >
-                    <List className="w-3.5 h-3.5" />
-                    <span>Dạng Bảng (List)</span>
-                  </button>
+                <CustomerList
+                  customers={displayedCustomers}
+                  visits={data.visits}
+                  partners={displayedPartners}
+                  onNewCustomer={() => setCustomerModalOpen(true)}
+                  onOpenAddVisit={handleOpenAddVisit}
+                  onViewCustomerProfile={handleViewCustomerProfile}
+                />
+              </div>
+            )}
+
+            {/* TAB 4: QUYẾT TOÁN (SETTLEMENTS) */}
+            {activeTab === 'commissions' && (
+              <div className="space-y-4">
+                <SettlementView
+                  month={selectedMonth}
+                  settlementResult={displayedSettlementResult}
+                  onConfirmSettlement={handleConfirmSettlement}
+                />
+              </div>
+            )}
+
+            {/* TAB 5: BÁO CÁO (REPORTS) */}
+            {activeTab === 'reports' && (
+              <div className="space-y-4">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900">Báo Cáo Đối Soát & Xuất CSV (BOM UTF-8)</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Tải bảng đối soát kế toán và danh sách khách hàng mở trực tiếp trên Excel không lỗi font tiếng Việt
+                  </p>
                 </div>
-              </div>
 
-              {partnerViewMode === 'tree' ? (
-                <PartnerTree
-                  partners={displayedPartners}
-                  settlementResult={displayedSettlementResult}
-                  onAddPartner={handleOpenNewPartner}
-                  onSelectPartner={handleEditPartner}
+                <ReportsView
+                  month={selectedMonth}
+                  customers={data.customers}
+                  visits={data.visits}
+                  partners={data.partners}
+                  settlementResult={settlementResult}
                 />
-              ) : (
-                <PartnerList
-                  partners={displayedPartners}
-                  settlementResult={displayedSettlementResult}
-                  onAddPartner={handleOpenNewPartner}
-                  onEditPartner={handleEditPartner}
-                  onToggleStatus={handleTogglePartnerStatus}
-                />
-              )}
-            </div>
-          )}
-
-          {/* TAB 3: KHÁCH HÀNG (CUSTOMERS) */}
-          {activeTab === 'customers' && (
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-base font-bold text-slate-900">Chuỗi Khách Hàng & Doanh Thu Trọn Đời</h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Hoa hồng tính theo độ sâu của khách (T1: 20%, T2: 2%+8%, T3+: 2%+3%) &bull; Ghi nhận nhiều lần tái khám
-                </p>
               </div>
-
-              <CustomerList
-                customers={displayedCustomers}
-                visits={data.visits}
-                partners={displayedPartners}
-                onNewCustomer={() => setCustomerModalOpen(true)}
-                onOpenAddVisit={handleOpenAddVisit}
-                onViewCustomerProfile={handleViewCustomerProfile}
-              />
-            </div>
-          )}
-
-          {/* TAB 4: QUYẾT TOÁN (SETTLEMENTS) */}
-          {activeTab === 'commissions' && (
-            <div className="space-y-4">
-              <SettlementView
-                month={selectedMonth}
-                settlementResult={displayedSettlementResult}
-                onConfirmSettlement={handleConfirmSettlement}
-              />
-            </div>
-          )}
-
-          {/* TAB 5: BÁO CÁO (REPORTS) */}
-          {activeTab === 'reports' && (
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-base font-bold text-slate-900">Báo Cáo Đối Soát & Xuất CSV (BOM UTF-8)</h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Tải bảng đối soát kế toán và danh sách khách hàng mở trực tiếp trên Excel không lỗi font tiếng Việt
-                </p>
-              </div>
-
-              <ReportsView
-                month={selectedMonth}
-                customers={data.customers}
-                visits={data.visits}
-                partners={data.partners}
-                settlementResult={settlementResult}
-              />
-            </div>
-          )}
+            )}
+          </Suspense>
         </main>
       </div>
 

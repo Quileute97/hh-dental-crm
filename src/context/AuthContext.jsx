@@ -100,14 +100,15 @@ export function AuthProvider({ children }) {
 
   // Đăng nhập nhanh Demo dành cho Review & Kiểm thử phân quyền
   function demoLogin(targetRole, targetPartnerId = null) {
+    const defaultPartnerId = targetRole === 'partner' ? (targetPartnerId || 'P1') : targetPartnerId;
     setRole(targetRole);
-    setPartnerId(targetPartnerId);
+    setPartnerId(defaultPartnerId);
     setProfile({
       role: targetRole,
       full_name: targetRole === 'admin' ? 'Quản Trị Viên (Admin)' :
                  targetRole === 'accountant' ? 'Kế Toán Trưởng' :
                  targetRole === 'frontdesk' ? 'Lễ Tân Tiếp Đón' : 'Đối Tác CTV (Bs. Nguyễn Văn A)',
-      partner_id: targetPartnerId
+      partner_id: defaultPartnerId
     });
     setUser({
       id: 'demo-user-' + targetRole,
