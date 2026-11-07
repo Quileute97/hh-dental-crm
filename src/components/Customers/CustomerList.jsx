@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Plus, DollarSign, Users, ChevronRight, Phone, ShieldCheck, History, Gift, FileText } from 'lucide-react';
 import { formatVND, formatDate } from '../../utils/formatters';
-import { calculateCustomerCredit } from '../../services/commissionEngine';
+import { calculateCustomerCredit, COMMISSION_POLICY } from '../../services/commissionEngine';
 
 export default function CustomerList({ 
   customers, 
@@ -61,9 +61,9 @@ export default function CustomerList({
             className="text-xs border border-slate-300 rounded-md py-1.5 px-2.5 bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
           >
             <option value="ALL">Tất cả độ sâu</option>
-            <option value="1">Tầng 1 (Trực tiếp: CTV 20%)</option>
-            <option value="2">Tầng 2 (CTV hưởng 10% | Sàn 0%)</option>
-            <option value="3">Tầng 3 (CTV hưởng 5% | Sàn 0%)</option>
+            <option value="1">Tầng 1 (Trực tiếp: CTV {COMMISSION_POLICY.depth1}%)</option>
+            <option value="2">Tầng 2 (Hạ tầng: CTV {COMMISSION_POLICY.depth2Plus}%)</option>
+            <option value="3">Tầng 3+ (Hạ tầng: CTV {COMMISSION_POLICY.depth2Plus}%)</option>
           </select>
         </div>
 

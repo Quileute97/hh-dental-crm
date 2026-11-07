@@ -7,8 +7,7 @@
  *    - Hoa hồng tính theo ĐỘ SÂU CỦA KHÁCH (customer.depth), KHÔNG theo cấp bậc đối tác.
  *    - SÀN KHÔNG THU (Nền tảng 0%), toàn bộ hoa hồng hoàn về CTV giới thiệu ban đầu:
  *      + depth 1: CTV hưởng 20%, Nền tảng 0%
- *      + depth 2: CTV hưởng 10%, Nền tảng 0%
- *      + depth 3+: CTV hưởng 5%, Nền tảng 0%
+ *      + depth 2+: CTV hưởng 2%, Nền tảng 0%
  *    - Không giới hạn độ sâu. Không có trần hoa hồng.
  *    - Chủ sở hữu khách (CTV) = customer.ownerPartnerId (kế thừa từ khách giới thiệu ban đầu).
  * 
@@ -25,6 +24,16 @@
  */
 
 /**
+ * Hằng số chính sách hoa hồng & phí nhánh duy nhất của hệ thống (Plan V5)
+ */
+export const COMMISSION_POLICY = {
+  depth1: 20,
+  depth2Plus: 2,
+  platform: 0,
+  branchFee: 1
+};
+
+/**
  * Tỷ lệ hoa hồng CTV và phần Nền tảng theo độ sâu của khách hàng
  * @param {number} depth - Độ sâu của khách (1, 2, 3...)
  * @returns {{ ctvRate: number, platformRate: number }} Tỷ lệ %
@@ -32,10 +41,10 @@
 export function getCommissionRatesByCustomerDepth(depth) {
   const d = Math.max(1, parseInt(depth, 10) || 1);
   if (d <= 1) {
-    return { ctvRate: 20, platformRate: 0 };
+    return { ctvRate: COMMISSION_POLICY.depth1, platformRate: COMMISSION_POLICY.platform };
   }
   // Plan V5: 2% CTV hạ tầng (depth >= 2)
-  return { ctvRate: 2, platformRate: 0 };
+  return { ctvRate: COMMISSION_POLICY.depth2Plus, platformRate: COMMISSION_POLICY.platform };
 }
 
 /**
