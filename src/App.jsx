@@ -19,7 +19,6 @@ import LoginScreen from './components/Auth/LoginScreen';
 
 import { 
   fetchAllData, 
-  syncSaveData, 
   apiSavePartner, 
   apiTogglePartnerStatus, 
   apiSaveCustomer,
@@ -37,7 +36,7 @@ import { formatVND } from './utils/formatters';
 import { CheckCircle2, Network, List } from 'lucide-react';
 
 export default function App() {
-  const { role, partnerId, isAdmin, isAccountant, isFrontdesk, isPartner } = useAuth();
+  const { user, loading: authLoading, role, partnerId, isAdmin, isAccountant, isFrontdesk, isPartner } = useAuth();
 
   const [data, setData] = useState({
     partners: [],
@@ -51,7 +50,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [partnerViewMode, setPartnerViewMode] = useState('tree');
 
-  // 3.1 Chọn kỳ đối soát (mặc định '2026-11' khớp tập dữ liệu mẫu chuẩn 172.000.000 VNĐ)
+  // Chọn kỳ đối soát (mặc định '2026-11' khớp tập dữ liệu chuẩn 172.000.000 VNĐ)
   const [selectedMonth, setSelectedMonth] = useState('2026-11');
 
   // Kết quả tính toán từ Supabase Postgres RPC (compute_month)
@@ -80,20 +79,26 @@ export default function App() {
   // Toast notification
   const [toastMessage, setToastMessage] = useState(null);
 
-  // Khởi tạo và nạp dữ liệu từ Backend Supabase Postgres
+  // Khởi tạo và nạp dữ liệu từ Backend Supabase Postgres khi có phiên đăng nhập
   useEffect(() => {
-    async function loadInitial() {
+    let active = true;
+    async function loadData() {
+      if (!user) return;
       const { data: initialData, isServer } = await fetchAllData();
-      setData(initialData);
-      setIsServerOnline(isServer);
+      if (active) {
+        setData(initialData);
+        setIsServerOnline(isServer);
+      }
     }
-    loadInitial();
-  }, []);
+    loadData();
+    return () => { active = false; };
+  }, [user]);
 
   // Gọi Postgres RPC compute_month trên Supabase khi thay đổi tháng hoặc dữ liệu
   useEffect(() => {
     let cancelled = false;
     async function loadRpcCompute() {
+      if (!user) return;
       const res = await apiComputeMonth(selectedMonth);
       if (!cancelled && res.ok && res.rows && res.rows.length > 0) {
         setRpcRows(res.rows);
@@ -101,7 +106,7 @@ export default function App() {
     }
     loadRpcCompute();
     return () => { cancelled = true; };
-  }, [selectedMonth, data]);
+  }, [selectedMonth, data, user]);
 
   // Kiểm tra phân quyền chuyển Tab
   useEffect(() => {
@@ -126,22 +131,48 @@ export default function App() {
 
   // --------------------------------------------------------------------------
   // TÍNH TOÁN THEO KỲ THÁNG (POSTGRES RPC + ENGINE FALLBACK)
+  // An toàn tuyệt đối, không bao giờ đọc trường undefined gây crash app
   // --------------------------------------------------------------------------
   const settlementResult = useMemo(() => {
     const local = calculateMonthlySettlement(selectedMonth, {
-      partners: data.partners,
-      customers: data.customers,
-      visits: data.visits,
-      settlements: data.settlements
-    });
+      partners: data.partners || [],
+      customers: data.customers || [],
+      visits: data.visits || [],
+      settlements: data.settlements || []
+    }) || {
+      month: selectedMonth,
+      periodRevenue: 0,
+      totalCtvCommission: 0,
+      totalPlatformShare: 0,
+      totalBranchFee: 0,
+      totalCost: 0,
+      costPercent: 0,
+      totalCredit: 0,
+      visitBreakdowns: [],
+      partnerRows: [],
+      settlementCount: 0,
+      isFullySettled: false
+    };
 
     if (!rpcRows || rpcRows.length === 0) {
-      return local;
+      const pRev = local.periodRevenue || 0;
+      const comm = local.totalCtvCommission || 0;
+      const fee = local.totalBranchFee || 0;
+      return {
+        ...local,
+        summary: {
+          totalRevenue: pRev,
+          totalCommission: comm,
+          totalBranchFee: fee,
+          systemNetRevenue: pRev - (comm + fee),
+          systemCostRatio: local.costPercent || 0
+        }
+      };
     }
 
     // Kết hợp số liệu trực tiếp từ Postgres RPC compute_month
     const rpcMap = new Map(rpcRows.map(r => [r.partnerId, r]));
-    const updatedPartnerRows = local.partnerRows.map(row => {
+    const updatedPartnerRows = (local.partnerRows || []).map(row => {
       const rpc = rpcMap.get(row.partnerId);
       if (!rpc) return row;
       return {
@@ -157,19 +188,28 @@ export default function App() {
     const totalRevenue = updatedPartnerRows.reduce((sum, r) => sum + r.ownRevenue, 0);
     const totalCommission = updatedPartnerRows.reduce((sum, r) => sum + r.commission, 0);
     const totalBranchFee = updatedPartnerRows.reduce((sum, r) => sum + r.branchFee, 0);
+    const totalPlatformShare = local.totalPlatformShare || 0;
+    const totalCost = totalCommission + totalPlatformShare + totalBranchFee;
+    const periodRevenue = totalRevenue || local.periodRevenue || 0;
+    const costPercent = periodRevenue > 0
+      ? Math.round((totalCost / periodRevenue) * 1000) / 10
+      : 0;
 
     return {
       ...local,
       partnerRows: updatedPartnerRows,
+      periodRevenue,
+      totalCtvCommission: totalCommission,
+      totalPlatformShare,
+      totalBranchFee,
+      totalCost,
+      costPercent,
       summary: {
-        ...local.summary,
-        totalRevenue: totalRevenue || local.summary.totalRevenue,
+        totalRevenue: periodRevenue,
         totalCommission,
         totalBranchFee,
-        systemNetRevenue: (totalRevenue || local.summary.totalRevenue) - (totalCommission + totalBranchFee),
-        systemCostRatio: (totalRevenue || local.summary.totalRevenue) > 0
-          ? Math.round(((totalCommission + totalBranchFee) / (totalRevenue || local.summary.totalRevenue)) * 1000) / 10
-          : 0
+        systemNetRevenue: periodRevenue - (totalCommission + totalBranchFee),
+        systemCostRatio: costPercent
       }
     };
   }, [selectedMonth, data, rpcRows]);
@@ -204,7 +244,7 @@ export default function App() {
     const allowedPartnerIds = new Set(displayedPartners.map(p => p.id));
     return {
       ...settlementResult,
-      partnerRows: settlementResult.partnerRows.filter(r => allowedPartnerIds.has(r.partnerId))
+      partnerRows: (settlementResult.partnerRows || []).filter(r => allowedPartnerIds.has(r.partnerId))
     };
   }, [settlementResult, displayedPartners, isPartner, partnerId]);
 
@@ -361,6 +401,24 @@ export default function App() {
     const logs = await apiFetchAuditLogs();
     setAuditLogs(logs);
     setAuditLogModalOpen(true);
+  }
+
+  // --------------------------------------------------------------------------
+  // GIAO DIỆN CHỜ ĐĂNG NHẬP / CHẶN NGƯỜI LẠ TRUY CẬP TRỰC TIẾP
+  // --------------------------------------------------------------------------
+  if (authLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50">
+        <div className="text-center space-y-3">
+          <div className="w-8 h-8 border-3 border-sky-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-xs text-slate-500 font-medium">Đang khởi tạo HH Dental CRM...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginScreen onLoginSuccess={() => {}} />;
   }
 
   return (

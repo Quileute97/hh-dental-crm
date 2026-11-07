@@ -1,5 +1,5 @@
 -- ============================================================================
--- HH DENTAL CLINIC - SUPABASE TOÀN BỘ KHỞI TẠO (FULL SETUP)
+-- HH DENTAL CLINIC - SUPABASE TOÀN BỘ KHỞI TẠO (FULL SETUP ĐÃ BẢO MẬT RLS)
 -- Dán toàn bộ nội dung tệp này vào Supabase SQL Editor và bấm Run
 -- ============================================================================
 
@@ -109,12 +109,18 @@ create table if not exists profiles (
 
 create or replace function my_role() returns text
 language sql stable security definer set search_path = public as $$
-  select coalesce((select role from profiles where user_id = auth.uid()), 'admin');
+  select case
+    when auth.uid() is null then 'anon'
+    else coalesce((select role from profiles where user_id = auth.uid()), 'anon')
+  end;
 $$;
 
 create or replace function my_partner_id() returns uuid
 language sql stable security definer set search_path = public as $$
-  select partner_id from profiles where user_id = auth.uid();
+  select case
+    when auth.uid() is null then null
+    else (select partner_id from profiles where user_id = auth.uid())
+  end;
 $$;
 
 create or replace function partner_subtree(root uuid) returns setof uuid
@@ -135,7 +141,7 @@ alter table services    enable row level security;
 alter table audit_logs  enable row level security;
 alter table profiles    enable row level security;
 
--- Dọn dẹp policies cũ nếu chạy lại
+-- Dọn dẹp policies cũ
 drop policy if exists partners_read on partners;
 drop policy if exists partners_write on partners;
 drop policy if exists customers_read on customers;
@@ -143,6 +149,7 @@ drop policy if exists customers_write on customers;
 drop policy if exists visits_read on visits;
 drop policy if exists visits_write on visits;
 drop policy if exists settlements_read on settlements;
+drop policy if exists settlements_write on settlements;
 drop policy if exists services_read on services;
 drop policy if exists services_write on services;
 drop policy if exists audit_read on audit_logs;
@@ -152,37 +159,64 @@ drop policy if exists profiles_write on profiles;
 
 -- POLICIES
 create policy partners_read on partners for select using (
-  my_role() in ('admin','accountant','frontdesk') or id in (select partner_subtree(my_partner_id()))
-);
-create policy partners_write on partners for all using (my_role() = 'admin');
-
-create policy customers_read on customers for select using (
-  my_role() in ('admin','accountant','frontdesk') or owner_partner_id = my_partner_id()
-);
-create policy customers_write on customers for all using (my_role() in ('admin','frontdesk'));
-
-create policy visits_read on visits for select using (
-  my_role() in ('admin','accountant','frontdesk') or exists (
-    select 1 from customers c where c.id = visits.customer_id and c.owner_partner_id = my_partner_id()
+  auth.uid() is not null and (
+    my_role() in ('admin','accountant','frontdesk') or id in (select partner_subtree(my_partner_id()))
   )
 );
-create policy visits_write on visits for all using (my_role() in ('admin','frontdesk'));
+create policy partners_write on partners for all
+  using (auth.uid() is not null and my_role() = 'admin')
+  with check (auth.uid() is not null and my_role() = 'admin');
+
+create policy customers_read on customers for select using (
+  auth.uid() is not null and (
+    my_role() in ('admin','accountant','frontdesk') or owner_partner_id = my_partner_id()
+  )
+);
+create policy customers_write on customers for all
+  using (auth.uid() is not null and my_role() in ('admin','frontdesk'))
+  with check (auth.uid() is not null and my_role() in ('admin','frontdesk'));
+
+create policy visits_read on visits for select using (
+  auth.uid() is not null and (
+    my_role() in ('admin','accountant','frontdesk') or exists (
+      select 1 from customers c where c.id = visits.customer_id and c.owner_partner_id = my_partner_id()
+    )
+  )
+);
+create policy visits_write on visits for all
+  using (auth.uid() is not null and my_role() in ('admin','frontdesk'))
+  with check (auth.uid() is not null and my_role() in ('admin','frontdesk'));
 
 create policy settlements_read on settlements for select using (
-  my_role() in ('admin','accountant') or partner_id = my_partner_id()
+  auth.uid() is not null and (
+    my_role() in ('admin','accountant') or partner_id = my_partner_id()
+  )
 );
+create policy settlements_write on settlements for all
+  using (auth.uid() is not null and my_role() in ('admin','accountant'))
+  with check (auth.uid() is not null and my_role() in ('admin','accountant'));
 
 create policy services_read on services for select using (true);
-create policy services_write on services for all using (my_role() = 'admin');
+create policy services_write on services for all
+  using (auth.uid() is not null and my_role() = 'admin')
+  with check (auth.uid() is not null and my_role() = 'admin');
 
-create policy audit_read on audit_logs for select using (my_role() = 'admin');
-create policy audit_write on audit_logs for insert with check (auth.uid() is not null);
+create policy audit_read on audit_logs for select using (
+  auth.uid() is not null and my_role() = 'admin'
+);
+create policy audit_write on audit_logs for insert with check (
+  auth.uid() is not null
+);
 
-create policy profiles_read on profiles for select using (user_id = auth.uid() or my_role() = 'admin');
-create policy profiles_write on profiles for all using (my_role() = 'admin');
+create policy profiles_read on profiles for select using (
+  auth.uid() is not null and (user_id = auth.uid() or my_role() = 'admin')
+);
+create policy profiles_write on profiles for all
+  using (auth.uid() is not null and my_role() = 'admin')
+  with check (auth.uid() is not null and my_role() = 'admin');
 
 -- ----------------------------------------------------------------------------
--- 3. HÀM TÍNH TOÁN HOA HỒNG & CHỐT SỔ (POSTGRES RPC)
+-- 3. HÀM TÍNH TOÁN HOA HỒNG & CHỐT SỔ (POSTGRES RPC BẢO MẬT)
 -- ----------------------------------------------------------------------------
 
 create or replace function ctv_rate(d int) returns numeric
@@ -199,49 +233,106 @@ returns table(
   branch_fee bigint, 
   total bigint
 )
-language sql stable security definer set search_path = public as $$
-with recursive
-period as (
-  select v.*, c.depth, c.owner_partner_id
-  from visits v join customers c on c.id = v.customer_id
-  where v.occurred_at >= (p_month || '-01')::timestamptz
-    and v.occurred_at <  ((p_month || '-01')::timestamptz + interval '1 month')
-),
-own as (
-  select p.id as pid, coalesce(sum(period.amount), 0)::bigint as rev
-  from partners p left join period on period.owner_partner_id = p.id
-  group by p.id
-),
-comm as (
-  select p.id as pid,
-         coalesce(sum(round(period.amount * ctv_rate(period.depth) / 100.0)), 0)::bigint as commission
-  from partners p left join period on period.owner_partner_id = p.id
-  group by p.id
-),
-down as (
-  select p.id as root, p.id as node from partners p
-  union all
-  select d.root, ch.id from down d join partners ch on ch.parent_id = d.node
-),
-branch as (
-  select d.root as pid, coalesce(sum(o.rev), 0)::bigint as rev
-  from down d join own o on o.pid = d.node
-  group by d.root
-),
-fee as (
-  select p.parent_id as pid, round(coalesce(sum(b.rev), 0) * 0.01)::bigint as fee
-  from partners p join branch b on b.pid = p.id
-  where p.parent_id is not null
-  group by p.parent_id
-)
-select p.id, o.rev, b.rev, c.commission, coalesce(f.fee, 0),
-       (c.commission + coalesce(f.fee, 0))::bigint
-from partners p
-join own o on o.pid = p.id
-join branch b on b.pid = p.id
-join comm c on c.pid = p.id
-left join fee f on f.pid = p.id;
-$$;
+language plpgsql stable security definer set search_path = public as $$
+declare
+  v_role text := my_role();
+  v_pid uuid := my_partner_id();
+begin
+  if auth.uid() is null then
+    raise exception 'Yêu cầu đăng nhập để truy cập dữ liệu tính toán hoa hồng.';
+  end if;
+
+  if v_role in ('admin', 'accountant') then
+    return query
+    with recursive
+    period as (
+      select v.*, c.depth, c.owner_partner_id
+      from visits v join customers c on c.id = v.customer_id
+      where v.occurred_at >= (p_month || '-01')::timestamptz
+        and v.occurred_at <  ((p_month || '-01')::timestamptz + interval '1 month')
+    ),
+    own as (
+      select p.id as pid, coalesce(sum(period.amount), 0)::bigint as rev
+      from partners p left join period on period.owner_partner_id = p.id
+      group by p.id
+    ),
+    comm as (
+      select p.id as pid,
+             coalesce(sum(round(period.amount * ctv_rate(period.depth) / 100.0)), 0)::bigint as commission
+      from partners p left join period on period.owner_partner_id = p.id
+      group by p.id
+    ),
+    down as (
+      select p.id as root, p.id as node from partners p
+      union all
+      select d.root, ch.id from down d join partners ch on ch.parent_id = d.node
+    ),
+    branch as (
+      select d.root as pid, coalesce(sum(o.rev), 0)::bigint as rev
+      from down d join own o on o.pid = d.node
+      group by d.root
+    ),
+    fee as (
+      select p.parent_id as pid, round(coalesce(sum(b.rev), 0) * 0.01)::bigint as fee
+      from partners p join branch b on b.pid = p.id
+      where p.parent_id is not null
+      group by p.parent_id
+    )
+    select p.id, o.rev, b.rev, c.commission, coalesce(f.fee, 0),
+           (c.commission + coalesce(f.fee, 0))::bigint
+    from partners p
+    join own o on o.pid = p.id
+    join branch b on b.pid = p.id
+    join comm c on c.pid = p.id
+    left join fee f on f.pid = p.id;
+  elsif v_role = 'partner' and v_pid is not null then
+    return query
+    with recursive
+    period as (
+      select v.*, c.depth, c.owner_partner_id
+      from visits v join customers c on c.id = v.customer_id
+      where v.occurred_at >= (p_month || '-01')::timestamptz
+        and v.occurred_at <  ((p_month || '-01')::timestamptz + interval '1 month')
+    ),
+    own as (
+      select p.id as pid, coalesce(sum(period.amount), 0)::bigint as rev
+      from partners p left join period on period.owner_partner_id = p.id
+      group by p.id
+    ),
+    comm as (
+      select p.id as pid,
+             coalesce(sum(round(period.amount * ctv_rate(period.depth) / 100.0)), 0)::bigint as commission
+      from partners p left join period on period.owner_partner_id = p.id
+      group by p.id
+    ),
+    down as (
+      select p.id as root, p.id as node from partners p
+      union all
+      select d.root, ch.id from down d join partners ch on ch.parent_id = d.node
+    ),
+    branch as (
+      select d.root as pid, coalesce(sum(o.rev), 0)::bigint as rev
+      from down d join own o on o.pid = d.node
+      group by d.root
+    ),
+    fee as (
+      select p.parent_id as pid, round(coalesce(sum(b.rev), 0) * 0.01)::bigint as fee
+      from partners p join branch b on b.pid = p.id
+      where p.parent_id is not null
+      group by p.parent_id
+    )
+    select p.id, o.rev, b.rev, c.commission, coalesce(f.fee, 0),
+           (c.commission + coalesce(f.fee, 0))::bigint
+    from partners p
+    join own o on o.pid = p.id
+    join branch b on b.pid = p.id
+    join comm c on c.pid = p.id
+    left join fee f on f.pid = p.id
+    where p.id in (select partner_subtree(v_pid));
+  else
+    raise exception 'Không có quyền truy cập dữ liệu tính toán hoa hồng.';
+  end if;
+end $$;
 
 create or replace function settle_month(p_month text, p_force boolean default false)
 returns setof settlements
@@ -250,9 +341,14 @@ declare
   v_role text := my_role();
   v_exists boolean;
 begin
+  if auth.uid() is null then
+    raise exception 'Yêu cầu đăng nhập để thực hiện chức năng này.';
+  end if;
+
   if v_role not in ('admin','accountant') then
     raise exception 'Không có quyền thực hiện chốt sổ.';
   end if;
+
   if p_month !~ '^\d{4}-\d{2}$' then
     raise exception 'Định dạng tháng không hợp lệ (YYYY-MM).';
   end if;
@@ -276,8 +372,19 @@ begin
   return query select * from settlements where month = p_month;
 end $$;
 
--- CẤP QUYỀN THỰC THI CHO API
-grant execute on function compute_month(text) to authenticated, anon;
-grant execute on function settle_month(text, boolean) to authenticated;
-revoke all on function settle_month(text, boolean) from anon;
+-- THU HỒI TOÀN BỘ QUYỀN EXECUTE TỪ PUBLIC VÀ ANON
+revoke execute on function settle_month(text, boolean) from public;
+revoke execute on function settle_month(text, boolean) from anon;
+grant execute on function settle_month(text, boolean) to authenticated, service_role;
 
+revoke execute on function compute_month(text) from public;
+revoke execute on function compute_month(text) from anon;
+grant execute on function compute_month(text) to authenticated, service_role;
+
+revoke execute on function partner_subtree(uuid) from public;
+revoke execute on function partner_subtree(uuid) from anon;
+grant execute on function partner_subtree(uuid) to authenticated, service_role;
+
+revoke execute on function ctv_rate(int) from public;
+revoke execute on function ctv_rate(int) from anon;
+grant execute on function ctv_rate(int) to authenticated, service_role;

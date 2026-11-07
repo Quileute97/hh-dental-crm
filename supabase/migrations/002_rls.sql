@@ -1,17 +1,23 @@
 -- ============================================================================
--- SUPABASE MIGRATION 002: ROW LEVEL SECURITY (RLS) & ACCESS CONTROL
+-- SUPABASE MIGRATION 002: ROW LEVEL SECURITY (RLS) & ACCESS CONTROL (SECURED)
 -- ============================================================================
 
--- Hàm lấy role của user hiện tại từ profiles
+-- Hàm lấy role của user hiện tại từ profiles (Mặc định 'anon' nếu chưa đăng nhập)
 create or replace function my_role() returns text
 language sql stable security definer set search_path = public as $$
-  select coalesce((select role from profiles where user_id = auth.uid()), 'anon');
+  select case
+    when auth.uid() is null then 'anon'
+    else coalesce((select role from profiles where user_id = auth.uid()), 'anon')
+  end;
 $$;
 
 -- Hàm lấy partner_id của user hiện tại (nếu là role partner)
 create or replace function my_partner_id() returns uuid
 language sql stable security definer set search_path = public as $$
-  select partner_id from profiles where user_id = auth.uid();
+  select case
+    when auth.uid() is null then null
+    else (select partner_id from profiles where user_id = auth.uid())
+  end;
 $$;
 
 -- Hàm đệ quy lấy toàn bộ cây con (subtree) của một đối tác
@@ -33,40 +39,82 @@ alter table services       enable row level security;
 alter table audit_logs     enable row level security;
 alter table profiles       enable row level security;
 
+-- Dọn dẹp policies cũ
+drop policy if exists partners_read on partners;
+drop policy if exists partners_write on partners;
+drop policy if exists customers_read on customers;
+drop policy if exists customers_write on customers;
+drop policy if exists visits_read on visits;
+drop policy if exists visits_write on visits;
+drop policy if exists settlements_read on settlements;
+drop policy if exists settlements_write on settlements;
+drop policy if exists services_read on services;
+drop policy if exists services_write on services;
+drop policy if exists audit_read on audit_logs;
+drop policy if exists audit_write on audit_logs;
+drop policy if exists profiles_read on profiles;
+drop policy if exists profiles_write on profiles;
+
 -- 1. Bảng partners
 create policy partners_read on partners for select using (
-  my_role() in ('admin','accountant','frontdesk') or id in (select partner_subtree(my_partner_id()))
+  auth.uid() is not null and (
+    my_role() in ('admin','accountant','frontdesk') or id in (select partner_subtree(my_partner_id()))
+  )
 );
-create policy partners_write on partners for all using (my_role() = 'admin');
+create policy partners_write on partners for all
+  using (auth.uid() is not null and my_role() = 'admin')
+  with check (auth.uid() is not null and my_role() = 'admin');
 
 -- 2. Bảng customers
 create policy customers_read on customers for select using (
-  my_role() in ('admin','accountant','frontdesk') or owner_partner_id = my_partner_id()
+  auth.uid() is not null and (
+    my_role() in ('admin','accountant','frontdesk') or owner_partner_id = my_partner_id()
+  )
 );
-create policy customers_write on customers for all using (my_role() in ('admin','frontdesk'));
+create policy customers_write on customers for all
+  using (auth.uid() is not null and my_role() in ('admin','frontdesk'))
+  with check (auth.uid() is not null and my_role() in ('admin','frontdesk'));
 
 -- 3. Bảng visits
 create policy visits_read on visits for select using (
-  my_role() in ('admin','accountant','frontdesk') or exists (
-    select 1 from customers c where c.id = visits.customer_id and c.owner_partner_id = my_partner_id()
+  auth.uid() is not null and (
+    my_role() in ('admin','accountant','frontdesk') or exists (
+      select 1 from customers c where c.id = visits.customer_id and c.owner_partner_id = my_partner_id()
+    )
   )
 );
-create policy visits_write on visits for all using (my_role() in ('admin','frontdesk'));
+create policy visits_write on visits for all
+  using (auth.uid() is not null and my_role() in ('admin','frontdesk'))
+  with check (auth.uid() is not null and my_role() in ('admin','frontdesk'));
 
 -- 4. Bảng settlements
 create policy settlements_read on settlements for select using (
-  my_role() in ('admin','accountant') or partner_id = my_partner_id()
+  auth.uid() is not null and (
+    my_role() in ('admin','accountant') or partner_id = my_partner_id()
+  )
 );
+create policy settlements_write on settlements for all
+  using (auth.uid() is not null and my_role() in ('admin','accountant'))
+  with check (auth.uid() is not null and my_role() in ('admin','accountant'));
 
 -- 5. Bảng services
-create policy services_read on services for select using (auth.uid() is not null);
-create policy services_write on services for all using (my_role() = 'admin');
+create policy services_read on services for select using (true);
+create policy services_write on services for all
+  using (auth.uid() is not null and my_role() = 'admin')
+  with check (auth.uid() is not null and my_role() = 'admin');
 
 -- 6. Bảng audit_logs
-create policy audit_read on audit_logs for select using (my_role() = 'admin');
-create policy audit_write on audit_logs for insert with check (auth.uid() is not null);
+create policy audit_read on audit_logs for select using (
+  auth.uid() is not null and my_role() = 'admin'
+);
+create policy audit_write on audit_logs for insert with check (
+  auth.uid() is not null
+);
 
 -- 7. Bảng profiles
-create policy profiles_read on profiles for select using (user_id = auth.uid() or my_role() = 'admin');
-create policy profiles_write on profiles for all using (my_role() = 'admin');
-
+create policy profiles_read on profiles for select using (
+  auth.uid() is not null and (user_id = auth.uid() or my_role() = 'admin')
+);
+create policy profiles_write on profiles for all
+  using (auth.uid() is not null and my_role() = 'admin')
+  with check (auth.uid() is not null and my_role() = 'admin');

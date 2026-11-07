@@ -24,9 +24,29 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
     }
   }
 
-  function handleDemoAccess(role, partnerId = null) {
-    demoLogin(role, partnerId);
-    if (onLoginSuccess) onLoginSuccess();
+  const DEMO_CREDENTIALS = {
+    admin: { email: 'admin@hhdental.vn', password: 'Admin@123456' },
+    accountant: { email: 'accountant@hhdental.vn', password: 'Ketoan@123456' },
+    frontdesk: { email: 'frontdesk@hhdental.vn', password: 'Letan@123456' },
+    partner: { email: 'partner@hhdental.vn', password: 'Doitac@123456' },
+  };
+
+  async function handleDemoAccess(targetRole) {
+    setError('');
+    setLoading(true);
+    const cred = DEMO_CREDENTIALS[targetRole];
+    if (cred) {
+      setEmail(cred.email);
+      setPassword(cred.password);
+      const res = await login(cred.email, cred.password);
+      setLoading(false);
+      if (res.ok) {
+        if (onLoginSuccess) onLoginSuccess();
+      } else {
+        demoLogin(targetRole);
+        if (onLoginSuccess) onLoginSuccess();
+      }
+    }
   }
 
   const containerClass = isModal
