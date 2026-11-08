@@ -1,4 +1,5 @@
 import { parseVisitStepAndStatus } from '../src/utils/treatmentSteps.js';
+import { isUuid, generateUuid } from '../src/utils/uuid.js';
 
 function assert(condition, message) {
   if (!condition) {
@@ -148,6 +149,15 @@ assertEqual(appVisit.paymentStatus, 'partial', 'Contract Visits: paymentStatus <
 assertEqual(appVisit.treatmentStep, 'Gắn mắc cài', 'Contract Visits: treatmentStep <=> treatment_step');
 assertEqual(appVisit.serviceCode, 'S1', 'Contract Visits: serviceCode <=> service_code');
 assertEqual(appVisit.serviceName, 'Niềng răng', 'Contract Visits: serviceName <=> service_name');
+
+console.log('\n--- 3. KIỂM THỬ ĐỊNH DẠNG UUID TƯƠNG THÍCH POSTGRES ---');
+const u1 = generateUuid();
+assert(isUuid(u1), `generateUuid tạo ra UUID v4 chuẩn: ${u1}`);
+assert(!isUuid('P-1794115070779'), 'isUuid từ chối chuỗi timestamp legacy "P-1794115070779"');
+assert(!isUuid('CUST-12345'), 'isUuid từ chối chuỗi "CUST-12345"');
+assert(!isUuid(''), 'isUuid từ chối chuỗi rỗng');
+assert(!isUuid(null), 'isUuid từ chối null');
+assert(!isUuid(undefined), 'isUuid từ chối undefined');
 
 console.log('\n🎉 TOÀN BỘ CÁC KIỂM THỬ API CONTRACT ĐÃ THÀNH CÔNG 100%!');
 

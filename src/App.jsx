@@ -345,19 +345,24 @@ export default function App() {
   }
 
   async function handleSavePartner(savedPartner) {
+    const res = await apiSavePartner(savedPartner);
+    if (!res.ok) {
+      showToast(`Lỗi lưu đối tác: ${res.error || 'Không thể lưu'}`, 'error');
+      return;
+    }
+    const saved = res.data || savedPartner;
     setData(prev => {
-      const exists = prev.partners.some(p => p.id === savedPartner.id);
+      const exists = prev.partners.some(p => p.id === saved.id || (p.code && p.code === saved.code));
       let updated;
       if (exists) {
-        updated = prev.partners.map(p => p.id === savedPartner.id ? { ...p, ...savedPartner } : p);
+        updated = prev.partners.map(p => (p.id === saved.id || (p.code && p.code === saved.code)) ? { ...p, ...saved } : p);
       } else {
-        updated = [...prev.partners, savedPartner];
+        updated = [...prev.partners, saved];
       }
       return { ...prev, partners: updated };
     });
 
-    await apiSavePartner(savedPartner);
-    showToast(`Đã lưu đối tác ${savedPartner.name} thành công!`);
+    showToast(`Đã lưu đối tác ${saved.name} vào hệ thống!`);
   }
 
   async function handleTogglePartnerStatus(partnerId) {
@@ -377,14 +382,19 @@ export default function App() {
   // HANDLERS: KHÁCH HÀNG (CUSTOMERS) & DOANH THU (VISITS)
   // --------------------------------------------------------------------------
   async function handleSaveCustomer(newCust, initialVisit = null) {
+    const res = await apiSaveCustomer(newCust, initialVisit);
+    if (!res.ok) {
+      showToast(`Lỗi tiếp nhận khách hàng: ${res.error || 'Không thể lưu'}`, 'error');
+      return;
+    }
+    const { customer: savedCust, visit: savedVisit } = res.data;
     setData(prev => ({
       ...prev,
-      customers: [newCust, ...prev.customers],
-      visits: initialVisit ? [initialVisit, ...prev.visits] : prev.visits
+      customers: [savedCust, ...prev.customers.filter(c => c.id !== savedCust.id)],
+      visits: savedVisit ? [savedVisit, ...prev.visits.filter(v => v.id !== savedVisit.id)] : prev.visits
     }));
 
-    await apiSaveCustomer(newCust, initialVisit);
-    showToast(`Đã tiếp nhận khách hàng ${newCust.name} (Tầng ${newCust.depth})!`);
+    showToast(`Đã tiếp nhận khách hàng ${savedCust.name} (Tầng ${savedCust.depth})!`);
   }
 
   function handleViewCustomerProfile(customer) {
@@ -399,32 +409,42 @@ export default function App() {
   }
 
   async function handleSaveVisit(newVisit) {
+    const res = await apiAddVisit(newVisit);
+    if (!res.ok) {
+      showToast(`Lỗi ghi nhận điều trị: ${res.error || 'Không thể lưu'}`, 'error');
+      return;
+    }
+    const saved = res.data;
     setData(prev => ({
       ...prev,
-      visits: [newVisit, ...prev.visits]
+      visits: [saved, ...prev.visits.filter(v => v.id !== saved.id)]
     }));
 
-    await apiAddVisit(newVisit);
-    showToast(`Đã ghi nhận thêm doanh thu ${formatVND(newVisit.amount)} cho khách!`);
+    showToast(`Đã ghi nhận thêm doanh thu ${formatVND(saved.amount)} cho khách!`);
   }
 
   // --------------------------------------------------------------------------
   // HANDLERS: GÓI DỊCH VỤ (SERVICE PACKAGES)
   // --------------------------------------------------------------------------
   async function handleSaveService(service) {
+    const res = await apiSaveService(service);
+    if (!res.ok) {
+      showToast(`Lỗi lưu gói dịch vụ: ${res.error || 'Không thể lưu'}`, 'error');
+      return;
+    }
+    const saved = res.data || service;
     setData(prev => {
-      const exists = prev.services.some(s => s.id === service.id);
+      const exists = prev.services.some(s => s.id === saved.id || (s.code && s.code === saved.code));
       let updated;
       if (exists) {
-        updated = prev.services.map(s => s.id === service.id ? { ...s, ...service } : s);
+        updated = prev.services.map(s => (s.id === saved.id || s.code === saved.code) ? { ...s, ...saved } : s);
       } else {
-        updated = [...prev.services, service];
+        updated = [...prev.services, saved];
       }
       return { ...prev, services: updated };
     });
 
-    await apiSaveService(service);
-    showToast(`Đã lưu gói dịch vụ "${service.name}" (${formatVND(service.defaultPrice)})!`);
+    showToast(`Đã lưu gói dịch vụ "${saved.name}" (${formatVND(saved.defaultPrice)})!`);
   }
 
   async function handleDeleteService(serviceId) {

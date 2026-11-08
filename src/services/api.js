@@ -3,7 +3,8 @@
  * Toàn bộ dữ liệu & tính toán hoa hồng kết nối trực tiếp Supabase Postgres & RPC
  * Hoạt động 100% trên dữ liệu thật, không sử dụng Mock Data
  */
-import { supabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase.js';
+import { generateUuid, isUuid } from '../utils/uuid.js';
 
 // ----------------------------------------------------------------------------
 // 1. LẤY TOÀN BỘ DỮ LIỆU ĐANG HOẠT ĐỘNG
@@ -234,29 +235,58 @@ export const apiSaveSettlement = apiSettleMonth;
 // ----------------------------------------------------------------------------
 export async function apiSavePartner(partner) {
   try {
+    const isEdit = isUuid(partner.id);
+    const parentIdValid = isUuid(partner.parentId) ? partner.parentId : null;
+
     const record = {
-      id: partner.id,
+      ...(isEdit ? { id: partner.id } : { id: generateUuid() }),
       code: partner.code,
       name: partner.name,
-      title: partner.title,
+      title: partner.title || null,
       phone: partner.phone,
-      email: partner.email,
-      parent_id: partner.parentId || null,
+      email: partner.email || null,
+      parent_id: parentIdValid,
       depth: partner.depth || 0,
       status: partner.status || 'ACTIVE',
-      bank_name: partner.bankName,
-      bank_account_no: partner.bankAccountNo,
-      bank_account_name: partner.bankAccountName
+      bank_name: partner.bankName || null,
+      bank_account_no: partner.bankAccountNo || null,
+      bank_account_name: partner.bankAccountName || null
     };
-    const { error } = await supabase.from('partners').upsert(record);
-    return !error;
+
+    const { data, error } = await supabase.from('partners').upsert(record).select().single();
+    if (error) {
+      console.error('[apiSavePartner error]:', error);
+      return { ok: false, error: error.message };
+    }
+
+    return {
+      ok: true,
+      data: {
+        id: data.id,
+        code: data.code,
+        name: data.name,
+        title: data.title,
+        phone: data.phone,
+        email: data.email,
+        parentId: data.parent_id,
+        depth: data.depth,
+        status: data.status,
+        bankName: data.bank_name,
+        bankAccountNo: data.bank_account_no,
+        bankAccountName: data.bank_account_name,
+        joinedAt: data.joined_at,
+        createdAt: data.created_at
+      }
+    };
   } catch (err) {
-    return false;
+    console.error('[apiSavePartner exception]:', err);
+    return { ok: false, error: err.message };
   }
 }
 
 export async function apiTogglePartnerStatus(partnerId) {
   try {
+    if (!isUuid(partnerId)) return false;
     const { data: p } = await supabase.from('partners').select('status').eq('id', partnerId).single();
     if (!p) return false;
     const nextStatus = p.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
@@ -272,51 +302,136 @@ export async function apiTogglePartnerStatus(partnerId) {
 // ----------------------------------------------------------------------------
 export async function apiSaveCustomer(customer, initialVisit = null) {
   try {
+    const isEdit = isUuid(customer.id);
+    const ownerPartnerValid = isUuid(customer.ownerPartnerId) ? customer.ownerPartnerId : null;
+    const refCustValid = isUuid(customer.referrerCustomerId) ? customer.referrerCustomerId : null;
+
     const custRecord = {
-      id: customer.id,
+      ...(isEdit ? { id: customer.id } : { id: generateUuid() }),
       code: customer.code,
       name: customer.name,
       phone: customer.phone,
-      owner_partner_id: customer.ownerPartnerId,
-      referrer_customer_id: customer.referrerCustomerId || null,
+      owner_partner_id: ownerPartnerValid,
+      referrer_customer_id: refCustValid,
       depth: customer.depth || 1,
-      treatment: customer.treatment,
+      treatment: customer.treatment || null,
       status: customer.status || 'completed'
     };
-    const { error: errCust } = await supabase.from('customers').upsert(custRecord);
-    if (errCust) return false;
 
-    if (initialVisit) {
-      await apiAddVisit(initialVisit);
+    const { data: savedCust, error: errCust } = await supabase.from('customers').upsert(custRecord).select().single();
+    if (errCust) {
+      console.error('[apiSaveCustomer error]:', errCust);
+      return { ok: false, error: errCust.message };
     }
-    return true;
+
+    let savedVisitData = null;
+    if (initialVisit) {
+      const visitRes = await apiAddVisit({
+        ...initialVisit,
+        customerId: savedCust.id
+      });
+      if (visitRes.ok) {
+        savedVisitData = visitRes.data;
+      }
+    }
+
+    return {
+      ok: true,
+      data: {
+        customer: {
+          id: savedCust.id,
+          code: savedCust.code,
+          name: savedCust.name,
+          phone: savedCust.phone,
+          ownerPartnerId: savedCust.owner_partner_id,
+          referrerCustomerId: savedCust.referrer_customer_id,
+          depth: savedCust.depth,
+          treatment: savedCust.treatment,
+          status: savedCust.status,
+          createdAt: savedCust.created_at
+        },
+        visit: savedVisitData
+      }
+    };
   } catch (err) {
-    return false;
+    console.error('[apiSaveCustomer exception]:', err);
+    return { ok: false, error: err.message };
   }
 }
 
 export async function apiAddVisit(visit) {
   try {
+    const isEdit = isUuid(visit.id);
+    const customerIdValid = isUuid(visit.customerId) ? visit.customerId : null;
+    if (!customerIdValid) {
+      return { ok: false, error: 'customerId không hợp lệ (yêu cầu UUID)' };
+    }
+
     const visitRecord = {
-      id: visit.id,
-      customer_id: visit.customerId,
-      amount: visit.amount,
+      ...(isEdit ? { id: visit.id } : { id: generateUuid() }),
+      customer_id: customerIdValid,
+      amount: Number(visit.amount || 0),
       note: visit.note || 'Lượt điều trị',
       occurred_at: visit.occurredAt || new Date().toISOString(),
       payment_status: visit.paymentStatus || 'paid',
-      treatment_step: visit.treatmentStep || null,
+      treatment_step: visit.treatmentStep || visit.step || null,
       service_code: visit.serviceCode || null,
-      service_name: visit.serviceName || null
+      service_name: visit.serviceName || visit.package || null
     };
-    const { error } = await supabase.from('visits').upsert(visitRecord);
-    return !error;
+
+    let { data, error } = await supabase.from('visits').upsert(visitRecord).select().single();
+    if (error && (error.code === 'PGRST204' || (error.message || '').includes('schema cache') || error.code === '42703')) {
+      // Fallback nếu database Supabase chưa apply migration 006_visit_clinical_fields.sql:
+      // Lưu thông tin gói / bước / trạng thái vào note để không mất dữ liệu lâm sàng
+      const fallbackNote = [
+        visit.serviceName ? `Gói: ${visit.serviceName}` : null,
+        visit.treatmentStep || visit.step ? `Bước: ${visit.treatmentStep || visit.step}` : null,
+        visit.paymentStatus ? `TT: ${visit.paymentStatus}` : null,
+        visit.note
+      ].filter(Boolean).join(' | ');
+
+      const fallbackRecord = {
+        ...(isEdit ? { id: visit.id } : { id: generateUuid() }),
+        customer_id: customerIdValid,
+        amount: Number(visit.amount || 0),
+        note: fallbackNote || 'Lượt điều trị',
+        occurred_at: visit.occurredAt || new Date().toISOString()
+      };
+
+      const fallbackRes = await supabase.from('visits').upsert(fallbackRecord).select().single();
+      data = fallbackRes.data;
+      error = fallbackRes.error;
+    }
+
+    if (error) {
+      console.error('[apiAddVisit error]:', error);
+      return { ok: false, error: error.message };
+    }
+
+    return {
+      ok: true,
+      data: {
+        id: data.id,
+        customerId: data.customer_id,
+        amount: Number(data.amount || 0),
+        note: data.note,
+        occurredAt: data.occurred_at,
+        paymentStatus: data.payment_status || 'paid',
+        treatmentStep: data.treatment_step || null,
+        serviceCode: data.service_code || null,
+        serviceName: data.service_name || null,
+        createdAt: data.created_at
+      }
+    };
   } catch (err) {
-    return false;
+    console.error('[apiAddVisit exception]:', err);
+    return { ok: false, error: err.message };
   }
 }
 
 export async function apiDeleteVisit(visitId) {
   try {
+    if (!isUuid(visitId)) return false;
     const { error } = await supabase.from('visits').delete().eq('id', visitId);
     return !error;
   } catch (err) {
@@ -326,6 +441,7 @@ export async function apiDeleteVisit(visitId) {
 
 export async function apiDeleteCustomer(customerId) {
   try {
+    if (!isUuid(customerId)) return false;
     // Xoá các lượt khám liên kết trước
     await supabase.from('visits').delete().eq('customer_id', customerId);
     const { error } = await supabase.from('customers').delete().eq('id', customerId);
@@ -340,22 +456,37 @@ export async function apiDeleteCustomer(customerId) {
 // ----------------------------------------------------------------------------
 export async function apiSaveService(service) {
   try {
+    const isEdit = isUuid(service.id);
     const record = {
-      id: service.id,
-      code: service.code || service.id,
+      ...(isEdit ? { id: service.id } : { id: generateUuid() }),
+      code: service.code || `S-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
       name: service.name,
-      default_price: service.defaultPrice || 0,
-      active: true
+      default_price: Number(service.defaultPrice || 0),
+      active: service.active !== false
     };
     const { data, error } = await supabase.from('services').upsert(record).select().single();
-    return { ok: !error, data };
+    if (error) {
+      console.error('[apiSaveService error]:', error);
+      return { ok: false, error: error.message };
+    }
+    return {
+      ok: true,
+      data: {
+        id: data.id,
+        code: data.code,
+        name: data.name,
+        defaultPrice: Number(data.default_price || 0),
+        active: data.active
+      }
+    };
   } catch (err) {
-    return { ok: false };
+    return { ok: false, error: err.message };
   }
 }
 
 export async function apiDeleteService(serviceId) {
   try {
+    if (!isUuid(serviceId)) return false;
     const { error } = await supabase.from('services').delete().eq('id', serviceId);
     return !error;
   } catch (err) {

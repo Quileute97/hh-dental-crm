@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Plus, Pencil, Trash2, Tag, Check, AlertCircle, PackageCheck, DollarSign } from 'lucide-react';
 import { formatVND } from '../../utils/formatters';
+import { generateUuid, isUuid } from '../../utils/uuid';
 
 export default function ServicePackageModal({
   isOpen,
@@ -66,7 +67,7 @@ export default function ServicePackageModal({
     }
 
     const serviceData = {
-      id: editingId || `S-${Date.now()}`,
+      id: isUuid(editingId) ? editingId : generateUuid(),
       name: trimmedName,
       defaultPrice: priceNum,
       description: formData.description.trim()

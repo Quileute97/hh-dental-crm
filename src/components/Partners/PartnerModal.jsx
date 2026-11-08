@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, AlertTriangle, ShieldCheck, Check } from 'lucide-react';
 import { validateParentAssignment } from '../../services/commissionEngine';
+import { generateUuid, isUuid } from '../../utils/uuid';
 
 export default function PartnerModal({ isOpen, onClose, onSave, partnerToEdit, partners, defaultParentId }) {
   const [formData, setFormData] = useState({
@@ -90,8 +91,8 @@ export default function PartnerModal({ isOpen, onClose, onSave, partnerToEdit, p
 
     onSave({
       ...formData,
-      parentId: formData.parentId || null,
-      id: partnerToEdit ? partnerToEdit.id : `P-${Date.now()}`,
+      parentId: (formData.parentId && isUuid(formData.parentId)) ? formData.parentId : null,
+      id: (partnerToEdit && isUuid(partnerToEdit.id)) ? partnerToEdit.id : generateUuid(),
       title: formData.parentId ? `Đối tác Tuyến ${formData.depth}` : 'Bác sĩ Sáng lập (Gốc)',
     });
 

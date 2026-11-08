@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Users, Tag, Check, Plus, Stethoscope, DollarSign, CheckCircle2, Clock, Sparkles, Layers } from 'lucide-react';
 import { formatVND } from '../../utils/formatters';
 import { getPresetStepsForService, PAYMENT_STATUSES } from '../../utils/treatmentSteps';
+import { generateUuid, isUuid } from '../../utils/uuid';
 
 export default function CustomerModal({ 
   isOpen, 
@@ -125,7 +126,7 @@ export default function CustomerModal({
     const computedDepth = parentCust ? (parentCust.depth || 1) + 1 : 1;
     const finalOwnerPartnerId = parentCust ? parentCust.ownerPartnerId : formData.ownerPartnerId;
 
-    const newCustomerId = `CUST-${Date.now()}`;
+    const newCustomerId = generateUuid();
     const code = `KH-${new Date().getFullYear()}-${String(customers.length + 1).padStart(4, '0')}`;
 
     const newCustomer = {
@@ -133,8 +134,8 @@ export default function CustomerModal({
       code,
       name: formData.name.trim(),
       phone: formData.phone.trim(),
-      ownerPartnerId: finalOwnerPartnerId,
-      referrerCustomerId: formData.referrerCustomerId || null,
+      ownerPartnerId: (finalOwnerPartnerId && isUuid(finalOwnerPartnerId)) ? finalOwnerPartnerId : null,
+      referrerCustomerId: (formData.referrerCustomerId && isUuid(formData.referrerCustomerId)) ? formData.referrerCustomerId : null,
       depth: computedDepth,
       treatment: formData.treatment,
       currentStep: formData.step.trim(),
@@ -151,7 +152,7 @@ export default function CustomerModal({
     const composedNote = `[${formData.step.trim()}] ${formData.treatment} - ${statusLabel}${formData.note ? ` • Ghi chú: ${formData.note.trim()}` : ''}`;
 
     const initialVisit = {
-      id: `VISIT-${Date.now()}-1`,
+      id: generateUuid(),
       customerId: newCustomerId,
       amount: parseInt(formData.initialAmount, 10) || 0,
       package: formData.treatment,
