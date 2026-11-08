@@ -498,31 +498,6 @@ export default function App() {
     return <LoginScreen onLoginSuccess={() => { }} />;
   }
 
-  // Chặn dữ liệu giả trên Production khi không kết nối được máy chủ
-  if (import.meta.env.PROD && loadError) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-slate-50 p-4">
-        <div className="max-w-md w-full bg-white rounded-xl border border-rose-200 p-6 text-center shadow-lg space-y-4">
-          <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
-            <AlertTriangle className="w-6 h-6" />
-          </div>
-          <h3 className="font-bold text-slate-900 text-base">Không thể kết nối máy chủ Supabase</h3>
-          <p className="text-xs text-slate-600 leading-relaxed">
-            {loadError}
-          </p>
-          <p className="text-[11px] text-amber-800 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
-            Cảnh báo: Hệ thống đã chặn nạp dữ liệu mẫu trên môi trường Production để bảo đảm an toàn số liệu.
-          </p>
-          <button
-            onClick={loadData}
-            className="w-full py-2.5 px-4 bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs rounded-lg transition-colors shadow-xs"
-          >
-            Thử lại kết nối
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden text-slate-800">

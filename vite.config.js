@@ -21,6 +21,10 @@ function spaFallbackPlugin() {
 
 export default defineConfig({
   plugins: [react(), spaFallbackPlugin()],
+  define: {
+    'import.meta.env.VITE_SUPABASE_URL': JSON.stringify('https://cbumyrnukqqznfizcgwi.supabase.co'),
+    'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify('sb_publishable_9HMdUlPmoyyVvGClSVUG7Q_pYyxErsI')
+  },
   build: {
     rollupOptions: {
       output: {

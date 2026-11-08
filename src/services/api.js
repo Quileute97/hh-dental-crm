@@ -10,13 +10,7 @@ import { supabase } from '../lib/supabase';
 // ----------------------------------------------------------------------------
 export async function fetchAllData() {
   try {
-    const [
-      { data: partnersData, error: errPartners },
-      { data: servicesData, error: errServices },
-      { data: customersData, error: errCustomers },
-      { data: visitsData, error: errVisits },
-      { data: settlementsData, error: errSettlements }
-    ] = await Promise.all([
+    const [pRes, sRes, cRes, vRes, stRes] = await Promise.allSettled([
       supabase.from('partners').select('*').order('depth', { ascending: true }),
       supabase.from('services').select('*').order('name'),
       supabase.from('customers').select('*').order('created_at', { ascending: false }),
@@ -24,85 +18,105 @@ export async function fetchAllData() {
       supabase.from('settlements').select('*')
     ]);
 
-    if (!errPartners && !errServices && !errCustomers) {
+    const partnersData = (pRes.status === 'fulfilled' && !pRes.value.error) ? pRes.value.data : [];
+    const servicesData = (sRes.status === 'fulfilled' && !sRes.value.error) ? sRes.value.data : [];
+    const customersData = (cRes.status === 'fulfilled' && !cRes.value.error) ? cRes.value.data : [];
+    const visitsData = (vRes.status === 'fulfilled' && !vRes.value.error) ? vRes.value.data : [];
+    const settlementsData = (stRes.status === 'fulfilled' && !stRes.value.error) ? stRes.value.data : [];
+
+    // Kiểm tra nếu có lỗi token hết hạn (401 / JWT expired)
+    const allErrors = [pRes, sRes, cRes, vRes, stRes]
+      .filter(r => r.status === 'fulfilled' && r.value.error)
+      .map(r => r.value.error);
+
+    const hasAuthError = allErrors.some(e => e.code === 'PGRST301' || (e.message || '').toLowerCase().includes('jwt') || (e.message || '').toLowerCase().includes('token'));
+    if (hasAuthError) {
+      await supabase.auth.signOut().catch(() => {});
       return {
-        isServer: true,
-        data: {
-          partners: (partnersData || []).map(p => ({
-            id: p.id,
-            code: p.code,
-            name: p.name,
-            title: p.title,
-            phone: p.phone,
-            email: p.email,
-            parentId: p.parent_id,
-            depth: p.depth,
-            status: p.status,
-            bankName: p.bank_name,
-            bankAccountNo: p.bank_account_no,
-            bankAccountName: p.bank_account_name,
-            joinedAt: p.joined_at,
-            createdAt: p.created_at
-          })),
-          services: (servicesData || []).map(s => ({
-            id: s.id,
-            code: s.code,
-            name: s.name,
-            defaultPrice: Number(s.default_price || 0),
-            active: s.active
-          })),
-          customers: (customersData || []).map(c => ({
-            id: c.id,
-            code: c.code,
-            name: c.name,
-            phone: c.phone,
-            ownerPartnerId: c.owner_partner_id,
-            referrerCustomerId: c.referrer_customer_id,
-            depth: c.depth,
-            treatment: c.treatment,
-            status: c.status,
-            createdAt: c.created_at
-          })),
-          visits: (visitsData || []).map(v => ({
-            id: v.id,
-            customerId: v.customer_id,
-            amount: Number(v.amount || 0),
-            note: v.note,
-            occurredAt: v.occurred_at,
-            paymentStatus: v.payment_status || (v.note && (v.note.toLowerCase().includes('chưa thanh toán') || v.note.toLowerCase().includes('ghi nợ')) ? 'pending' : (v.note && v.note.toLowerCase().includes('thanh toán một phần')) ? 'partial' : 'paid'),
-            treatmentStep: v.treatment_step || null,
-            serviceCode: v.service_code || null,
-            serviceName: v.service_name || null,
-            createdAt: v.created_at
-          })),
-          settlements: (settlementsData || []).map(s => ({
-            month: s.month,
-            partnerId: s.partner_id,
-            partnerCode: s.partner_code,
-            partnerName: s.partner_name,
-            ownRevenue: Number(s.own_revenue || 0),
-            branchRevenue: Number(s.branch_revenue || 0),
-            commission: Number(s.commission || 0),
-            branchFee: Number(s.branch_fee || 0),
-            total: Number(s.total || 0),
-            settledAt: s.settled_at
-          }))
-        }
+        isServer: false,
+        data: null,
+        error: 'Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại hệ thống.'
       };
     }
 
-    if (errPartners || errServices || errCustomers) {
-      console.warn('[Supabase API] Query error:', errPartners || errServices || errCustomers);
-    }
+    return {
+      isServer: true,
+      data: {
+        partners: (partnersData || []).map(p => ({
+          id: p.id,
+          code: p.code,
+          name: p.name,
+          title: p.title,
+          phone: p.phone,
+          email: p.email,
+          parentId: p.parent_id,
+          depth: p.depth,
+          status: p.status,
+          bankName: p.bank_name,
+          bankAccountNo: p.bank_account_no,
+          bankAccountName: p.bank_account_name,
+          joinedAt: p.joined_at,
+          createdAt: p.created_at
+        })),
+        services: (servicesData || []).map(s => ({
+          id: s.id,
+          code: s.code,
+          name: s.name,
+          defaultPrice: Number(s.default_price || 0),
+          active: s.active
+        })),
+        customers: (customersData || []).map(c => ({
+          id: c.id,
+          code: c.code,
+          name: c.name,
+          phone: c.phone,
+          ownerPartnerId: c.owner_partner_id,
+          referrerCustomerId: c.referrer_customer_id,
+          depth: c.depth,
+          treatment: c.treatment,
+          status: c.status,
+          createdAt: c.created_at
+        })),
+        visits: (visitsData || []).map(v => ({
+          id: v.id,
+          customerId: v.customer_id,
+          amount: Number(v.amount || 0),
+          note: v.note,
+          occurredAt: v.occurred_at,
+          paymentStatus: v.payment_status || (v.note && (v.note.toLowerCase().includes('chưa thanh toán') || v.note.toLowerCase().includes('ghi nợ')) ? 'pending' : (v.note && v.note.toLowerCase().includes('thanh toán một phần')) ? 'partial' : 'paid'),
+          treatmentStep: v.treatment_step || null,
+          serviceCode: v.service_code || null,
+          serviceName: v.service_name || null,
+          createdAt: v.created_at
+        })),
+        settlements: (settlementsData || []).map(s => ({
+          month: s.month,
+          partnerId: s.partner_id,
+          partnerCode: s.partner_code,
+          partnerName: s.partner_name,
+          ownRevenue: Number(s.own_revenue || 0),
+          branchRevenue: Number(s.branch_revenue || 0),
+          commission: Number(s.commission || 0),
+          branchFee: Number(s.branch_fee || 0),
+          total: Number(s.total || 0),
+          settledAt: s.settled_at
+        }))
+      }
+    };
   } catch (err) {
     console.warn('[Supabase API] Failed to fetch live data from Supabase:', err);
+    return {
+      isServer: false,
+      data: {
+        partners: [],
+        services: [],
+        customers: [],
+        visits: [],
+        settlements: []
+      },
+      error: err?.message || 'Không thể kết nối máy chủ Supabase.'
+    };
   }
-
-  return {
-    isServer: false,
-    data: null,
-    error: 'Không thể kết nối với máy chủ Supabase. Vui lòng kiểm tra kết nối mạng hoặc liên hệ quản trị viên.'
-  };
 }
 
 function isForbiddenError(error) {

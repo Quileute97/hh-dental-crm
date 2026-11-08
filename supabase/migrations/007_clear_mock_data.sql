@@ -25,3 +25,4 @@ DELETE FROM partners;
 DELETE FROM audit_logs;
 
 COMMIT;
+
