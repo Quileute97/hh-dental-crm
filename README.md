@@ -1,4 +1,4 @@
-# HH Dental Clinic — CRM Quản Trị Đối Tác & Chuỗi Khách Hàng (Plan V5)
+# HH Dental Clinic — CRM Quản Trị Đối Tác & Chuỗi Khách Hàng (Production-Ready)
 
 Hệ thống quản lý đối tác và bệnh nhân phòng khám **HH Dental Clinic** được chuẩn hóa theo mô hình **hai hệ thống độc lập**:
 1. **Hệ thống 1 — Chuỗi khách hàng:** Hoa hồng tính theo **Độ sâu của khách trong chuỗi giới thiệu**, **Sàn không thu (0%)**, toàn bộ hoa hồng được **hoàn về Cộng tác viên (CTV) giới thiệu ban đầu**.
@@ -6,13 +6,13 @@ Hệ thống quản lý đối tác và bệnh nhân phòng khám **HH Dental Cl
 
 ---
 
-## 1. Công Thức & Chính Sách Hoa Hồng Chuẩn
+## 1. Công Thức & Chính Sách Hoa Hồng Chuẩn (Plan V5)
 
 ### Hệ Thống 1: Chuỗi Khách Hàng (Sàn 0% — Toàn Bộ Hoàn Về CTV Ban Đầu)
 * **Tầng 1 (Khách trực tiếp):** CTV hưởng **20%**, Sàn **0%**.
 * **Tầng 2+ (Khách từ F1 trở đi - Hạ tầng giới thiệu):** CTV hưởng **2%**, Sàn **0%**.
 * *Chủ sở hữu khách (CTV ban đầu):* `customer.ownerPartnerId` kế thừa tự động từ khách giới thiệu ban đầu.
-* *Doanh thu trọn đời:* Bảng `visits` lưu từng lần khám (gói đầu tiên, tái điều trị...).
+* *Doanh thu trọn đời:* Bảng `visits` lưu từng lần khám lâm sàng (gói điều trị, bước điều trị, trạng thái thanh toán).
 * *Credit dịch vụ cho khách:* Khách được giới thiệu đến khám (+200.000 ₫), hoàn tất (+500.000 ₫). Không trừ vào hoa hồng đối tác.
 
 ### Hệ Thống 2: Cây Phả Hệ Đối Tác
@@ -26,40 +26,74 @@ Hệ thống quản lý đối tác và bệnh nhân phòng khám **HH Dental Cl
 
 ## 2. Kết Quả Kiểm Thử Tiêu Chuẩn (172.000.000 VNĐ)
 
-Kịch bản chuẩn kỳ tháng 2026-11 (đối chiếu 3 nguồn: engine client, Postgres RPC `compute_month`, `scripts/golden.json`):
-* **Doanh thu kỳ:** 172.000.000 ₫
-* **Sổ khách P1:** 86.000.000 ₫ | **Doanh thu nhánh P1:** 172.000.000 ₫ | **Hoa hồng P1:** 8.380.000 ₫ (20%×37tr + 2%×49tr) | **Phí nhánh P1:** 860.000 ₫ | **Tổng nhận:** 9.240.000 ₫
-* **Sổ khách P2:** 66.000.000 ₫ | **Doanh thu nhánh P2:** 86.000.000 ₫ | **Hoa hồng P2:** 8.160.000 ₫ (20%×38tr + 2%×28tr) | **Phí nhánh P2:** 200.000 ₫ | **Tổng nhận:** 8.360.000 ₫
-* **Sổ khách P3:** 20.000.000 ₫ | **Doanh thu nhánh P3:** 20.000.000 ₫ | **Hoa hồng P3:** 4.000.000 ₫ (20%×20tr) | **Phí nhánh P3:** 0 ₫ | **Tổng nhận:** 4.000.000 ₫
+Kịch bản chuẩn kỳ tháng 2026-11 (đối chiếu 3 nguồn độc lập: client engine `src/services/commissionEngine.js`, Postgres RPC `compute_month`, và `scripts/golden.json`):
+
+| Đối tác | Mã REF | Sổ khách | Doanh thu nhánh | Hoa hồng CTV | Phí nhánh 1% | Tổng nhận |
+|---|---|---:|---:|---:|---:|---:|
+| **Bs. Nguyễn Văn A (P1)** | REF-A-FOUNDER | 86.000.000 ₫ | 172.000.000 ₫ | 8.380.000 ₫ | 860.000 ₫ | **9.240.000 ₫** |
+| **Trần Thị B (P2)** | REF-B-LEVEL4 | 66.000.000 ₫ | 86.000.000 ₫ | 8.160.000 ₫ | 200.000 ₫ | **8.360.000 ₫** |
+| **Lê Hoàng C (P3)** | REF-C-LEVEL3 | 20.000.000 ₫ | 20.000.000 ₫ | 4.000.000 ₫ | 0 ₫ | **4.000.000 ₫** |
+| **Phạm Minh D (P4)** | REF-D-LEVEL2 | 0 ₫ | 0 ₫ | 0 ₫ | 0 ₫ | **0 ₫** |
+| **Vũ Thảo D2 (P5)** | REF-D2-LEVEL2 | 0 ₫ | 0 ₫ | 0 ₫ | 0 ₫ | **0 ₫** |
+| **Đặng Quốc E (P6)** | REF-E-LEVEL1 | 0 ₫ | 0 ₫ | 0 ₫ | 0 ₫ | **0 ₫** |
+
+* **Tổng doanh thu toàn hệ thống:** 172.000.000 ₫
 * **Tổng hoa hồng CTV:** 20.540.000 ₫
 * **Phần nền tảng (Sàn):** 0 ₫ *(Sàn không thu)*
-* **Phí nhánh 1%:** 1.060.000 ₫
+* **Tổng phí nhánh 1%:** 1.060.000 ₫
 * **Tổng chi phí hệ thống:** 21.600.000 ₫ (**12,6%** doanh thu)
+* **Lợi nhuận giữ lại Nha khoa:** 150.400.000 ₫ (**87,4%** doanh thu)
 
 ---
 
-## 3. Cấu Hình Biến Môi Trường (Cloudflare Deployment)
+## 3. Triển Khai (Deployment) — Cloudflare Workers Static Assets
 
-Trên Cloudflare Dashboard (**Workers & Pages > Settings > Variables and Secrets**), bắt buộc phải thiết lập 2 biến môi trường tại thời điểm build:
-- `VITE_SUPABASE_URL`: `https://your-project-ref.supabase.co`
-- `VITE_SUPABASE_ANON_KEY`: `eyJhbGciOi...`
+Frontend chạy dưới dạng Static Assets trên Cloudflare Workers (`https://hh-dental-crm.drminhdat-work.workers.dev/`).
 
-> ⚠️ **CẢNH BÁO QUAN TRỌNG**: Nếu thiếu 2 biến môi trường này, ứng dụng sẽ hiển thị màn hình thông báo *"Thiếu cấu hình Supabase — liên hệ quản trị"* và từ chối tải giao diện nhằm đảm bảo an toàn, không bao giờ để xảy ra lỗi sập trắng trang.
+### Cấu hình biến môi trường tại thời điểm Build (Build-Time):
+Tại Cloudflare Dashboard (**Workers & Pages > hh-dental-crm > Settings > Variables and Secrets**):
+- `VITE_SUPABASE_URL`: `https://cbumyrnukqqznfizcgwi.supabase.co`
+- `VITE_SUPABASE_ANON_KEY`: `sb_publishable_...`
 
----
+> ⚠️ **CẢNH BÁO BẢO MẬT**: Khóa `VITE_SUPABASE_ANON_KEY` là public key theo thiết kế. Toàn bộ cơ chế an toàn phụ thuộc vào PostgreSQL Row Level Security (RLS). Tuyệt đối **KHÔNG** đưa `SUPABASE_SERVICE_ROLE_KEY` vào frontend bundle.
 
-## 4. Lệnh Khởi Chạy & Kiểm Thử
-
+### Lệnh Deploy:
 ```bash
-# 1. Chạy bộ kiểm thử tự động (5 bộ test PASS 100%)
-npm test
-
-# 2. Chạy đối soát golden benchmark
-npm run golden
-
-# 3. Khởi động môi trường phát triển (cổng 3000)
-npm run dev
-
-# 4. Build sản phẩm (dist/)
+# 1. Build tối ưu hóa bundle (< 350 kB per chunk)
 npm run build
+
+# 2. Deploy lên Cloudflare Workers Static Assets
+npx wrangler deploy --assets dist
 ```
+
+---
+
+## 4. Kiểm Chứng Hệ Thống (Verification Commands)
+
+Bộ kiểm chứng tự động toàn diện:
+```bash
+# Chạy toàn bộ chu trình kiểm tra: Tests + Golden + Quét Secret + Build + Kiểm tra RLS
+npm run verify:all
+
+# Kiểm tra đơn lẻ:
+npm test                  # 3 bộ test: settlement, api-contract, permissions (100% PASS)
+npm run golden            # Đối soát số liệu chuẩn kỳ 2026-11
+npm run scan:secrets      # Quét mã nguồn src/ chặn lộ service_role hoặc JWT
+npm run verify:rls        # Kiểm tra 4 probe bảo mật RLS bằng anon key
+node scripts/apply-sql.mjs --dry-run  # Kiểm tra các tệp SQL migration
+```
+
+---
+
+## 5. Quy Trình Cập Nhật Cơ Sở Dữ Liệu (Migrations)
+
+Khi có thay đổi schema hoặc vá lỗi bảo mật, thực hiện theo thứ tự:
+1. `supabase/security_fix.sql` — Bật RLS, sửa hàm `my_role()`, bảo vệ RPC `compute_month` và `settle_month`.
+2. `supabase/migrations/005_audit_triggers.sql` — Kích hoạt trigger tự động ghi vết thay đổi vào `audit_logs`.
+3. `supabase/migrations/006_visit_clinical_fields.sql` — Bổ sung cột lâm sàng & trạng thái thanh toán cho bảng `visits`.
+
+Chạy tự động (nếu có `DATABASE_URL` hoặc `SUPABASE_ACCESS_TOKEN`):
+```bash
+node scripts/apply-sql.mjs
+```
+Hoặc dán thủ công vào **Supabase Dashboard > SQL Editor**, sau đó kiểm chứng bằng `npm run verify:rls`.
