@@ -18,3 +18,4 @@ export function generateUuid() {
     return v.toString(16);
   });
 }
+
