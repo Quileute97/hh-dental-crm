@@ -723,6 +723,7 @@ export default function App() {
         isOpen={auditLogModalOpen}
         onClose={() => setAuditLogModalOpen(false)}
         logs={auditLogs}
+        currentUserRole={currentUserRole}
       />
 
       {/* Toast popup */}

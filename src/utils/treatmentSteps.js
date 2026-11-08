@@ -108,17 +108,44 @@ export function getPresetStepsForService(serviceName = '') {
 }
 
 /**
- * Trích xuất bước điều trị và trạng thái thanh toán từ ghi chú visit cũ (nếu có)
- * @param {string} note 
- * @returns {{ step: string, status: string }}
+ * Trích xuất bước điều trị và trạng thái thanh toán từ visit object hoặc ghi chú note cũ.
+ * Ưu tiên các cột trực tiếp (treatment_step, payment_status), chỉ fallback sang note khi cột rỗng.
+ * 
+ * @param {object|string} visitOrNote 
+ * @returns {{ step: string, status: 'paid'|'partial'|'pending' }}
  */
-export function parseVisitStepAndStatus(note = '') {
+export function parseVisitStepAndStatus(visitOrNote = '') {
+  if (!visitOrNote) return { step: 'Điều trị', status: 'paid' };
+
+  // 1. Nếu truyền vào là object visit: ưu tiên đọc từ các cột chuẩn
+  if (typeof visitOrNote === 'object') {
+    const directStep = visitOrNote.treatment_step || visitOrNote.treatmentStep;
+    const directStatus = visitOrNote.payment_status || visitOrNote.paymentStatus;
+
+    if (directStep || directStatus) {
+      let finalStatus = directStatus || 'paid';
+      if (!['paid', 'partial', 'pending'].includes(finalStatus)) {
+        finalStatus = 'paid';
+      }
+      return {
+        step: directStep || 'Điều trị',
+        status: finalStatus
+      };
+    }
+
+    // Nếu object không có cột trực tiếp, fallback đọc note của object
+    return parseVisitStepAndStatus(visitOrNote.note || '');
+  }
+
+  // 2. Fallback bóc tách từ chuỗi note cũ
+  const note = String(visitOrNote).trim();
   if (!note) return { step: 'Điều trị', status: 'paid' };
 
   let status = 'paid';
-  if (note.toLowerCase().includes('chưa thanh toán') || note.toLowerCase().includes('ghi nợ')) {
+  const lower = note.toLowerCase();
+  if (lower.includes('chưa thanh toán') || lower.includes('ghi nợ')) {
     status = 'pending';
-  } else if (note.toLowerCase().includes('thanh toán một phần')) {
+  } else if (lower.includes('thanh toán một phần')) {
     status = 'partial';
   }
 
@@ -133,6 +160,6 @@ export function parseVisitStepAndStatus(note = '') {
     return { step: parts[parts.length - 1].trim(), status };
   }
 
-  return { step: note.trim(), status };
+  return { step: note || 'Điều trị', status };
 }
 

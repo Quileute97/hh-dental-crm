@@ -74,6 +74,10 @@ export async function fetchAllData() {
             amount: Number(v.amount || 0),
             note: v.note,
             occurredAt: v.occurred_at,
+            paymentStatus: v.payment_status || (v.note && (v.note.toLowerCase().includes('chưa thanh toán') || v.note.toLowerCase().includes('ghi nợ')) ? 'pending' : (v.note && v.note.toLowerCase().includes('thanh toán một phần')) ? 'partial' : 'paid'),
+            treatmentStep: v.treatment_step || null,
+            serviceCode: v.service_code || null,
+            serviceName: v.service_name || null,
             createdAt: v.created_at
           })),
           settlements: (settlementsData || []).map(s => ({
@@ -92,10 +96,19 @@ export async function fetchAllData() {
       };
     }
   } catch (err) {
-    console.warn('[Supabase API] Failed to fetch live data from Supabase, falling back to local seed:', err);
+    console.warn('[Supabase API] Failed to fetch live data from Supabase:', err);
   }
 
-  // Fallback seed ban đầu nếu chưa migrate hoặc chưa có biến môi trường
+  // Chặn dữ liệu giả trên môi trường Production: TUYỆT ĐỐI KHÔNG fallback dữ liệu mẫu seed!
+  if (import.meta.env.PROD) {
+    return {
+      isServer: false,
+      data: null,
+      error: 'Không thể kết nối với máy chủ Supabase. Vui lòng kiểm tra cấu hình biến môi trường hoặc liên hệ quản trị viên.'
+    };
+  }
+
+  // Fallback seed ban đầu chỉ trong môi trường Dev (development)
   return {
     isServer: false,
     data: {
@@ -291,9 +304,33 @@ export async function apiAddVisit(visit) {
       customer_id: visit.customerId,
       amount: visit.amount,
       note: visit.note || 'Lượt điều trị',
-      occurred_at: visit.occurredAt || new Date().toISOString()
+      occurred_at: visit.occurredAt || new Date().toISOString(),
+      payment_status: visit.paymentStatus || 'paid',
+      treatment_step: visit.treatmentStep || null,
+      service_code: visit.serviceCode || null,
+      service_name: visit.serviceName || null
     };
     const { error } = await supabase.from('visits').upsert(visitRecord);
+    return !error;
+  } catch (err) {
+    return false;
+  }
+}
+
+export async function apiDeleteVisit(visitId) {
+  try {
+    const { error } = await supabase.from('visits').delete().eq('id', visitId);
+    return !error;
+  } catch (err) {
+    return false;
+  }
+}
+
+export async function apiDeleteCustomer(customerId) {
+  try {
+    // Xoá các lượt khám liên kết trước
+    await supabase.from('visits').delete().eq('customer_id', customerId);
+    const { error } = await supabase.from('customers').delete().eq('id', customerId);
     return !error;
   } catch (err) {
     return false;
@@ -331,16 +368,47 @@ export async function apiDeleteService(serviceId) {
 // ----------------------------------------------------------------------------
 // 7. NHẬT KÝ KIỂM TOÁN (AUDIT LOGS)
 // ----------------------------------------------------------------------------
-export async function apiFetchAuditLogs() {
+export async function apiFetchAuditLogs(limit = 100) {
   try {
     const { data, error } = await supabase
       .from('audit_logs')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(50);
+      .limit(limit);
     return data || [];
   } catch (err) {
     return [];
+  }
+}
+
+// ----------------------------------------------------------------------------
+// 8. QUẢN LÝ TÀI KHOẢN & PHÂN QUYỀN (PROFILES - ADMIN)
+// ----------------------------------------------------------------------------
+export async function apiFetchProfiles() {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('role');
+    return data || [];
+  } catch (err) {
+    return [];
+  }
+}
+
+export async function apiUpdateProfile(userId, profile) {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .upsert({
+        user_id: userId,
+        role: profile.role,
+        partner_id: profile.partner_id || profile.partnerId || null,
+        full_name: profile.full_name || profile.fullName || null
+      });
+    return !error;
+  } catch (err) {
+    return false;
   }
 }
 

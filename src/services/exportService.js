@@ -103,6 +103,79 @@ export function exportCustomersToCSV(customers, visits, partners) {
   downloadCsvWithBOM(csvContent, `Danh_Sach_Chuoi_Khach_Hang_${formatDateForFile(new Date())}.csv`);
 }
 
+/**
+ * Xuất danh sách lượt khám, bao gồm Bước điều trị và Trạng thái thanh toán lâm sàng
+ */
+export function exportVisitsToCSV(visits, customers = []) {
+  const customerMap = new Map(customers.map(c => [c.id, c]));
+
+  const headers = [
+    'Mã lượt khám',
+    'Mã khách hàng',
+    'Tên khách hàng',
+    'Số điện thoại',
+    'Gói dịch vụ',
+    'Bước điều trị',
+    'Số tiền (VNĐ)',
+    'Trạng thái thanh toán',
+    'Thời gian điều trị',
+    'Ghi chú'
+  ];
+
+  const rows = visits.map(v => {
+    const cust = customerMap.get(v.customerId);
+    const paymentLabel = v.paymentStatus === 'pending'
+      ? 'Chưa thanh toán (Ghi nợ)'
+      : v.paymentStatus === 'partial'
+      ? 'Thanh toán một phần'
+      : 'Đã thanh toán';
+
+    return [
+      `"${v.id || ''}"`,
+      `"${cust?.code || v.customerId || ''}"`,
+      `"${cust?.name || ''}"`,
+      `"${cust?.phone || ''}"`,
+      `"${v.serviceName || cust?.treatment || ''}"`,
+      `"${v.treatmentStep || 'Điều trị'}"`,
+      v.amount || 0,
+      `"${paymentLabel}"`,
+      `"${v.occurredAt ? new Date(v.occurredAt).toLocaleString('vi-VN') : ''}"`,
+      `"${(v.note || '').replace(/"/g, '""')}"`
+    ];
+  });
+
+  const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+  downloadCsvWithBOM(csvContent, `Danh_Sach_Luot_Kham_Lam_Sang_${formatDateForFile(new Date())}.csv`);
+}
+
+/**
+ * Xuất sổ nhật ký kiểm toán (Audit Logs) ra file CSV
+ */
+export function exportAuditLogsToCSV(logs) {
+  const headers = [
+    'Hành động (Action)',
+    'Đối tượng (Entity)',
+    'ID Đối tượng (Entity ID)',
+    'Người thực hiện (Actor)',
+    'Thời gian',
+    'Dữ liệu thay đổi (Payload)'
+  ];
+
+  const rows = (logs || []).map(l => {
+    return [
+      `"${l.action || ''}"`,
+      `"${l.entity || ''}"`,
+      `"${l.entity_id || l.entityId || ''}"`,
+      `"${l.actor || l.operator || ''}"`,
+      `"${l.created_at || l.timestamp ? new Date(l.created_at || l.timestamp).toLocaleString('vi-VN') : ''}"`,
+      `"${JSON.stringify(l.payload || l.details || {}).replace(/"/g, '""')}"`
+    ];
+  });
+
+  const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+  downloadCsvWithBOM(csvContent, `Nhat_Ky_Kiem_Toan_${formatDateForFile(new Date())}.csv`);
+}
+
 function translateCustomerStatus(status) {
   switch (status) {
     case 'lead': return 'Tiếp nhận mới (Lead)';
