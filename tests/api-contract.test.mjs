@@ -150,3 +150,4 @@ assertEqual(appVisit.serviceCode, 'S1', 'Contract Visits: serviceCode <=> servic
 assertEqual(appVisit.serviceName, 'Niềng răng', 'Contract Visits: serviceName <=> service_name');
 
 console.log('\n🎉 TOÀN BỘ CÁC KIỂM THỬ API CONTRACT ĐÃ THÀNH CÔNG 100%!');
+

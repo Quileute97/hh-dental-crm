@@ -33,3 +33,4 @@ export const can = (role, action) => {
 };
 
 export default can;
+

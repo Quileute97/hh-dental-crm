@@ -69,3 +69,4 @@ if (violations.length > 0) {
   console.log('✅ src/ SCAN PASS: Không phát hiện service_role, sb_secret_, hay secret token nào trong src/.');
   process.exit(0);
 }
+

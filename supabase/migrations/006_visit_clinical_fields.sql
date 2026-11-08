@@ -33,3 +33,4 @@ create index if not exists idx_visits_payment_status on visits(payment_status);
 create index if not exists idx_visits_customer_payment on visits(customer_id, payment_status);
 
 commit;
+

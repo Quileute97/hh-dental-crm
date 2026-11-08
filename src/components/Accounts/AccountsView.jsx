@@ -376,3 +376,4 @@ export default function AccountsView({ partners = [], showToast = () => {} }) {
     </div>
   );
 }
+

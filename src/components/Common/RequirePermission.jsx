@@ -41,3 +41,4 @@ export default function RequirePermission({ role, action, children, onBack }) {
 
   return <>{children}</>;
 }
+

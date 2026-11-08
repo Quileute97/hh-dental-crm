@@ -55,3 +55,4 @@ Nếu nghi ngờ bất kỳ khóa bí mật nào bị lộ:
 - **Kiểm tra rò rỉ khóa**: `npm run scan:secrets`
 - **Kiểm tra lỗ hổng RLS**: `npm run verify:rls`
 - **Kiểm tra toàn diện**: `npm run verify:all`
+

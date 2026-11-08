@@ -81,3 +81,4 @@ assertEqual(can('hacker', 'manageAccounts'), false, 'invalid role has no permiss
 assertEqual(can('admin', 'unknownAction'), false, 'unknown action returns false');
 
 console.log('\n🎉 TOÀN BỘ MA TRẬN PHÂN QUYỀN ĐÃ PASS 100% KIỂM TRA!');
+
