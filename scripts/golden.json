@@ -1,12 +1,12 @@
 {
   "month": "2026-11",
-  "generatedAt": "2026-11-08T08:09:22.506Z",
+  "generatedAt": "2026-11-08T08:24:21.193Z",
   "periodRevenue": 172000000,
-  "totalCtvCommission": 26700000,
+  "totalCtvCommission": 20540000,
   "totalPlatformShare": 0,
   "totalBranchFee": 1060000,
-  "totalCost": 27760000,
-  "costPercent": 16.1,
+  "totalCost": 21600000,
+  "costPercent": 12.6,
   "partnerRows": [
     {
       "partnerId": "P1",
@@ -14,9 +14,9 @@
       "partnerName": "Bs. Nguyễn Văn A",
       "ownRevenue": 86000000,
       "branchRevenue": 172000000,
-      "commission": 12300000,
+      "commission": 8380000,
       "branchFee": 860000,
-      "total": 13160000
+      "total": 9240000
     },
     {
       "partnerId": "P2",
@@ -24,9 +24,9 @@
       "partnerName": "Trần Thị B",
       "ownRevenue": 66000000,
       "branchRevenue": 86000000,
-      "commission": 10400000,
+      "commission": 8160000,
       "branchFee": 200000,
-      "total": 10600000
+      "total": 8360000
     },
     {
       "partnerId": "P3",

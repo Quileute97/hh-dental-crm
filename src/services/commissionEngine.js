@@ -7,8 +7,7 @@
  *    - Hoa hồng tính theo ĐỘ SÂU CỦA KHÁCH (customer.depth), KHÔNG theo cấp bậc đối tác.
  *    - SÀN KHÔNG THU (Nền tảng 0%), toàn bộ hoa hồng hoàn về CTV giới thiệu ban đầu:
  *      + depth 1 (Trực tiếp): CTV hưởng 20%, Nền tảng 0%
- *      + depth 2 (Hạ tầng):   CTV hưởng 10%, Nền tảng 0%
- *      + depth 3..n (Tầng 3+): CTV hưởng 5%, Nền tảng 0%
+ *      + depth 2+ (Hạ tầng):  CTV hưởng 2%, Nền tảng 0% (áp dụng cho toàn bộ Tầng 2 trở đi)
  *    - Không giới hạn độ sâu. Không có trần hoa hồng.
  *    - Chủ sở hữu khách (CTV) = customer.ownerPartnerId (kế thừa từ khách giới thiệu ban đầu).
  * 
@@ -29,18 +28,17 @@
  */
 export const COMMISSION_POLICY = {
   depth1: 20,
-  depth2: 10,
-  depth3Plus: 5,
-  depth2Plus: 10, // Tương thích ngược với các thành phần cũ
+  depth2Plus: 2,
+  depth2: 2,
+  depth3Plus: 2,
   platform: 0,
   branchFee: 1
 };
 
 /**
  * Tỷ lệ hoa hồng CTV và phần Nền tảng theo độ sâu của khách hàng:
- * - Tầng 1 (Trực tiếp): 20%
- * - Tầng 2 (Hạ tầng):   10%
- * - Tầng 3 đến tầng n:  5%
+ * - Tầng 1 (Trực tiếp): CTV hưởng 20%
+ * - Tầng 2+ (Hạ tầng):  CTV hưởng 2%
  * @param {number} depth - Độ sâu của khách (1, 2, 3...)
  * @returns {{ ctvRate: number, platformRate: number }} Tỷ lệ %
  */
@@ -49,11 +47,8 @@ export function getCommissionRatesByCustomerDepth(depth) {
   if (d <= 1) {
     return { ctvRate: COMMISSION_POLICY.depth1, platformRate: COMMISSION_POLICY.platform };
   }
-  if (d === 2) {
-    return { ctvRate: COMMISSION_POLICY.depth2, platformRate: COMMISSION_POLICY.platform };
-  }
-  // Tầng 3 đến tầng n: 5%
-  return { ctvRate: COMMISSION_POLICY.depth3Plus, platformRate: COMMISSION_POLICY.platform };
+  // Tầng 2+ (Hạ tầng, depth >= 2): 2%
+  return { ctvRate: COMMISSION_POLICY.depth2Plus, platformRate: COMMISSION_POLICY.platform };
 }
 
 /**

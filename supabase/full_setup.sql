@@ -221,11 +221,7 @@ create policy profiles_write on profiles for all
 
 create or replace function ctv_rate(d int) returns numeric
 language sql immutable as $$ 
-  select case 
-    when d <= 1 then 20 
-    when d = 2 then 10 
-    else 5 
-  end 
+  select case when d <= 1 then 20 else 2 end 
 $$;
 
 create or replace function compute_month(p_month text)

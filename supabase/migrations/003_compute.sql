@@ -3,14 +3,10 @@
 -- ============================================================================
 
 -- Tỷ lệ hoa hồng CTV theo độ sâu của khách hàng:
--- Tầng 1 (trực tiếp) = 20%, Tầng 2 (hạ tầng) = 10%, Tầng 3 đến tầng n = 5%
+-- Tầng 1 (trực tiếp) = 20%, Tầng 2+ (hạ tầng) = 2%
 create or replace function ctv_rate(d int) returns numeric
 language sql immutable as $$ 
-  select case 
-    when d <= 1 then 20 
-    when d = 2 then 10 
-    else 5 
-  end 
+  select case when d <= 1 then 20 else 2 end 
 $$;
 
 -- 1. Hàm tính hoa hồng & phí nhánh cho một tháng (Read-only RPC - Chỉ Authenticated)

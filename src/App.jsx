@@ -658,7 +658,7 @@ export default function App() {
                 <div>
                   <h2 className="text-base font-bold text-slate-900">Chuỗi Khách Hàng & Doanh Thu Trọn Đời</h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Hoa hồng tính theo độ sâu của khách (T1: {COMMISSION_POLICY.depth1}%, T2: {COMMISSION_POLICY.depth2}%, T3+: {COMMISSION_POLICY.depth3Plus}%) &bull; Phí nhánh {COMMISSION_POLICY.branchFee}% &bull; Ghi nhận nhiều lần tái khám
+                    Hoa hồng tính theo độ sâu của khách (T1: {COMMISSION_POLICY.depth1}%, T2+: {COMMISSION_POLICY.depth2Plus}%) &bull; Phí nhánh {COMMISSION_POLICY.branchFee}% &bull; Ghi nhận nhiều lần tái khám
                   </p>
                 </div>
 

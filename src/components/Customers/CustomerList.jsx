@@ -66,8 +66,8 @@ export default function CustomerList({
           >
             <option value="ALL">Tất cả độ sâu</option>
             <option value="1">Tầng 1 (Trực tiếp: CTV {COMMISSION_POLICY.depth1}%)</option>
-            <option value="2">Tầng 2 (Hạ tầng: CTV {COMMISSION_POLICY.depth2}%)</option>
-            <option value="3">Tầng 3+ (Hạ tầng: CTV {COMMISSION_POLICY.depth3Plus}%)</option>
+            <option value="2">Tầng 2 (Hạ tầng: CTV {COMMISSION_POLICY.depth2Plus}%)</option>
+            <option value="3">Tầng 3+ (Hạ tầng: CTV {COMMISSION_POLICY.depth2Plus}%)</option>
           </select>
         </div>
 

@@ -20,14 +20,10 @@ language sql stable security definer set search_path = public as $$
   end;
 $$;
 
--- 2. HÀM TỶ LỆ HOA HỒNG CTV THEO ĐỘ SÂU (T1: 20%, T2: 10%, T3+: 5%)
+-- 2. HÀM TỶ LỆ HOA HỒNG CTV THEO ĐỘ SÂU (T1: 20%, T2+: 2%)
 create or replace function ctv_rate(d int) returns numeric
 language sql immutable as $$ 
-  select case 
-    when d <= 1 then 20 
-    when d = 2 then 10 
-    else 5 
-  end 
+  select case when d <= 1 then 20 else 2 end 
 $$;
 
 -- 3. SỬA HÀM compute_month() - BẮT BUỘC ĐĂNG NHẬP, PHÂN QUYỀN PARTNER/ADMIN
