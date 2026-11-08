@@ -135,3 +135,4 @@ export function parseVisitStepAndStatus(note = '') {
 
   return { step: note.trim(), status };
 }
+
