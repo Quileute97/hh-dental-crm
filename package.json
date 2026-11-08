@@ -9,7 +9,10 @@
     "preview": "vite preview",
     "test": "node tests/settlement.test.mjs",
     "golden": "node scripts/golden.mjs",
-    "migrate": "node scripts/migrate.mjs"
+    "migrate": "node scripts/migrate.mjs",
+    "scan:secrets": "node scripts/scan-secrets.mjs",
+    "verify:rls": "node scripts/verify-rls.mjs",
+    "verify:all": "npm test && npm run golden && npm run scan:secrets && npm run build && npm run verify:rls"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0",

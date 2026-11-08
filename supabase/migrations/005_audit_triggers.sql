@@ -87,5 +87,11 @@ create trigger trg_audit_settlements
 after insert or update or delete on settlements
 for each row execute function fn_audit_log_trigger();
 
+-- 4. Phân quyền xem nhật ký kiểm toán cho admin và accountant
+drop policy if exists audit_read on audit_logs;
+create policy audit_read on audit_logs for select using (
+  auth.uid() is not null and my_role() in ('admin', 'accountant')
+);
+
 commit;
 

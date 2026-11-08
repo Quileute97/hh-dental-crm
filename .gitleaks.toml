@@ -1,0 +1,17 @@
+# Gitleaks Configuration for HH Dental CRM
+title = "HH Dental CRM Secret Scan"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "supabase-service-role"
+description = "Supabase Service Role Key or Secret detected"
+regex = '''(?i)(service_role|sb_secret_[a-zA-Z0-9_-]{20,})'''
+path = '''src/.*'''
+
+[[rules]]
+id = "jwt-secret-token"
+description = "Raw HS256 JWT Token detected in source"
+regex = '''eyJhbGciOiJIUzI1Ni[a-zA-Z0-9_\-\.]{30,}'''
+path = '''src/.*'''
