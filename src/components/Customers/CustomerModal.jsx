@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, Users, Tag, Check, Plus, Stethoscope, DollarSign, CheckCircle2, Clock, Sparkles, Layers } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { X, Users, Tag, Check, Plus, Stethoscope, DollarSign, CheckCircle2, Clock, Sparkles, Layers, Search } from 'lucide-react';
 import { formatVND } from '../../utils/formatters';
 import { getPresetStepsForService, PAYMENT_STATUSES } from '../../utils/treatmentSteps';
 import { generateUuid, isUuid } from '../../utils/uuid';
@@ -30,6 +30,8 @@ export default function CustomerModal({
     note: ''
   });
 
+  const [referrerSearch, setReferrerSearch] = useState('');
+  const [partnerSearch, setPartnerSearch] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -49,9 +51,54 @@ export default function CustomerModal({
         status: 'completed',
         note: ''
       });
+      setReferrerSearch('');
+      setPartnerSearch('');
       setError('');
     }
   }, [isOpen, partners, services]);
+
+  // Bộ lọc tìm kiếm nhanh Khách hàng giới thiệu cho Lễ tân
+  const filteredReferrerCustomers = useMemo(() => {
+    if (!referrerSearch.trim()) return customers;
+    const q = referrerSearch.toLowerCase().trim();
+    return customers.filter(c =>
+      (c.name || '').toLowerCase().includes(q) ||
+      (c.phone || '').includes(q) ||
+      (c.code || '').toLowerCase().includes(q)
+    );
+  }, [customers, referrerSearch]);
+
+  const displayedReferrerOptions = useMemo(() => {
+    if (!formData.referrerCustomerId) return filteredReferrerCustomers;
+    const exists = filteredReferrerCustomers.some(c => c.id === formData.referrerCustomerId);
+    if (!exists) {
+      const selected = customers.find(c => c.id === formData.referrerCustomerId);
+      if (selected) return [selected, ...filteredReferrerCustomers];
+    }
+    return filteredReferrerCustomers;
+  }, [filteredReferrerCustomers, formData.referrerCustomerId, customers]);
+
+  // Bộ lọc tìm kiếm nhanh Đối tác CTV cho Lễ tân
+  const filteredPartners = useMemo(() => {
+    if (!partnerSearch.trim()) return partners;
+    const q = partnerSearch.toLowerCase().trim();
+    return partners.filter(p =>
+      (p.name || '').toLowerCase().includes(q) ||
+      (p.phone || '').includes(q) ||
+      (p.code || '').toLowerCase().includes(q) ||
+      (p.title || '').toLowerCase().includes(q)
+    );
+  }, [partners, partnerSearch]);
+
+  const displayedPartnerOptions = useMemo(() => {
+    if (!formData.ownerPartnerId) return filteredPartners;
+    const exists = filteredPartners.some(p => p.id === formData.ownerPartnerId);
+    if (!exists) {
+      const selected = partners.find(p => p.id === formData.ownerPartnerId);
+      if (selected) return [selected, ...filteredPartners];
+    }
+    return filteredPartners;
+  }, [filteredPartners, formData.ownerPartnerId, partners]);
 
   if (!isOpen) return null;
 
@@ -233,44 +280,133 @@ export default function CustomerModal({
             </div>
 
             {/* Phân cấp chuỗi khách & CTV */}
-            <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
-              <label className="block font-semibold text-slate-800">
-                Khách hàng giới thiệu (Referrer Customer)
-              </label>
-              <select
-                value={formData.referrerCustomerId}
-                onChange={e => handleReferrerChange(e.target.value)}
-                className="w-full px-3 py-1.5 border border-slate-300 rounded-md bg-white text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
-              >
-                <option value="">Không có (Khách trực tiếp từ CTV — Tầng 1)</option>
-                {customers.map(c => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} ({c.code || c.id}) — Đang ở Tầng {c.depth || 1}
-                  </option>
-                ))}
-              </select>
-
-              {selectedParentCust ? (
-                <div className="text-[11px] text-sky-800 bg-sky-50 p-2 rounded-md border border-sky-200 flex justify-between items-center">
-                  <span>Suy ra độ sâu mới: <strong>Tầng {(selectedParentCust.depth || 1) + 1}</strong></span>
-                  <span>Kế thừa CTV: <strong>{partners.find(p => p.id === selectedParentCust.ownerPartnerId)?.name}</strong></span>
-                </div>
-              ) : (
-                <div>
-                  <label className="block font-semibold text-slate-700 mt-2 mb-1">
-                    Chỉ định Đối tác CTV sở hữu khách <span className="text-rose-500">*</span>
+            <div className="p-3.5 bg-slate-50/90 rounded-xl border border-slate-200 space-y-3">
+              {/* Mục 1: Khách hàng giới thiệu (Referrer Customer) */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block font-semibold text-slate-800 text-xs">
+                    Khách hàng giới thiệu (Referrer Customer)
                   </label>
+                  {referrerSearch && (
+                    <span className="text-[10px] text-sky-600 font-medium">
+                      Khớp: {filteredReferrerCustomers.length} khách hàng
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 items-center">
+                  {/* Khung tìm kiếm KH kế bên */}
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={referrerSearch}
+                      onChange={e => setReferrerSearch(e.target.value)}
+                      placeholder="Tìm nhanh KH (Tên, SĐT, Mã)..."
+                      className="w-full pl-8 pr-7 py-1.5 border border-slate-300 rounded-md bg-white text-xs placeholder:text-slate-400 focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                    />
+                    {referrerSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setReferrerSearch('')}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                        title="Xóa tìm kiếm"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Dropdown chọn khách hàng giới thiệu */}
                   <select
-                    value={formData.ownerPartnerId}
-                    onChange={e => setFormData({ ...formData, ownerPartnerId: e.target.value })}
-                    className="w-full px-3 py-1.5 border border-slate-300 rounded-md bg-white text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                    value={formData.referrerCustomerId}
+                    onChange={e => handleReferrerChange(e.target.value)}
+                    className="w-full px-3 py-1.5 border border-slate-300 rounded-md bg-white text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none truncate"
                   >
-                    {partners.map(p => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} ({p.code}) — {p.title || `Độ sâu ${p.depth}`}
+                    <option value="">Không có (Khách trực tiếp từ CTV — Tầng 1)</option>
+                    {displayedReferrerOptions.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} {c.phone ? `(${c.phone})` : ''} - {c.code || c.id} (Tầng {c.depth || 1})
                       </option>
                     ))}
+                    {displayedReferrerOptions.length === 0 && (
+                      <option value="" disabled>Không tìm thấy khách hàng nào</option>
+                    )}
                   </select>
+                </div>
+
+                {selectedParentCust && (
+                  <div className="text-[11px] text-sky-800 bg-sky-50 p-2.5 rounded-lg border border-sky-200 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mt-2">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-semibold">{selectedParentCust.name}</span>
+                      {selectedParentCust.phone && (
+                        <span className="text-slate-500 font-mono text-[10px]">({selectedParentCust.phone})</span>
+                      )}
+                      <span className="px-1.5 py-0.5 bg-sky-100 rounded text-[10px] text-sky-700 font-medium">
+                        Đang ở Tầng {selectedParentCust.depth || 1}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[10px]">
+                      <span>Suy ra: <strong className="text-emerald-700">Tầng {(selectedParentCust.depth || 1) + 1}</strong></span>
+                      <span>&bull; Kế thừa CTV: <strong className="text-sky-900">{partners.find(p => p.id === selectedParentCust.ownerPartnerId)?.name || 'Chưa rõ'}</strong></span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Mục 2: Chỉ định Đối tác CTV sở hữu khách (khi không có khách giới thiệu) */}
+              {!selectedParentCust && (
+                <div className="space-y-1.5 pt-2.5 border-t border-slate-200/70">
+                  <div className="flex items-center justify-between">
+                    <label className="block font-semibold text-slate-700 text-xs">
+                      Chỉ định Đối tác CTV sở hữu khách <span className="text-rose-500">*</span>
+                    </label>
+                    {partnerSearch && (
+                      <span className="text-[10px] text-sky-600 font-medium">
+                        Khớp: {filteredPartners.length} đối tác
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 items-center">
+                    {/* Khung tìm kiếm CTV kế bên */}
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                      <input
+                        type="text"
+                        value={partnerSearch}
+                        onChange={e => setPartnerSearch(e.target.value)}
+                        placeholder="Tìm nhanh CTV (Tên, SĐT, Mã REF)..."
+                        className="w-full pl-8 pr-7 py-1.5 border border-slate-300 rounded-md bg-white text-xs placeholder:text-slate-400 focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                      />
+                      {partnerSearch && (
+                        <button
+                          type="button"
+                          onClick={() => setPartnerSearch('')}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                          title="Xóa tìm kiếm"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Dropdown chọn đối tác CTV */}
+                    <select
+                      value={formData.ownerPartnerId}
+                      onChange={e => setFormData({ ...formData, ownerPartnerId: e.target.value })}
+                      className="w-full px-3 py-1.5 border border-slate-300 rounded-md bg-white text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none truncate"
+                    >
+                      {displayedPartnerOptions.map(p => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} {p.phone ? `(${p.phone})` : ''} — {p.code} ({p.title || `Độ sâu ${p.depth}`})
+                        </option>
+                      ))}
+                      {displayedPartnerOptions.length === 0 && (
+                        <option value="" disabled>Không tìm thấy đối tác nào</option>
+                      )}
+                    </select>
+                  </div>
                 </div>
               )}
             </div>

@@ -18,3 +18,4 @@ $$;
 revoke execute on function ctv_rate(int) from public;
 revoke execute on function ctv_rate(int) from anon;
 grant execute on function ctv_rate(int) to authenticated, service_role;
+
