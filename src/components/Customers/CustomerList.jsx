@@ -3,6 +3,8 @@ import { Search, Plus, DollarSign, Users, ChevronRight, Phone, ShieldCheck, Hist
 import { formatVND, formatDate } from '../../utils/formatters';
 import { calculateCustomerCredit, COMMISSION_POLICY } from '../../services/commissionEngine';
 import { parseVisitStepAndStatus } from '../../utils/treatmentSteps';
+import { useAuth } from '../../context/AuthContext';
+import { can } from '../../config/permissions';
 
 export default function CustomerList({ 
   customers, 
@@ -12,6 +14,7 @@ export default function CustomerList({
   onOpenAddVisit,
   onViewCustomerProfile 
 }) {
+  const { role } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [depthFilter, setDepthFilter] = useState('ALL');
   const [expandedCustomerId, setExpandedCustomerId] = useState(null);
@@ -68,13 +71,15 @@ export default function CustomerList({
           </select>
         </div>
 
-        <button
-          onClick={onNewCustomer}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors shrink-0 shadow-sm"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Tiếp nhận khách hàng mới</span>
-        </button>
+        {can(role, 'manageCustomers') && (
+          <button
+            onClick={onNewCustomer}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors shrink-0 shadow-sm"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Tiếp nhận khách hàng mới</span>
+          </button>
+        )}
       </div>
 
       {/* Table */}
@@ -241,14 +246,16 @@ export default function CustomerList({
                             <span>Hồ sơ</span>
                           </button>
 
-                          <button
-                            onClick={() => onOpenAddVisit(cust, totalRevenue)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded transition-colors"
-                            title="Ghi nhận lần tái khám / điều trị bổ sung"
-                          >
-                            <DollarSign className="w-3.5 h-3.5 text-sky-600" />
-                            <span>+ Doanh thu</span>
-                          </button>
+                          {can(role, 'recordVisit') && (
+                            <button
+                              onClick={() => onOpenAddVisit(cust, totalRevenue)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded transition-colors"
+                              title="Ghi nhận lần tái khám / điều trị bổ sung"
+                            >
+                              <DollarSign className="w-3.5 h-3.5 text-sky-600" />
+                              <span>+ Doanh thu</span>
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

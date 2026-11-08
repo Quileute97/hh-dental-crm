@@ -13,12 +13,15 @@ import {
 } from 'lucide-react';
 import { formatVND, formatDate } from '../../utils/formatters';
 import { exportSettlementToCSV } from '../../services/exportService';
+import { useAuth } from '../../context/AuthContext';
+import { can } from '../../config/permissions';
 
 export default function SettlementView({ 
   month, 
   settlementResult, 
   onConfirmSettlement 
 }) {
+  const { role } = useAuth();
   const {
     periodRevenue = 0,
     totalCtvCommission = 0,
@@ -92,31 +95,35 @@ export default function SettlementView({
 
         {/* Action buttons: 3.5 Chốt sổ tháng & 3.6 Xuất CSV */}
         <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-          <button
-            onClick={handleExport}
-            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-md transition-colors"
-          >
-            <Download className="w-3.5 h-3.5 text-slate-500" />
-            <span>Xuất CSV đối soát (BOM)</span>
-          </button>
+          {can(role, 'exportCsv') && (
+            <button
+              onClick={handleExport}
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-md transition-colors"
+            >
+              <Download className="w-3.5 h-3.5 text-slate-500" />
+              <span>Xuất CSV đối soát (BOM)</span>
+            </button>
+          )}
 
-          {isFullySettled ? (
-            <button
-              onClick={handleSettleClick}
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-md transition-colors"
-              title="Kỳ này đã chốt. Bấm để chốt lại nếu có thay đổi"
-            >
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>Đã chốt sổ (Bấm để tính lại)</span>
-            </button>
-          ) : (
-            <button
-              onClick={handleSettleClick}
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors shadow-sm"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Chốt sổ tháng {month}</span>
-            </button>
+          {can(role, 'settleMonth') && (
+            isFullySettled ? (
+              <button
+                onClick={handleSettleClick}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-md transition-colors"
+                title="Kỳ này đã chốt. Bấm để chốt lại nếu có thay đổi"
+              >
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>Đã chốt sổ (Bấm để tính lại)</span>
+              </button>
+            ) : (
+              <button
+                onClick={handleSettleClick}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors shadow-sm"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Chốt sổ tháng {month}</span>
+              </button>
+            )
           )}
         </div>
       </div>

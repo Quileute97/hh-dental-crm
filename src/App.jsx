@@ -18,6 +18,9 @@ const PartnerList = React.lazy(() => import('./components/Partners/PartnerList')
 const CustomerList = React.lazy(() => import('./components/Customers/CustomerList'));
 const SettlementView = React.lazy(() => import('./components/Commissions/SettlementView'));
 const ReportsView = React.lazy(() => import('./components/Reports/ReportsView'));
+const AccountsView = React.lazy(() => import('./components/Accounts/AccountsView'));
+import RequirePermission from './components/Common/RequirePermission';
+import { can } from './config/permissions';
 
 import {
   fetchAllData,
@@ -35,7 +38,7 @@ import {
 import { calculateMonthlySettlement, COMMISSION_POLICY } from './services/commissionEngine';
 import { useAuth } from './context/AuthContext';
 import { formatVND } from './utils/formatters';
-import { CheckCircle2, Network, List, Info } from 'lucide-react';
+import { CheckCircle2, Network, List, Info, AlertTriangle, AlertCircle, ArrowLeft } from 'lucide-react';
 
 export default function App() {
   const { user, loading: authLoading, role, partnerId, isAdmin, isAccountant, isFrontdesk, isPartner } = useAuth();
@@ -82,20 +85,31 @@ export default function App() {
 
   // Toast notification
   const [toastMessage, setToastMessage] = useState(null);
+  const [loadError, setLoadError] = useState(null);
 
   // Khởi tạo và nạp dữ liệu từ Backend Supabase Postgres khi có phiên đăng nhập
-  useEffect(() => {
-    let active = true;
-    async function loadData() {
-      if (!user) return;
-      const { data: initialData, isServer } = await fetchAllData();
-      if (active) {
-        setData(initialData);
-        setIsServerOnline(isServer);
+  async function loadData() {
+    if (!user) return;
+    setLoadError(null);
+    try {
+      const res = await fetchAllData();
+      if (!res.data && import.meta.env.PROD) {
+        setLoadError(res.error || 'Không thể kết nối với máy chủ Supabase. Vui lòng kiểm tra lại cấu hình.');
+        setIsServerOnline(false);
+      } else {
+        setData(res.data || { partners: [], services: [], customers: [], visits: [], settlements: [] });
+        setIsServerOnline(res.isServer);
+      }
+    } catch (err) {
+      if (import.meta.env.PROD) {
+        setLoadError(err.message || 'Lỗi kết nối máy chủ Supabase.');
+        setIsServerOnline(false);
       }
     }
+  }
+
+  useEffect(() => {
     loadData();
-    return () => { active = false; };
   }, [user]);
 
   // Gọi Postgres RPC compute_month trên Supabase khi thay đổi tháng hoặc dữ liệu
@@ -121,19 +135,21 @@ export default function App() {
     return () => { cancelled = true; };
   }, [selectedMonth, data, user]);
 
-  // Kiểm tra phân quyền chuyển Tab
+  // Kiểm tra phân quyền chuyển Tab theo Ma trận can(role, ...)
+  const allowedTabs = useMemo(() => {
+    const list = ['dashboard', 'customers'];
+    if (can(role, 'viewOtherPartners')) list.push('partners');
+    if (can(role, 'settleMonth')) list.push('commissions');
+    if (can(role, 'viewSystemRevenue')) list.push('reports');
+    if (can(role, 'manageAccounts')) list.push('accounts');
+    return list;
+  }, [role]);
+
   useEffect(() => {
-    const rolePermissions = {
-      admin: ['dashboard', 'partners', 'customers', 'commissions', 'reports'],
-      accountant: ['dashboard', 'partners', 'customers', 'commissions', 'reports'],
-      frontdesk: ['dashboard', 'partners', 'customers'],
-      partner: ['dashboard', 'customers', 'commissions']
-    };
-    const allowed = rolePermissions[role] || rolePermissions.admin;
-    if (!allowed.includes(activeTab)) {
+    if (allowedTabs.length > 0 && !allowedTabs.includes(activeTab)) {
       setActiveTab('dashboard');
     }
-  }, [role, activeTab]);
+  }, [role, allowedTabs]);
 
   function showToast(message, type = 'success') {
     setToastMessage({ message, type });
@@ -490,6 +506,32 @@ export default function App() {
     return <LoginScreen onLoginSuccess={() => { }} />;
   }
 
+  // Chặn dữ liệu giả trên Production khi không kết nối được máy chủ
+  if (import.meta.env.PROD && loadError) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50 p-4">
+        <div className="max-w-md w-full bg-white rounded-xl border border-rose-200 p-6 text-center shadow-lg space-y-4">
+          <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+            <AlertTriangle className="w-6 h-6" />
+          </div>
+          <h3 className="font-bold text-slate-900 text-base">Không thể kết nối máy chủ Supabase</h3>
+          <p className="text-xs text-slate-600 leading-relaxed">
+            {loadError}
+          </p>
+          <p className="text-[11px] text-amber-800 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+            Cảnh báo: Hệ thống đã chặn nạp dữ liệu mẫu trên môi trường Production để bảo đảm an toàn số liệu.
+          </p>
+          <button
+            onClick={loadData}
+            className="w-full py-2.5 px-4 bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs rounded-lg transition-colors shadow-xs"
+          >
+            Thử lại kết nối
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden text-slate-800">
       {/* Sidebar */}
@@ -504,6 +546,25 @@ export default function App() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Banner cảnh báo Offline / Dữ liệu mẫu */}
+        {!isServerOnline && (
+          import.meta.env.PROD ? (
+            <div className="bg-rose-600 text-white px-4 py-2 text-xs font-bold flex items-center justify-between shrink-0 shadow-xs">
+              <span>🚨 CẢNH BÁO: Mất kết nối máy chủ Supabase — Dữ liệu hiển thị có thể không chính xác!</span>
+              <button onClick={loadData} className="underline text-white font-normal hover:text-slate-100 text-xs">
+                Thử lại
+              </button>
+            </div>
+          ) : (
+            <div className="bg-amber-100 text-amber-900 border-b border-amber-300 px-4 py-2 text-xs font-semibold flex items-center justify-between shrink-0">
+              <span>⚠️ DỮ LIỆU MẪU (dev) — Đang sử dụng seed cục bộ, chưa kết nối được máy chủ Supabase</span>
+              <button onClick={loadData} className="underline text-amber-900 font-normal hover:text-amber-950 text-xs">
+                Thử lại
+              </button>
+            </div>
+          )
+        )}
+
         {/* Top Header with Month Selector */}
         <Header
           selectedMonth={selectedMonth}
@@ -528,10 +589,14 @@ export default function App() {
           {activeTab === 'dashboard' && (
             <div className="space-y-6">
               {/* 4 Chỉ số: Doanh thu kỳ · Hoa hồng CTV · Phần nền tảng · Phí nhánh 1% */}
-              <StatCards settlementResult={displayedSettlementResult} />
+              <StatCards 
+                settlementResult={displayedSettlementResult} 
+                customers={displayedCustomers}
+                visits={data.visits}
+              />
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
+                <div className={can(role, 'viewOtherPartners') ? "lg:col-span-2" : "lg:col-span-3"}>
                   <RecentReferrals
                     settlementResult={displayedSettlementResult}
                     onNavigateTab={setActiveTab}
@@ -539,12 +604,14 @@ export default function App() {
                     customers={displayedCustomers}
                   />
                 </div>
-                <div className="lg:col-span-1">
-                  <TopPartners
-                    settlementResult={displayedSettlementResult}
-                    onNavigateTab={setActiveTab}
-                  />
-                </div>
+                {can(role, 'viewOtherPartners') && (
+                  <div className="lg:col-span-1">
+                    <TopPartners
+                      settlementResult={displayedSettlementResult}
+                      onNavigateTab={setActiveTab}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -552,58 +619,60 @@ export default function App() {
           <Suspense fallback={<div className="p-8 text-center text-slate-400 text-xs">Đang nạp dữ liệu phân hệ...</div>}>
             {/* TAB 2: ĐỐI TÁC (PARTNERS) */}
             {activeTab === 'partners' && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-base font-bold text-slate-900">
-                      Cây Đối Tác & Phí Nhánh 1% (Kỳ {selectedMonth})
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Mạng lưới đối tác không giới hạn độ sâu — Phí nhánh 1% tính trên toàn bộ cây con trực tiếp
-                    </p>
+              <RequirePermission role={role} action="viewOtherPartners" onBack={() => setActiveTab('dashboard')}>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-base font-bold text-slate-900">
+                        Cây Đối Tác & Phí Nhánh 1% (Kỳ {selectedMonth})
+                      </h2>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Mạng lưới đối tác không giới hạn độ sâu — Phí nhánh 1% tính trên toàn bộ cây con trực tiếp
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-md p-1 text-xs">
+                      <button
+                        onClick={() => setPartnerViewMode('tree')}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded transition-colors ${partnerViewMode === 'tree'
+                            ? 'bg-sky-50 text-sky-700 font-semibold'
+                            : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                      >
+                        <Network className="w-3.5 h-3.5" />
+                        <span>Dạng Cây (Tree)</span>
+                      </button>
+                      <button
+                        onClick={() => setPartnerViewMode('list')}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded transition-colors ${partnerViewMode === 'list'
+                            ? 'bg-sky-50 text-sky-700 font-semibold'
+                            : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                      >
+                        <List className="w-3.5 h-3.5" />
+                        <span>Dạng Bảng (List)</span>
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-md p-1 text-xs">
-                    <button
-                      onClick={() => setPartnerViewMode('tree')}
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded transition-colors ${partnerViewMode === 'tree'
-                          ? 'bg-sky-50 text-sky-700 font-semibold'
-                          : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                    >
-                      <Network className="w-3.5 h-3.5" />
-                      <span>Dạng Cây (Tree)</span>
-                    </button>
-                    <button
-                      onClick={() => setPartnerViewMode('list')}
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded transition-colors ${partnerViewMode === 'list'
-                          ? 'bg-sky-50 text-sky-700 font-semibold'
-                          : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                    >
-                      <List className="w-3.5 h-3.5" />
-                      <span>Dạng Bảng (List)</span>
-                    </button>
-                  </div>
+                  {partnerViewMode === 'tree' ? (
+                    <PartnerTree
+                      partners={displayedPartners}
+                      settlementResult={displayedSettlementResult}
+                      onAddPartner={handleOpenNewPartner}
+                      onSelectPartner={handleEditPartner}
+                    />
+                  ) : (
+                    <PartnerList
+                      partners={displayedPartners}
+                      settlementResult={displayedSettlementResult}
+                      onAddPartner={handleOpenNewPartner}
+                      onEditPartner={handleEditPartner}
+                      onToggleStatus={handleTogglePartnerStatus}
+                    />
+                  )}
                 </div>
-
-                {partnerViewMode === 'tree' ? (
-                  <PartnerTree
-                    partners={displayedPartners}
-                    settlementResult={displayedSettlementResult}
-                    onAddPartner={handleOpenNewPartner}
-                    onSelectPartner={handleEditPartner}
-                  />
-                ) : (
-                  <PartnerList
-                    partners={displayedPartners}
-                    settlementResult={displayedSettlementResult}
-                    onAddPartner={handleOpenNewPartner}
-                    onEditPartner={handleEditPartner}
-                    onToggleStatus={handleTogglePartnerStatus}
-                  />
-                )}
-              </div>
+              </RequirePermission>
             )}
 
             {/* TAB 3: KHÁCH HÀNG (CUSTOMERS) */}
@@ -629,32 +698,63 @@ export default function App() {
 
             {/* TAB 4: QUYẾT TOÁN (SETTLEMENTS) */}
             {activeTab === 'commissions' && (
-              <div className="space-y-4">
-                <SettlementView
-                  month={selectedMonth}
-                  settlementResult={displayedSettlementResult}
-                  onConfirmSettlement={handleConfirmSettlement}
-                />
-              </div>
+              <RequirePermission role={role} action="settleMonth" onBack={() => setActiveTab('dashboard')}>
+                <div className="space-y-4">
+                  <SettlementView
+                    month={selectedMonth}
+                    settlementResult={displayedSettlementResult}
+                    onConfirmSettlement={handleConfirmSettlement}
+                  />
+                </div>
+              </RequirePermission>
             )}
 
             {/* TAB 5: BÁO CÁO (REPORTS) */}
             {activeTab === 'reports' && (
-              <div className="space-y-4">
-                <div>
-                  <h2 className="text-base font-bold text-slate-900">Báo Cáo Đối Soát & Xuất CSV (BOM UTF-8)</h2>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Tải bảng đối soát kế toán và danh sách khách hàng mở trực tiếp trên Excel không lỗi font tiếng Việt
-                  </p>
-                </div>
+              <RequirePermission role={role} action="viewSystemRevenue" onBack={() => setActiveTab('dashboard')}>
+                <div className="space-y-4">
+                  <div>
+                    <h2 className="text-base font-bold text-slate-900">Báo Cáo Đối Soát & Xuất CSV (BOM UTF-8)</h2>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Tải bảng đối soát kế toán và danh sách khách hàng mở trực tiếp trên Excel không lỗi font tiếng Việt
+                    </p>
+                  </div>
 
-                <ReportsView
-                  month={selectedMonth}
-                  customers={data.customers}
-                  visits={data.visits}
-                  partners={data.partners}
-                  settlementResult={settlementResult}
-                />
+                  <ReportsView
+                    month={selectedMonth}
+                    customers={data.customers}
+                    visits={data.visits}
+                    partners={data.partners}
+                    settlementResult={settlementResult}
+                  />
+                </div>
+              </RequirePermission>
+            )}
+
+            {/* TAB 6: TÀI KHOẢN & PHÂN QUYỀN (ACCOUNTS - ADMIN) */}
+            {activeTab === 'accounts' && (
+              <RequirePermission role={role} action="manageAccounts" onBack={() => setActiveTab('dashboard')}>
+                <AccountsView partners={data.partners} showToast={showToast} />
+              </RequirePermission>
+            )}
+
+            {/* SOFT 404: KHÔNG TÌM THẤY TRANG */}
+            {!['dashboard', 'partners', 'customers', 'commissions', 'reports', 'accounts'].includes(activeTab) && (
+              <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+                <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 mb-4">
+                  <AlertCircle className="w-8 h-8" />
+                </div>
+                <h3 className="text-base font-bold text-slate-900 mb-1">Không tìm thấy trang</h3>
+                <p className="text-xs text-slate-500 mb-6 max-w-sm">
+                  Đường dẫn hoặc phân hệ bạn yêu cầu không tồn tại hoặc tài khoản không được phân quyền truy cập.
+                </p>
+                <button
+                  onClick={() => setActiveTab('dashboard')}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-lg shadow-xs transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Quay lại Bảng điều khiển
+                </button>
               </div>
             )}
           </Suspense>

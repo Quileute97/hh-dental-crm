@@ -1,6 +1,6 @@
 import React from 'react';
-import { FileSpreadsheet, Download, Filter, Calendar, Users, CheckCircle2, ShieldCheck, DollarSign, GitFork } from 'lucide-react';
-import { exportSettlementToCSV, exportCustomersToCSV } from '../../services/exportService';
+import { FileSpreadsheet, Download, Filter, Calendar, Users, CheckCircle2, ShieldCheck, DollarSign, GitFork, Stethoscope } from 'lucide-react';
+import { exportSettlementToCSV, exportCustomersToCSV, exportVisitsToCSV } from '../../services/exportService';
 import { formatVND } from '../../utils/formatters';
 
 export default function ReportsView({ 
@@ -28,31 +28,35 @@ export default function ReportsView({
     exportCustomersToCSV(customers, visits, partners);
   }
 
+  function handleExportVisits() {
+    exportVisitsToCSV(visits, customers);
+  }
+
   return (
     <div className="space-y-5">
-      {/* 2 Thẻ tải file báo cáo chuẩn UTF-8 BOM */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* 3 Thẻ tải file báo cáo chuẩn UTF-8 BOM */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Card 1: Bảng đối soát chốt sổ kế toán tháng */}
         <div className="bg-white border border-slate-200 rounded-lg p-5 flex flex-col justify-between shadow-xs">
           <div>
             <div className="flex items-center gap-2.5 text-sky-700">
               <FileSpreadsheet className="w-5 h-5" />
               <h3 className="font-bold text-sm text-slate-900">
-                Bảng Kê Đối Soát Quyết Toán Tháng (Kỳ {month})
+                Bảng Đối Soát Quyết Toán ({month})
               </h3>
             </div>
             <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-              Trích xuất tệp CSV/Excel chuẩn đối soát 8 cột bắt buộc: <strong>Đối tác, Tên, Cấp trên, Sổ khách, Doanh thu nhánh, Hoa hồng, Phí nhánh 1%, Tổng phải trả</strong>. Kèm thông tin tài khoản ngân hàng.
+              Trích xuất CSV chuẩn 8 cột: Đối tác, Tên, Cấp trên, Sổ khách, Doanh thu nhánh, Hoa hồng, Phí nhánh 1%, Tổng phải trả.
             </p>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-            <span className="text-[11px] text-slate-400">Chuẩn BOM UTF-8 không lỗi font tiếng Việt</span>
+            <span className="text-[11px] text-slate-400">BOM UTF-8</span>
             <button
               onClick={handleExportSettlement}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors shadow-sm"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Tải bảng đối soát ({month})</span>
+              <span>Tải đối soát</span>
             </button>
           </div>
         </div>
@@ -63,21 +67,46 @@ export default function ReportsView({
             <div className="flex items-center gap-2.5 text-emerald-700">
               <Users className="w-5 h-5" />
               <h3 className="font-bold text-sm text-slate-900">
-                Báo Cáo Chuỗi Khách Hàng & Doanh Thu Trọn Đời
+                Chuỗi Khách Hàng ({customers.length})
               </h3>
             </div>
             <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-              Xuất toàn bộ cây khách hàng đa độ sâu: <strong>Mã KH, Tên, CTV sở hữu, Khách giới thiệu, Độ sâu (Depth), Dịch vụ điều trị, Doanh thu cộng dồn qua các lần tái khám</strong>.
+              Xuất toàn bộ cây khách hàng đa độ sâu: Mã KH, Tên, CTV sở hữu, Người giới thiệu, Độ sâu, Gói điều trị, Doanh thu tích lũy.
             </p>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-            <span className="text-[11px] text-slate-400">{customers.length} khách hàng trong chuỗi</span>
+            <span className="text-[11px] text-slate-400">BOM UTF-8</span>
             <button
               onClick={handleExportCustomers}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md transition-colors shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md transition-colors shadow-sm"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Tải danh sách chuỗi khách</span>
+              <span>Tải chuỗi khách</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Card 3: Báo cáo lượt khám & Lâm sàng */}
+        <div className="bg-white border border-slate-200 rounded-lg p-5 flex flex-col justify-between shadow-xs">
+          <div>
+            <div className="flex items-center gap-2.5 text-purple-700">
+              <Stethoscope className="w-5 h-5" />
+              <h3 className="font-bold text-sm text-slate-900">
+                Lượt Khám & Lâm Sàng ({visits.length})
+              </h3>
+            </div>
+            <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+              Chi tiết các lượt điều trị: Mã lượt khám, Khách hàng, Bước điều trị, Số tiền, Trạng thái thanh toán, Thời gian khám.
+            </p>
+          </div>
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+            <span className="text-[11px] text-slate-400">BOM UTF-8</span>
+            <button
+              onClick={handleExportVisits}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-md transition-colors shadow-sm"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Tải lượt khám</span>
             </button>
           </div>
         </div>

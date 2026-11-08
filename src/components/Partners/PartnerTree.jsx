@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { buildPartnerTree } from '../../services/commissionEngine';
 import { formatVND } from '../../utils/formatters';
+import { useAuth } from '../../context/AuthContext';
+import { can } from '../../config/permissions';
 
 export default function PartnerTree({ 
   partners, 
@@ -22,6 +24,7 @@ export default function PartnerTree({
   onAddPartner, 
   onSelectPartner 
 }) {
+  const { role } = useAuth();
   const treeRoots = buildPartnerTree(partners);
 
   return (
@@ -39,13 +42,15 @@ export default function PartnerTree({
             </p>
           </div>
         </div>
-        <button
-          onClick={() => onAddPartner()}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded shadow-sm transition-colors shrink-0"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Thêm đối tác gốc mới</span>
-        </button>
+        {can(role, 'managePartners') && (
+          <button
+            onClick={() => onAddPartner()}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded shadow-sm transition-colors shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Thêm đối tác gốc mới</span>
+          </button>
+        )}
       </div>
 
       {/* Tree container */}
@@ -63,6 +68,7 @@ export default function PartnerTree({
                 settlementResult={settlementResult}
                 onSelectPartner={onSelectPartner}
                 onAddSubPartner={(parentId) => onAddPartner(parentId)}
+                canManagePartners={can(role, 'managePartners')}
               />
             ))}
           </div>
@@ -72,7 +78,7 @@ export default function PartnerTree({
   );
 }
 
-function TreeNode({ node, settlementResult, onSelectPartner, onAddSubPartner }) {
+function TreeNode({ node, settlementResult, onSelectPartner, onAddSubPartner, canManagePartners }) {
   const [isExpanded, setIsExpanded] = useState(true);
 
   const row = settlementResult?.partnerRows?.find(r => r.partnerId === node.id) || {
@@ -162,13 +168,15 @@ function TreeNode({ node, settlementResult, onSelectPartner, onAddSubPartner }) 
             >
               Chi tiết
             </button>
-            <button
-              onClick={() => onAddSubPartner(node.id)}
-              className="inline-flex items-center gap-1 text-sky-600 hover:text-sky-700 bg-sky-50 hover:bg-sky-100 px-2 py-0.5 rounded font-semibold transition-colors"
-            >
-              <Plus className="w-3 h-3" />
-              <span>Thêm con</span>
-            </button>
+            {canManagePartners && (
+              <button
+                onClick={() => onAddSubPartner(node.id)}
+                className="inline-flex items-center gap-1 text-sky-600 hover:text-sky-700 bg-sky-50 hover:bg-sky-100 px-2 py-0.5 rounded font-semibold transition-colors"
+              >
+                <Plus className="w-3 h-3" />
+                <span>Thêm con</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -183,6 +191,7 @@ function TreeNode({ node, settlementResult, onSelectPartner, onAddSubPartner }) 
               settlementResult={settlementResult}
               onSelectPartner={onSelectPartner}
               onAddSubPartner={onAddSubPartner}
+              canManagePartners={canManagePartners}
             />
           ))}
         </div>

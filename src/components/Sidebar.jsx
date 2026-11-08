@@ -11,9 +11,11 @@ import {
   GitFork,
   LogOut,
   ShieldCheck,
-  UserCheck
+  UserCheck,
+  UserCog
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { can } from '../config/permissions';
 
 export default function Sidebar({ 
   activeTab, 
@@ -31,7 +33,7 @@ export default function Sidebar({
       label: 'Tổng quan điều hành',
       icon: LayoutDashboard,
       badge: null,
-      roles: ['admin', 'accountant', 'frontdesk', 'partner'],
+      visible: true,
     },
     {
       id: 'partners',
@@ -39,7 +41,7 @@ export default function Sidebar({
       icon: Network,
       badge: 'Phí 1%',
       badgeColor: 'sky',
-      roles: ['admin', 'accountant', 'frontdesk'],
+      visible: can(role, 'viewOtherPartners'),
     },
     {
       id: 'customers',
@@ -47,7 +49,7 @@ export default function Sidebar({
       icon: Users,
       badge: 'Độ sâu',
       badgeColor: 'emerald',
-      roles: ['admin', 'accountant', 'frontdesk', 'partner'],
+      visible: true,
     },
     {
       id: 'commissions',
@@ -55,7 +57,7 @@ export default function Sidebar({
       icon: Coins,
       badge: settlementStatus?.isFullySettled ? 'Đã chốt' : 'Cần chốt',
       badgeColor: settlementStatus?.isFullySettled ? 'emerald' : 'amber',
-      roles: ['admin', 'accountant', 'partner'],
+      visible: can(role, 'settleMonth'),
     },
     {
       id: 'reports',
@@ -63,18 +65,26 @@ export default function Sidebar({
       icon: FileSpreadsheet,
       badge: 'BOM UTF-8',
       badgeColor: 'slate',
-      roles: ['admin', 'accountant'],
+      visible: can(role, 'viewSystemRevenue'),
+    },
+    {
+      id: 'accounts',
+      label: 'Tài khoản & Phân quyền',
+      icon: UserCog,
+      badge: 'Admin',
+      badgeColor: 'purple',
+      visible: can(role, 'manageAccounts'),
     },
   ];
 
-  // Lọc Menu theo Role Supabase Auth
-  const visibleMenuItems = allMenuItems.filter(item => item.roles.includes(role || 'admin'));
+  // Lọc Menu theo Ma trận Phân quyền can(role, ...)
+  const visibleMenuItems = allMenuItems.filter(item => item.visible);
 
   const roleLabels = {
-    admin: { label: 'Quản Trị Viên', color: 'bg-sky-100 text-sky-800 border-sky-300' },
-    accountant: { label: 'Kế Toán Trưởng', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
-    frontdesk: { label: 'Lễ Tân Tiếp Đón', color: 'bg-amber-100 text-amber-800 border-amber-300' },
-    partner: { label: 'Đối Tác CTV', color: 'bg-purple-100 text-purple-800 border-purple-300' },
+    admin: { label: 'Quản Trị Viên', color: 'bg-purple-100 text-purple-800 border-purple-300' },
+    accountant: { label: 'Kế Toán Trưởng', color: 'bg-blue-100 text-blue-800 border-blue-300' },
+    frontdesk: { label: 'Lễ Tân Tiếp Đón', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+    partner: { label: 'Đối Tác CTV', color: 'bg-amber-100 text-amber-800 border-amber-300' },
   };
 
   const currentRoleInfo = roleLabels[role] || roleLabels.admin;
@@ -141,7 +151,7 @@ export default function Sidebar({
           );
         })}
 
-        {isAdmin && (
+        {can(role, 'viewAudit') && (
           <div className="pt-2">
             <button
               onClick={onOpenAuditLogs}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Plus, Calendar, Users, PackagePlus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { can } from '../config/permissions';
 
 export default function Header({
   selectedMonth,
@@ -9,7 +10,7 @@ export default function Header({
   onOpenNewPartner,
   onOpenServicePackages
 }) {
-  const { role, isAdmin, isAccountant, isFrontdesk } = useAuth();
+  const { role } = useAuth();
 
   return (
     <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0">
@@ -39,8 +40,8 @@ export default function Header({
           />
         </div>
 
-        {/* Nút Thêm Gói dịch vụ - Chỉ Admin/Accountant/Frontdesk */}
-        {(isAdmin || isAccountant || isFrontdesk) && (
+        {/* Nút Thêm Gói dịch vụ - Chỉ Admin (can: manageServices) */}
+        {can(role, 'manageServices') && (
           <button
             onClick={onOpenServicePackages}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-sky-700 bg-sky-50 border border-sky-200 hover:bg-sky-100 rounded-md transition-colors shadow-2xs"
@@ -51,8 +52,8 @@ export default function Header({
           </button>
         )}
 
-        {/* Nút Thêm đối tác - Chỉ Admin */}
-        {isAdmin && (
+        {/* Nút Thêm đối tác - Chỉ Admin (can: managePartners) */}
+        {can(role, 'managePartners') && (
           <button
             onClick={onOpenNewPartner}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-md transition-colors"
@@ -62,8 +63,8 @@ export default function Header({
           </button>
         )}
 
-        {/* Nút Khách hàng mới - Admin & Frontdesk */}
-        {(isAdmin || isFrontdesk) && (
+        {/* Nút Khách hàng mới - Admin & Frontdesk (can: manageCustomers) */}
+        {can(role, 'manageCustomers') && (
           <button
             onClick={onOpenNewCustomer}
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors shadow-sm"

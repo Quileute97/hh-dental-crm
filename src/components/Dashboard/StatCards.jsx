@@ -1,10 +1,25 @@
-import React from 'react';
-import { DollarSign, Percent, TrendingUp, GitFork, Award } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { 
+  DollarSign, 
+  Percent, 
+  TrendingUp, 
+  GitFork, 
+  Award, 
+  Users, 
+  CalendarCheck, 
+  AlertCircle, 
+  Gift 
+} from 'lucide-react';
 import { formatVND } from '../../utils/formatters';
 import { useAuth } from '../../context/AuthContext';
+import { can } from '../../config/permissions';
 
-export default function StatCards({ settlementResult }) {
-  const { isPartner } = useAuth();
+export default function StatCards({ 
+  settlementResult = {}, 
+  customers = [], 
+  visits = [] 
+}) {
+  const { role, isPartner, isFrontdesk } = useAuth();
   const {
     periodRevenue = 0,
     totalCtvCommission = 0,
@@ -12,17 +27,124 @@ export default function StatCards({ settlementResult }) {
     totalBranchFee = 0,
     totalCost = 0,
     costPercent = 0,
-    month = ''
+    month = '',
+    summary = {}
   } = settlementResult || {};
 
+  // Tính toán các chỉ số vận hành lâm sàng & công nợ
+  const { todayCustomers, todayVisits, debtAmount, totalCredits } = useMemo(() => {
+    const todayStr = new Date().toISOString().slice(0, 10);
+
+    let custCount = 0;
+    (customers || []).forEach(c => {
+      if (c.createdAt && c.createdAt.slice(0, 10) === todayStr) {
+        custCount++;
+      }
+    });
+
+    let visitCount = 0;
+    let debt = 0;
+    (visits || []).forEach(v => {
+      if (v.occurredAt && v.occurredAt.slice(0, 10) === todayStr) {
+        visitCount++;
+      }
+      const st = (v.paymentStatus || '').toLowerCase();
+      const note = (v.note || '').toLowerCase();
+      if (st === 'pending' || st === 'partial' || note.includes('chưa thanh toán') || note.includes('ghi nợ') || note.includes('thanh toán một phần')) {
+        debt += Number(v.amount || 0);
+      }
+    });
+
+    return {
+      todayCustomers: custCount,
+      todayVisits: visitCount,
+      debtAmount: debt,
+      totalCredits: summary.totalCredit || 0
+    };
+  }, [customers, visits, summary]);
+
+  // --------------------------------------------------------------------------
+  // 1. GIAO DIỆN LỄ TÂN (FRONTDESK): CHỈ HIỂN THỊ KPI VẬN HÀNH & CÔNG NỢ
+  // Ẩn hoàn toàn doanh thu hệ thống, hoa hồng CTV và lợi nhuận giữ lại
+  // --------------------------------------------------------------------------
+  if (isFrontdesk) {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* KPI 1: Khách mới hôm nay */}
+          <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Khách mới hôm nay</span>
+              <div className="w-8 h-8 rounded-md bg-sky-50 text-sky-600 flex items-center justify-center">
+                <Users className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="text-2xl font-bold text-slate-900">{todayCustomers}</div>
+              <p className="text-[11px] text-slate-500 mt-1">Tiếp nhận tại phòng khám</p>
+            </div>
+          </div>
+
+          {/* KPI 2: Lượt khám hôm nay */}
+          <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Lượt điều trị hôm nay</span>
+              <div className="w-8 h-8 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <CalendarCheck className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="text-2xl font-bold text-emerald-700">{todayVisits}</div>
+              <p className="text-[11px] text-emerald-600 font-medium mt-1">Lượt khám & thủ thuật</p>
+            </div>
+          </div>
+
+          {/* KPI 3: Công nợ khách hàng (Pending + Partial) */}
+          <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Công nợ (Chưa thu)</span>
+              <div className="w-8 h-8 rounded-md bg-amber-50 text-amber-600 flex items-center justify-center">
+                <AlertCircle className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="text-2xl font-bold text-amber-700">{formatVND(debtAmount)}</div>
+              <p className="text-[11px] text-amber-600 font-medium mt-1">Chờ thu viện phí / Trả góp</p>
+            </div>
+          </div>
+
+          {/* KPI 4: Credit giới thiệu đã phát */}
+          <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Credit đã phát</span>
+              <div className="w-8 h-8 rounded-md bg-purple-50 text-purple-600 flex items-center justify-center">
+                <Gift className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="text-2xl font-bold text-purple-700">{formatVND(totalCredits)}</div>
+              <p className="text-[11px] text-purple-600 font-medium mt-1">Thưởng khách giới thiệu khách</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // 2. GIAO DIỆN ĐỐI TÁC (PARTNER) VÀ ADMIN / ACCOUNTANT
+  // --------------------------------------------------------------------------
   return (
     <div className="space-y-4">
-      {/* 4 Chỉ số chính theo yêu cầu Plan V5 (Đối tác hiển thị 3 chỉ số cá nhân) */}
-      <div className={`grid grid-cols-1 sm:grid-cols-2 ${isPartner ? 'lg:grid-cols-3' : 'lg:grid-cols-4'} gap-4`}>
-        {/* Chỉ số 1: Doanh thu kỳ */}
+      {/* Hàng KPI chính */}
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${isPartner ? 'lg:grid-cols-4' : 'lg:grid-cols-4'} gap-4`}>
+        
+        {/* Chỉ số 1: Doanh thu */}
         <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Doanh thu kỳ</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              {isPartner ? 'Doanh thu của tôi' : 'Doanh thu hệ thống'}
+            </span>
             <div className="w-8 h-8 rounded-md bg-sky-50 text-sky-600 flex items-center justify-center">
               <DollarSign className="w-4 h-4" />
             </div>
@@ -41,7 +163,9 @@ export default function StatCards({ settlementResult }) {
         {/* Chỉ số 2: Hoa hồng CTV */}
         <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Hoa hồng CTV</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              {isPartner ? 'Hoa hồng CTV nhận' : 'Hoa hồng CTV'}
+            </span>
             <div className="w-8 h-8 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <Award className="w-4 h-4" />
             </div>
@@ -54,25 +178,7 @@ export default function StatCards({ settlementResult }) {
           </div>
         </div>
 
-        {/* Chỉ số 3: Phần nền tảng (Ẩn hoàn toàn với role partner) */}
-        {!isPartner && (
-          <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Phần nền tảng (Sàn)</span>
-              <div className="w-8 h-8 rounded-md bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                <TrendingUp className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-3">
-              <div className="text-2xl font-bold text-indigo-700">{formatVND(totalPlatformShare)}</div>
-              <p className="text-[11px] text-indigo-600 font-medium mt-1">
-                Sàn không thu (0%) &bull; Hoàn toàn bộ về CTV
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Chỉ số 4: Phí nhánh 1% */}
+        {/* Chỉ số 3: Phí nhánh 1% */}
         <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Phí nhánh 1%</span>
@@ -83,14 +189,32 @@ export default function StatCards({ settlementResult }) {
           <div className="mt-3">
             <div className="text-2xl font-bold text-amber-700">{formatVND(totalBranchFee)}</div>
             <p className="text-[11px] text-slate-500 mt-1">
-              {isPartner ? 'Nhận từ doanh thu nhánh con' : 'Phân bổ cấp trên trên toàn nhánh con'}
+              {isPartner ? 'Nhận từ doanh thu nhánh con' : 'Phân bổ trên toàn nhánh con'}
+            </p>
+          </div>
+        </div>
+
+        {/* Chỉ số 4: Công nợ (Pending + Partial) */}
+        <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              {isPartner ? 'Công nợ khách của tôi' : 'Công nợ toàn hệ thống'}
+            </span>
+            <div className="w-8 h-8 rounded-md bg-purple-50 text-purple-600 flex items-center justify-center">
+              <AlertCircle className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-2xl font-bold text-purple-700">{formatVND(debtAmount)}</div>
+            <p className="text-[11px] text-purple-600 font-medium mt-1">
+              {isPartner ? 'Viện phí chưa hoàn tất' : 'Chờ thu / Chưa thanh toán'}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Dải tổng kết hiệu suất: Ẩn khối "Lợi nhuận giữ lại Nha khoa" & "Tỷ lệ tổng chi phí" với role partner */}
-      {!isPartner && (
+      {/* Dải tổng kết hiệu suất: CHỈ HIỂN THỊ VỚI ADMIN & ACCOUNTANT */}
+      {can(role, 'viewProfit') && (
         <div className="bg-slate-900 text-white rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-md bg-white/10 flex items-center justify-center text-sky-400">

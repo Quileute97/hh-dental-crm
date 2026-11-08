@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Search, Plus, Edit2, CheckCircle2, XCircle, Clock, ShieldCheck, CreditCard } from 'lucide-react';
 import { formatVND } from '../../utils/formatters';
+import { useAuth } from '../../context/AuthContext';
+import { can } from '../../config/permissions';
 
 export default function PartnerList({
   partners,
@@ -9,6 +11,7 @@ export default function PartnerList({
   onEditPartner,
   onToggleStatus
 }) {
+  const { role } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
 
   const partnerRows = settlementResult?.partnerRows || [];
@@ -37,13 +40,15 @@ export default function PartnerList({
           </div>
         </div>
 
-        <button
-          onClick={() => onAddPartner()}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors shrink-0"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Thêm đối tác mới</span>
-        </button>
+        {can(role, 'managePartners') && (
+          <button
+            onClick={() => onAddPartner()}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Thêm đối tác mới</span>
+          </button>
+        )}
       </div>
 
       {/* Table 3.3 Chuẩn Plan v5 */}
@@ -134,23 +139,27 @@ export default function PartnerList({
 
                     {/* Cột 9: Thao tác */}
                     <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          onClick={() => onEditPartner(partnerObj || row)}
-                          className="p-1.5 rounded hover:bg-slate-100 text-slate-500 hover:text-slate-800"
-                          title="Sửa đối tác"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => onToggleStatus(row.partnerId)}
-                          className={`p-1.5 rounded transition-colors ${isActive ? 'text-emerald-600 hover:bg-emerald-50' : 'text-slate-400 hover:bg-slate-100'
-                            }`}
-                          title={isActive ? 'Đang hoạt động (Bấm để tạm dừng)' : 'Đang tạm dừng (Bấm để kích hoạt)'}
-                        >
-                          {isActive ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
-                        </button>
-                      </div>
+                      {can(role, 'managePartners') ? (
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => onEditPartner(partnerObj || row)}
+                            className="p-1.5 rounded hover:bg-slate-100 text-slate-500 hover:text-slate-800"
+                            title="Sửa đối tác"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => onToggleStatus(row.partnerId)}
+                            className={`p-1.5 rounded transition-colors ${isActive ? 'text-emerald-600 hover:bg-emerald-50' : 'text-slate-400 hover:bg-slate-100'
+                              }`}
+                            title={isActive ? 'Đang hoạt động (Bấm để tạm dừng)' : 'Đang tạm dừng (Bấm để kích hoạt)'}
+                          >
+                            {isActive ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 font-mono">—</span>
+                      )}
                     </td>
                   </tr>
                 );

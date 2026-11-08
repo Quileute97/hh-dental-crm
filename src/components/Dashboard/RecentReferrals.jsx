@@ -1,6 +1,8 @@
 import React from 'react';
 import { Clock, ArrowRight, UserCheck, Shield, ExternalLink } from 'lucide-react';
 import { formatVND, formatDate } from '../../utils/formatters';
+import { useAuth } from '../../context/AuthContext';
+import { can } from '../../config/permissions';
 
 export default function RecentReferrals({ 
   settlementResult, 
@@ -8,7 +10,9 @@ export default function RecentReferrals({
   onViewCustomerProfile, 
   customers = [] 
 }) {
+  const { role } = useAuth();
   const visitBreakdowns = settlementResult?.visitBreakdowns || [];
+  const showFinancials = can(role, 'viewProfit');
 
   return (
     <div className="bg-white border border-slate-200 rounded-lg shadow-xs">
@@ -36,15 +40,19 @@ export default function RecentReferrals({
               <th className="py-2.5 px-4 text-center">Độ sâu (Depth)</th>
               <th className="py-2.5 px-4">Đối tác sở hữu (CTV)</th>
               <th className="py-2.5 px-4 text-right">Doanh thu visit</th>
-              <th className="py-2.5 px-4 text-right">Hoa hồng CTV</th>
-              <th className="py-2.5 px-4 text-right">Phần nền tảng</th>
+              {showFinancials && (
+                <>
+                  <th className="py-2.5 px-4 text-right">Hoa hồng CTV</th>
+                  <th className="py-2.5 px-4 text-right">Phần nền tảng</th>
+                </>
+              )}
               <th className="py-2.5 px-4 text-right">Thời gian</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {visitBreakdowns.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-8 text-center text-slate-400">
+                <td colSpan={showFinancials ? 7 : 5} className="py-8 text-center text-slate-400">
                   Chưa có lượt khám nào phát sinh trong kỳ này.
                 </td>
               </tr>
@@ -83,14 +91,18 @@ export default function RecentReferrals({
                   <td className="py-2.5 px-4 text-right font-bold text-slate-900">
                     {formatVND(item.amount)}
                   </td>
-                  <td className="py-2.5 px-4 text-right">
-                    <span className="font-bold text-emerald-700">{formatVND(item.ctvAmount)}</span>
-                    <span className="text-[10px] text-slate-400 block">({item.ctvRate}%)</span>
-                  </td>
-                  <td className="py-2.5 px-4 text-right">
-                    <span className="font-bold text-slate-400">{formatVND(item.platformAmount)}</span>
-                    <span className="text-[10px] text-emerald-600 font-medium block">Sàn 0% (Hoàn CTV)</span>
-                  </td>
+                  {showFinancials && (
+                    <>
+                      <td className="py-2.5 px-4 text-right">
+                        <span className="font-bold text-emerald-700">{formatVND(item.ctvAmount)}</span>
+                        <span className="text-[10px] text-slate-400 block">({item.ctvRate}%)</span>
+                      </td>
+                      <td className="py-2.5 px-4 text-right">
+                        <span className="font-bold text-slate-400">{formatVND(item.platformAmount)}</span>
+                        <span className="text-[10px] text-emerald-600 font-medium block">Sàn 0% (Hoàn CTV)</span>
+                      </td>
+                    </>
+                  )}
                   <td className="py-2.5 px-4 text-right text-slate-500 text-[11px]">
                     {formatDate(item.occurredAt)}
                   </td>
