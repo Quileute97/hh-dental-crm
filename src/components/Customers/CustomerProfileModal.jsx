@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   User, 
@@ -18,10 +18,13 @@ import {
   FileText, 
   Sparkles,
   ChevronRight,
-  Award
+  Award,
+  Stethoscope,
+  Check
 } from 'lucide-react';
 import { formatVND, formatDate } from '../../utils/formatters';
 import { calculateCustomerCredit, getCommissionRatesByCustomerDepth } from '../../services/commissionEngine';
+import { getPresetStepsForService, PAYMENT_STATUSES, parseVisitStepAndStatus } from '../../utils/treatmentSteps';
 
 export default function CustomerProfileModal({
   isOpen,
@@ -34,10 +37,33 @@ export default function CustomerProfileModal({
   onAddVisit
 }) {
   const [showAddVisitForm, setShowAddVisitForm] = useState(false);
-  const [visitAmount, setVisitAmount] = useState('');
+  const [visitPackage, setVisitPackage] = useState('');
+  const [visitStep, setVisitStep] = useState('');
+  const [visitAmount, setVisitAmount] = useState('5000000');
+  const [visitPaymentStatus, setVisitPaymentStatus] = useState('paid');
   const [visitNote, setVisitNote] = useState('');
   const [visitDate, setVisitDate] = useState(new Date().toISOString().substring(0, 10));
   const [visitError, setVisitError] = useState('');
+
+  useEffect(() => {
+    if (customer) {
+      const pkg = customer.treatment || services[0]?.name || 'Niềng răng trong suốt Invisalign';
+      setVisitPackage(pkg);
+      const steps = getPresetStepsForService(pkg);
+      const defaultStep = steps[1]?.name || steps[0]?.name || 'Gắn mắc cài / Điều trị chuyên sâu';
+      setVisitStep(defaultStep);
+
+      const matchedS = services.find(s => s.name === pkg);
+      const stepPrice = matchedS 
+        ? Math.round(matchedS.defaultPrice * (steps[1]?.defaultShare || 0.25)) 
+        : 5000000;
+      setVisitAmount(String(stepPrice > 0 ? stepPrice : 5000000));
+      setVisitPaymentStatus('paid');
+      setVisitNote('');
+      setVisitDate(new Date().toISOString().substring(0, 10));
+      setVisitError('');
+    }
+  }, [customer, services, showAddVisitForm]);
 
   if (!isOpen || !customer) return null;
 
@@ -69,6 +95,30 @@ export default function CustomerProfileModal({
   const accumulatedCredit = calculateCustomerCredit(customers, customer.id);
   const referredChildren = customers.filter(c => c.referrerCustomerId === customer.id);
 
+  const currentPresetSteps = getPresetStepsForService(visitPackage);
+  const matchedVisitServiceObj = services.find(s => s.name === visitPackage);
+
+  function handlePackageChange(packageName) {
+    setVisitPackage(packageName);
+    const steps = getPresetStepsForService(packageName);
+    const defaultStep = steps[1]?.name || steps[0]?.name || 'Điều trị lâm sàng';
+    setVisitStep(defaultStep);
+
+    const s = services.find(item => item.name === packageName);
+    if (s) {
+      const stepPrice = Math.round(s.defaultPrice * (steps[1]?.defaultShare || 0.25));
+      if (stepPrice > 0) setVisitAmount(String(stepPrice));
+    }
+  }
+
+  function handleSelectStep(stepObj) {
+    setVisitStep(stepObj.name);
+    if (matchedVisitServiceObj) {
+      const calculated = Math.round(matchedVisitServiceObj.defaultPrice * (stepObj.defaultShare || 0.2));
+      if (calculated > 0) setVisitAmount(String(calculated));
+    }
+  }
+
   function handleSaveNewVisit(e) {
     e.preventDefault();
     setVisitError('');
@@ -78,35 +128,44 @@ export default function CustomerProfileModal({
       setVisitError('Vui lòng nhập số tiền điều trị hợp lệ lớn hơn 0.');
       return;
     }
+    if (!visitStep.trim()) {
+      setVisitError('Vui lòng nhập hoặc chọn Nội dung điều trị (Step).');
+      return;
+    }
+
+    const statusLabel = visitPaymentStatus === 'paid' 
+      ? 'Đã thanh toán' 
+      : visitPaymentStatus === 'partial' 
+      ? 'Thanh toán một phần' 
+      : 'Chưa thanh toán';
+
+    const composedNote = `[${visitStep.trim()}] ${visitPackage} - ${statusLabel}${visitNote ? ` • ${visitNote.trim()}` : ''}`;
 
     if (onAddVisit) {
       onAddVisit({
         customerId: customer.id,
         amount: num,
-        note: visitNote.trim() || 'Tái khám / Đợt điều trị bổ sung',
+        package: visitPackage,
+        step: visitStep.trim(),
+        paymentStatus: visitPaymentStatus,
+        status: visitPaymentStatus,
+        note: composedNote,
         occurredAt: new Date(visitDate).toISOString()
       });
     }
 
     // Reset form
-    setVisitAmount('');
-    setVisitNote('');
     setShowAddVisitForm(false);
   }
 
-  function handleSelectQuickService(s) {
-    setVisitAmount(String(s.defaultPrice));
-    setVisitNote(s.name);
-  }
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-      <div className="bg-white rounded-xl border border-slate-200 max-w-3xl w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl border border-slate-200 max-w-3xl w-full my-6 max-h-[92vh] flex flex-col overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-100">
         
         {/* ================================================================= */}
         {/* HEADER HỒ SƠ KHÁCH HÀNG */}
         {/* ================================================================= */}
-        <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-sky-600 text-white font-bold flex items-center justify-center text-sm shadow-xs">
               {customer.name?.charAt(0)?.toUpperCase() || 'K'}
@@ -266,7 +325,7 @@ export default function CustomerProfileModal({
 
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-500">Gói đăng ký:</span>
-                <span className="font-bold text-slate-800 px-2 py-1 bg-slate-100 rounded text-xs border border-slate-200">
+                <span className="font-bold text-slate-800 px-2.5 py-1 bg-sky-50 text-sky-800 rounded-md text-xs border border-sky-200">
                   {customer.treatment || 'Chưa chọn gói'}
                 </span>
               </div>
@@ -332,38 +391,6 @@ export default function CustomerProfileModal({
                 />
               </div>
             </div>
-
-            {/* Tiến độ giai đoạn lâm sàng / điều trị */}
-            <div className="grid grid-cols-3 gap-2 pt-2 text-[11px]">
-              <div className="p-2 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center gap-1.5 font-medium">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span>1. Khám & Lên phác đồ</span>
-              </div>
-              <div className={`p-2 rounded border flex items-center gap-1.5 font-medium ${
-                custVisits.length > 0
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                  : 'bg-slate-50 border-slate-200 text-slate-500'
-              }`}>
-                {custVisits.length > 0 ? (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                ) : (
-                  <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                )}
-                <span>2. Điều trị ({custVisits.length} lượt)</span>
-              </div>
-              <div className={`p-2 rounded border flex items-center gap-1.5 font-medium ${
-                paymentPercent >= 100 && customer.status === 'completed'
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                  : 'bg-slate-50 border-slate-200 text-slate-500'
-              }`}>
-                {paymentPercent >= 100 && customer.status === 'completed' ? (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                ) : (
-                  <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                )}
-                <span>3. Hoàn tất & Chăm sóc</span>
-              </div>
-            </div>
           </div>
 
           {/* ================================================================= */}
@@ -380,7 +407,7 @@ export default function CustomerProfileModal({
                     Lịch Sử Điều Trị & Nhật Ký Doanh Thu ({custVisits.length} lần)
                   </h4>
                   <p className="text-[11px] text-slate-500">
-                    Toàn bộ các đợt phát sinh điều trị thực tế của khách hàng
+                    Phân tách rõ Gói dịch vụ & Bước điều trị lâm sàng theo từng đợt khám
                   </p>
                 </div>
               </div>
@@ -394,82 +421,175 @@ export default function CustomerProfileModal({
               </button>
             </div>
 
-            {/* Form thêm đợt điều trị nhanh (nếu mở) */}
+            {/* Form thêm đợt điều trị: Tách rõ 2 phần: Gói & Step */}
             {showAddVisitForm && (
-              <form onSubmit={handleSaveNewVisit} className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-3 text-xs animate-in fade-in duration-150">
+              <form onSubmit={handleSaveNewVisit} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4 text-xs animate-in fade-in duration-150">
                 <div className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
                   <Plus className="w-3.5 h-3.5 text-sky-600" />
-                  <span>Ghi nhận lần khám / đợt điều trị phát sinh</span>
+                  <span>Ghi nhận bước điều trị mới cho khách hàng</span>
                 </div>
 
                 {visitError && (
-                  <div className="p-2 rounded bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+                  <div className="p-2 rounded-md bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
                     {visitError}
                   </div>
                 )}
 
-                {/* Chọn nhanh gói */}
-                {services.length > 0 && (
+                {/* Phần 1: Gói dịch vụ */}
+                <div className="p-3 bg-white border border-sky-200 rounded-lg space-y-2">
+                  <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5 text-sky-800">
+                    <span className="w-4 h-4 rounded bg-sky-600 text-white flex items-center justify-center text-[10px]">1</span>
+                    <span>PHẦN 1: GÓI DỊCH VỤ ĐIỀU TRỊ</span>
+                  </div>
+                  {services.length > 0 && (
+                    <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto pt-1">
+                      {services.map(s => {
+                        const isSelected = visitPackage === s.name;
+                        return (
+                          <button
+                            key={s.id}
+                            type="button"
+                            onClick={() => handlePackageChange(s.name)}
+                            className={`px-2 py-0.5 rounded text-[11px] transition-all border flex items-center gap-1 ${
+                              isSelected
+                                ? 'bg-sky-600 text-white border-sky-600 font-semibold shadow-2xs'
+                                : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-sky-300'
+                            }`}
+                          >
+                            <span>{s.name}</span>
+                            {isSelected && <Check className="w-3 h-3 text-white" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {matchedVisitServiceObj && (
+                    <div className="text-[10px] text-slate-500 flex justify-between pt-1">
+                      <span>Đang chọn: <strong>{visitPackage}</strong></span>
+                      <span className="font-mono text-sky-700 font-bold">Giá niêm yết: {formatVND(matchedVisitServiceObj.defaultPrice)}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Phần 2: Nội dung điều trị (Step) & Chi phí */}
+                <div className="p-3 bg-white border border-emerald-200 rounded-lg space-y-3">
+                  <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5 text-emerald-800">
+                    <span className="w-4 h-4 rounded bg-emerald-600 text-white flex items-center justify-center text-[10px]">2</span>
+                    <span>PHẦN 2: BƯỚC ĐIỀU TRỊ HÔM NAY (STEP) & CHI PHÍ</span>
+                  </div>
+
+                  {/* Preset steps */}
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      Chọn nhanh từ gói dịch vụ:
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1 flex items-center gap-1">
+                      <Stethoscope className="w-3 h-3 text-emerald-600" />
+                      <span>Gợi ý bước điều trị của gói (Bấm để chọn):</span>
                     </label>
-                    <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
-                      {services.map(s => (
-                        <button
-                          key={s.id}
-                          type="button"
-                          onClick={() => handleSelectQuickService(s)}
-                          className="px-2 py-0.5 rounded bg-white hover:bg-sky-50 border border-slate-200 hover:border-sky-300 text-[10px] text-slate-700 font-medium"
-                        >
-                          {s.name} ({formatVND(s.defaultPrice)})
-                        </button>
-                      ))}
+                    <div className="flex flex-wrap gap-1">
+                      {currentPresetSteps.map((st, idx) => {
+                        const isCurrent = visitStep === st.name;
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => handleSelectStep(st)}
+                            className={`px-2 py-0.5 rounded text-[11px] transition-all border flex items-center gap-1 ${
+                              isCurrent
+                                ? 'bg-emerald-600 text-white border-emerald-600 font-semibold shadow-2xs'
+                                : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-emerald-300'
+                            }`}
+                          >
+                            <span>{st.name}</span>
+                            {isCurrent && <Check className="w-3 h-3 text-white" />}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
-                )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Nội dung điều trị (Step) <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="VD: Gắn mắc cài, Lấy dấu, Siết răng..."
+                        value={visitStep}
+                        onChange={e => setVisitStep(e.target.value)}
+                        className="w-full px-2.5 py-1.5 border border-slate-300 rounded-md font-semibold text-xs bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Chi phí đợt này (VNĐ) <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        required
+                        min="1000"
+                        step="1000"
+                        placeholder="VD: 5000000"
+                        value={visitAmount}
+                        onChange={e => setVisitAmount(e.target.value)}
+                        className="w-full px-2.5 py-1.5 border border-slate-300 rounded-md font-bold text-xs bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                      {visitAmount && !isNaN(visitAmount) && (
+                        <span className="text-[10px] text-emerald-700 font-medium block mt-0.5">
+                          Tương đương: {formatVND(Number(visitAmount))}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Trạng thái thanh toán */}
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">
-                      Số tiền đợt này (VNĐ) <span className="text-rose-500">*</span>
+                      Trạng thái thanh toán:
                     </label>
-                    <input
-                      type="number"
-                      required
-                      min="1000"
-                      step="1000"
-                      placeholder="VD: 5000000"
-                      value={visitAmount}
-                      onChange={e => setVisitAmount(e.target.value)}
-                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded font-bold text-xs bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
-                    />
-                    {visitAmount && !isNaN(visitAmount) && (
-                      <span className="text-[10px] text-emerald-700 font-medium block mt-0.5">
-                        {formatVND(Number(visitAmount))}
-                      </span>
-                    )}
+                    <div className="grid grid-cols-3 gap-2">
+                      {PAYMENT_STATUSES.map(item => {
+                        const isChosen = visitPaymentStatus === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => setVisitPaymentStatus(item.id)}
+                            className={`py-1 px-2 rounded-md border text-center transition-all text-[11px] font-semibold flex items-center justify-center gap-1 ${
+                              isChosen
+                                ? `${item.badgeClass} ring-2 ring-emerald-500/30 shadow-2xs`
+                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                            }`}
+                          >
+                            {item.id === 'paid' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
+                            <span>{item.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Nội dung điều trị</label>
-                    <input
-                      type="text"
-                      placeholder="VD: Tái khám định kỳ, gắn mắc cài..."
-                      value={visitNote}
-                      onChange={e => setVisitNote(e.target.value)}
-                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Ngày thực hiện</label>
-                    <input
-                      type="date"
-                      value={visitDate}
-                      onChange={e => setVisitDate(e.target.value)}
-                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Ngày thực hiện</label>
+                      <input
+                        type="date"
+                        value={visitDate}
+                        onChange={e => setVisitDate(e.target.value)}
+                        className="w-full px-2.5 py-1.5 border border-slate-300 rounded-md text-xs bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Ghi chú bổ sung</label>
+                      <input
+                        type="text"
+                        placeholder="Ghi chú lâm sàng..."
+                        value={visitNote}
+                        onChange={e => setVisitNote(e.target.value)}
+                        className="w-full px-2.5 py-1.5 border border-slate-300 rounded-md text-xs bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -477,15 +597,16 @@ export default function CustomerProfileModal({
                   <button
                     type="button"
                     onClick={() => setShowAddVisitForm(false)}
-                    className="px-3 py-1 font-semibold text-slate-600 hover:bg-slate-200 rounded"
+                    className="px-3 py-1 font-semibold text-slate-600 hover:bg-slate-200 rounded-md"
                   >
                     Hủy
                   </button>
                   <button
                     type="submit"
-                    className="px-3 py-1 font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded shadow-xs"
+                    className="px-4 py-1.5 font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md shadow-xs inline-flex items-center gap-1"
                   >
-                    Lưu đợt điều trị
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Lưu đợt điều trị</span>
                   </button>
                 </div>
               </form>
@@ -496,10 +617,10 @@ export default function CustomerProfileModal({
               <table className="w-full text-xs text-left">
                 <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
                   <tr>
-                    <th className="py-2.5 px-3 text-center w-12">#</th>
-                    <th className="py-2.5 px-4">Nội dung điều trị / Hạng mục</th>
+                    <th className="py-2.5 px-3 text-center w-10">#</th>
+                    <th className="py-2.5 px-4">Nội dung điều trị (Step) & Gói dịch vụ</th>
                     <th className="py-2.5 px-4 text-center">Ngày điều trị</th>
-                    <th className="py-2.5 px-4 text-right">Số tiền thanh toán</th>
+                    <th className="py-2.5 px-4 text-right">Chi phí</th>
                     <th className="py-2.5 px-3 text-center">Trạng thái</th>
                   </tr>
                 </thead>
@@ -511,29 +632,49 @@ export default function CustomerProfileModal({
                       </td>
                     </tr>
                   ) : (
-                    custVisits.map((v, index) => (
-                      <tr key={v.id || index} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-2.5 px-3 text-center font-mono text-[11px] text-slate-400">
-                          {index + 1}
-                        </td>
-                        <td className="py-2.5 px-4 font-semibold text-slate-900">
-                          <div>{v.note || (index === 0 ? 'Gói điều trị ban đầu' : 'Tái điều trị')}</div>
-                          <div className="text-[10px] text-slate-400 font-mono">{v.id}</div>
-                        </td>
-                        <td className="py-2.5 px-4 text-center text-slate-600 text-[11px]">
-                          {formatDate(v.occurredAt)}
-                        </td>
-                        <td className="py-2.5 px-4 text-right font-bold text-emerald-700">
-                          {formatVND(v.amount)}
-                        </td>
-                        <td className="py-2.5 px-3 text-center">
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                            <span>Đã thu</span>
-                          </span>
-                        </td>
-                      </tr>
-                    ))
+                    custVisits.map((v, index) => {
+                      const details = v.step 
+                        ? { step: v.step, status: v.paymentStatus || 'paid' } 
+                        : parseVisitStepAndStatus(v.note);
+                      const isPaid = details.status === 'paid';
+                      const isPartial = details.status === 'partial';
+
+                      return (
+                        <tr key={v.id || index} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-2.5 px-3 text-center font-mono text-[11px] text-slate-400">
+                            {index + 1}
+                          </td>
+                          <td className="py-2.5 px-4">
+                            <div className="font-bold text-slate-900 text-xs">
+                              {details.step || 'Lượt điều trị'}
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-medium flex items-center gap-1.5 mt-0.5">
+                              <span>{v.package || customer.treatment}</span>
+                              <span className="text-slate-300">&bull;</span>
+                              <span className="font-mono text-slate-400">{v.id}</span>
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-4 text-center text-slate-600 text-[11px]">
+                            {formatDate(v.occurredAt)}
+                          </td>
+                          <td className="py-2.5 px-4 text-right font-bold text-emerald-700 text-xs">
+                            {formatVND(v.amount)}
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded border ${
+                              isPaid 
+                                ? 'text-emerald-700 bg-emerald-50 border-emerald-200' 
+                                : isPartial 
+                                ? 'text-amber-700 bg-amber-50 border-amber-200'
+                                : 'text-slate-600 bg-slate-100 border-slate-200'
+                            }`}>
+                              {isPaid && <CheckCircle2 className="w-3 h-3 text-emerald-600" />}
+                              <span>{isPaid ? 'Đã thanh toán' : isPartial ? 'Thanh toán 1 phần' : 'Chưa thu'}</span>
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
                 {custVisits.length > 0 && (
@@ -559,7 +700,7 @@ export default function CustomerProfileModal({
         {/* ================================================================= */}
         {/* FOOTER HỒ SƠ */}
         {/* ================================================================= */}
-        <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/60 flex items-center justify-between text-xs">
+        <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/60 flex items-center justify-between text-xs shrink-0">
           <span className="text-slate-500 flex items-center gap-1.5">
             <Sparkles className="w-4 h-4 text-sky-600" />
             <span>Hồ sơ chuẩn hóa theo Kiến Trúc Hai Trục & Chuỗi Khách V5 — H&H Dental</span>
@@ -576,4 +717,3 @@ export default function CustomerProfileModal({
     </div>
   );
 }
-

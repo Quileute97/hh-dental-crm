@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Search, Plus, DollarSign, Users, ChevronRight, Phone, ShieldCheck, History, Gift, FileText } from 'lucide-react';
+import { Search, Plus, DollarSign, Users, ChevronRight, Phone, ShieldCheck, History, Gift, FileText, CheckCircle2, Stethoscope, Tag } from 'lucide-react';
 import { formatVND, formatDate } from '../../utils/formatters';
 import { calculateCustomerCredit, COMMISSION_POLICY } from '../../services/commissionEngine';
+import { parseVisitStepAndStatus } from '../../utils/treatmentSteps';
 
 export default function CustomerList({ 
   customers, 
@@ -162,9 +163,38 @@ export default function CustomerList({
                         )}
                       </td>
 
-                      {/* Cột 5: Dịch vụ */}
-                      <td className="py-3 px-4 text-slate-700 max-w-[200px] truncate" title={cust.treatment}>
-                        {cust.treatment || 'N/A'}
+                      {/* Cột 5: Gói dịch vụ & Bước điều trị lâm sàng */}
+                      <td className="py-3 px-4 text-slate-700 max-w-[220px]">
+                        <div className="font-bold text-slate-900 text-xs truncate" title={cust.treatment}>
+                          {cust.treatment || 'Chưa chọn gói'}
+                        </div>
+                        {(() => {
+                          const latestVisit = custVisits[custVisits.length - 1];
+                          const parsed = latestVisit 
+                            ? (latestVisit.step ? { step: latestVisit.step, status: latestVisit.paymentStatus || 'paid' } : parseVisitStepAndStatus(latestVisit.note))
+                            : (cust.currentStep ? { step: cust.currentStep, status: 'paid' } : null);
+                          
+                          if (!parsed || !parsed.step) return null;
+                          const isPaid = parsed.status === 'paid';
+                          const isPartial = parsed.status === 'partial';
+
+                          return (
+                            <div className="text-[10px] flex items-center gap-1.5 mt-0.5 truncate">
+                              <span className="font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 truncate">
+                                Step: {parsed.step}
+                              </span>
+                              <span className={`text-[9px] px-1 py-0.5 rounded font-bold ${
+                                isPaid 
+                                  ? 'text-emerald-700 bg-emerald-100/60' 
+                                  : isPartial 
+                                  ? 'text-amber-700 bg-amber-100/60' 
+                                  : 'text-slate-600 bg-slate-100'
+                              }`}>
+                                {isPaid ? 'Đã thu' : isPartial ? 'Thu 1 phần' : 'Chưa thu'}
+                              </span>
+                            </div>
+                          );
+                        })()}
                       </td>
 
                       {/* Cột 6: Doanh thu cộng dồn */}
@@ -233,18 +263,44 @@ export default function CustomerList({
                               <span className="text-emerald-700">Tổng tích lũy: {formatVND(totalRevenue)}</span>
                             </div>
                             <div className="divide-y divide-slate-100">
-                              {custVisits.map((v, i) => (
-                                <div key={v.id || i} className="py-1.5 flex items-center justify-between text-[11px]">
-                                  <div className="flex items-center gap-2">
-                                    <span className="w-4 h-4 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-[10px]">
-                                      {i + 1}
-                                    </span>
-                                    <span className="font-medium text-slate-800">{v.note || 'Lượt điều trị'}</span>
-                                    <span className="text-slate-400 text-[10px]">({formatDate(v.occurredAt)})</span>
+                              {custVisits.map((v, i) => {
+                                const details = v.step 
+                                  ? { step: v.step, status: v.paymentStatus || 'paid' } 
+                                  : parseVisitStepAndStatus(v.note);
+                                const isPaid = details.status === 'paid';
+                                const isPartial = details.status === 'partial';
+
+                                return (
+                                  <div key={v.id || i} className="py-2 flex items-center justify-between text-[11px]">
+                                    <div className="flex items-center gap-2.5">
+                                      <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-[10px] font-bold shrink-0">
+                                        {i + 1}
+                                      </span>
+                                      <div>
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="font-bold text-slate-900">{details.step || 'Đợt điều trị'}</span>
+                                          <span className={`text-[9px] px-1.5 py-0.2 rounded font-semibold inline-flex items-center gap-0.5 ${
+                                            isPaid 
+                                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                                              : isPartial 
+                                              ? 'bg-amber-50 text-amber-700 border border-amber-200' 
+                                              : 'bg-slate-100 text-slate-600 border border-slate-200'
+                                          }`}>
+                                            {isPaid && <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" />}
+                                            <span>{isPaid ? 'Đã thanh toán' : isPartial ? 'Thanh toán 1 phần' : 'Chưa thanh toán'}</span>
+                                          </span>
+                                        </div>
+                                        <div className="text-slate-400 text-[10px] flex items-center gap-1 mt-0.5">
+                                          <span>{v.package || cust.treatment}</span>
+                                          <span>&bull;</span>
+                                          <span>Ngày: {formatDate(v.occurredAt)}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <span className="font-bold text-emerald-700 text-xs">{formatVND(v.amount)}</span>
                                   </div>
-                                  <span className="font-bold text-slate-900">{formatVND(v.amount)}</span>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           </div>
                         </td>
