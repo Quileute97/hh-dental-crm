@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { can } from '../config/permissions';
+import { COMMISSION_POLICY } from '../services/commissionEngine';
 
 export default function Sidebar({ 
   activeTab, 
@@ -178,11 +179,15 @@ export default function Sidebar({
           <div className="font-semibold text-slate-800 text-[10px] uppercase">1. Chuỗi khách (Độ sâu)</div>
           <div className="flex justify-between">
             <span>Tầng 1 (Trực tiếp):</span>
-            <span className="font-bold text-sky-700">CTV 20%</span>
+            <span className="font-bold text-sky-700">CTV {COMMISSION_POLICY.depth1}%</span>
           </div>
           <div className="flex justify-between">
             <span>Tầng 2+ (Hạ tầng):</span>
-            <span className="font-bold text-sky-700">CTV 2%</span>
+            <span className="font-bold text-sky-700">CTV {COMMISSION_POLICY.depth2}%</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Tầng 3 đến tầng n:</span>
+            <span className="font-bold text-sky-700">CTV {COMMISSION_POLICY.depth3Plus}%</span>
           </div>
         </div>
 

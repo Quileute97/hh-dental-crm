@@ -71,20 +71,20 @@ const p2 = res1.partnerRows.find(r => r.partnerId === 'P2');
 const p3 = res1.partnerRows.find(r => r.partnerId === 'P3');
 
 assertEqual(res1.periodRevenue, 172000000, 'periodRevenue');
-assertEqual(res1.totalCtvCommission, 20540000, 'totalCtvCommission (T1: 20%, T2+: 2%)');
+assertEqual(res1.totalCtvCommission, 26700000, 'totalCtvCommission (T1: 20%, T2: 10%, T3+: 5%)');
 assertEqual(res1.totalPlatformShare, 0, 'totalPlatformShare (Sàn không thu = 0)');
 assertEqual(res1.totalBranchFee, 1060000, 'totalBranchFee');
-assertEqual(res1.totalCost, 21600000, 'totalCost');
-assertEqual(res1.costPercent, 12.6, 'costPercent');
+assertEqual(res1.totalCost, 27760000, 'totalCost');
+assertEqual(res1.costPercent, 16.1, 'costPercent');
 
 assertEqual(p1.ownRevenue, 86000000, 'P1 ownRevenue');
 assertEqual(p1.branchRevenue, 172000000, 'P1 branchRevenue');
-assertEqual(p1.commission, 8380000, 'P1 commission (20%×37tr + 2%×49tr)');
+assertEqual(p1.commission, 12300000, 'P1 commission (20%×37tr + 10%×49tr)');
 assertEqual(p1.branchFee, 860000, 'P1 branchFee');
 
 assertEqual(p2.ownRevenue, 66000000, 'P2 ownRevenue');
 assertEqual(p2.branchRevenue, 86000000, 'P2 branchRevenue');
-assertEqual(p2.commission, 8160000, 'P2 commission (20%×38tr + 2%×28tr)');
+assertEqual(p2.commission, 10400000, 'P2 commission (20%×38tr + 10%×28tr)');
 assertEqual(p2.branchFee, 200000, 'P2 branchFee');
 
 assertEqual(p3.ownRevenue, 20000000, 'P3 ownRevenue');
@@ -125,9 +125,9 @@ assertEqual(p2_2.branchFee, 300000, 'P2 branchFee (+100.000)');
 assertEqual(p1_2.branchFee, 960000, 'P1 branchFee (+100.000)');
 
 // ----------------------------------------------------
-// TEST 2.1 — KIỂM THỬ ĐỘ SÂU KHÁCH HÀNG: TẦNG 1 (20%), TẦNG 2+ HẠ TẦNG (2%)
+// TEST 2.1 — KIỂM THỬ ĐỘ SÂU KHÁCH HÀNG: TẦNG 1 (20%), TẦNG 2 (10%), TẦNG 3..N (5%)
 // ----------------------------------------------------
-console.log('\n--- TEST 2.1: TỶ LỆ HOA HỒNG TẦNG 1 (20%), TẦNG 2+ (2%) ---');
+console.log('\n--- TEST 2.1: TỶ LỆ HOA HỒNG TẦNG 1 (20%), TẦNG 2 (10%), TẦNG 3..N (5%) ---');
 const depthTestCustomers = [
   { id: 'cd1', ownerPartnerId: 'P1', depth: 1 },
   { id: 'cd2', ownerPartnerId: 'P1', depth: 2 },
@@ -137,10 +137,10 @@ const depthTestCustomers = [
 ];
 const depthTestVisits = [
   { id: 'vd1', customerId: 'cd1', amount: 10000000, occurredAt: '2026-11-01T00:00:00Z' }, // 10tr * 20% = 2.000.000
-  { id: 'vd2', customerId: 'cd2', amount: 10000000, occurredAt: '2026-11-01T00:00:00Z' }, // 10tr * 2%  = 200.000
-  { id: 'vd3', customerId: 'cd3', amount: 10000000, occurredAt: '2026-11-01T00:00:00Z' }, // 10tr * 2%  = 200.000
-  { id: 'vd4', customerId: 'cd4', amount: 20000000, occurredAt: '2026-11-01T00:00:00Z' }, // 20tr * 2%  = 400.000
-  { id: 'vd10', customerId: 'cd10', amount: 10000000, occurredAt: '2026-11-01T00:00:00Z' }, // 10tr * 2% = 200.000
+  { id: 'vd2', customerId: 'cd2', amount: 10000000, occurredAt: '2026-11-01T00:00:00Z' }, // 10tr * 10% = 1.000.000
+  { id: 'vd3', customerId: 'cd3', amount: 10000000, occurredAt: '2026-11-01T00:00:00Z' }, // 10tr * 5%  = 500.000
+  { id: 'vd4', customerId: 'cd4', amount: 20000000, occurredAt: '2026-11-01T00:00:00Z' }, // 20tr * 5%  = 1.000.000
+  { id: 'vd10', customerId: 'cd10', amount: 10000000, occurredAt: '2026-11-01T00:00:00Z' }, // 10tr * 5% = 500.000
 ];
 const depthRes = calculateMonthlySettlement('2026-11', {
   partners: [{ id: 'P1', code: 'REF-P1', name: 'P1', parentId: null, depth: 0 }],
@@ -151,15 +151,15 @@ const depthRes = calculateMonthlySettlement('2026-11', {
 const p1Depth = depthRes.partnerRows[0];
 assertEqual(depthRes.visitBreakdowns.find(v => v.visitId === 'vd1').ctvRate, 20, 'Tầng 1 -> ctvRate = 20%');
 assertEqual(depthRes.visitBreakdowns.find(v => v.visitId === 'vd1').ctvAmount, 2000000, 'Tầng 1 -> ctvAmount = 2.000.000 ₫');
-assertEqual(depthRes.visitBreakdowns.find(v => v.visitId === 'vd2').ctvRate, 2, 'Tầng 2 -> ctvRate = 2%');
-assertEqual(depthRes.visitBreakdowns.find(v => v.visitId === 'vd2').ctvAmount, 200000, 'Tầng 2 -> ctvAmount = 200.000 ₫');
-assertEqual(depthRes.visitBreakdowns.find(v => v.visitId === 'vd3').ctvRate, 2, 'Tầng 3 -> ctvRate = 2%');
-assertEqual(depthRes.visitBreakdowns.find(v => v.visitId === 'vd3').ctvAmount, 200000, 'Tầng 3 -> ctvAmount = 200.000 ₫');
-assertEqual(depthRes.visitBreakdowns.find(v => v.visitId === 'vd4').ctvRate, 2, 'Tầng 4 -> ctvRate = 2%');
-assertEqual(depthRes.visitBreakdowns.find(v => v.visitId === 'vd4').ctvAmount, 400000, 'Tầng 4 -> ctvAmount = 400.000 ₫');
-assertEqual(depthRes.visitBreakdowns.find(v => v.visitId === 'vd10').ctvRate, 2, 'Tầng 10 (tầng n) -> ctvRate = 2%');
-assertEqual(depthRes.visitBreakdowns.find(v => v.visitId === 'vd10').ctvAmount, 200000, 'Tầng 10 -> ctvAmount = 200.000 ₫');
-assertEqual(p1Depth.commission, 3000000, 'Tổng hoa hồng P1 từ cả 5 tầng = 3.000.000 ₫');
+assertEqual(depthRes.visitBreakdowns.find(v => v.visitId === 'vd2').ctvRate, 10, 'Tầng 2 -> ctvRate = 10%');
+assertEqual(depthRes.visitBreakdowns.find(v => v.visitId === 'vd2').ctvAmount, 1000000, 'Tầng 2 -> ctvAmount = 1.000.000 ₫');
+assertEqual(depthRes.visitBreakdowns.find(v => v.visitId === 'vd3').ctvRate, 5, 'Tầng 3 -> ctvRate = 5%');
+assertEqual(depthRes.visitBreakdowns.find(v => v.visitId === 'vd3').ctvAmount, 500000, 'Tầng 3 -> ctvAmount = 500.000 ₫');
+assertEqual(depthRes.visitBreakdowns.find(v => v.visitId === 'vd4').ctvRate, 5, 'Tầng 4 -> ctvRate = 5%');
+assertEqual(depthRes.visitBreakdowns.find(v => v.visitId === 'vd4').ctvAmount, 1000000, 'Tầng 4 -> ctvAmount = 1.000.000 ₫');
+assertEqual(depthRes.visitBreakdowns.find(v => v.visitId === 'vd10').ctvRate, 5, 'Tầng 10 (tầng n) -> ctvRate = 5%');
+assertEqual(depthRes.visitBreakdowns.find(v => v.visitId === 'vd10').ctvAmount, 500000, 'Tầng 10 -> ctvAmount = 500.000 ₫');
+assertEqual(p1Depth.commission, 5000000, 'Tổng hoa hồng P1 từ cả 5 tầng = 5.000.000 ₫');
 
 // ----------------------------------------------------
 // TEST 3 & 4 — ĐỐI SOÁT VỚI GOLDEN BENCHMARK (172M VNĐ)
