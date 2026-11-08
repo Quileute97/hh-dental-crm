@@ -1,14 +1,9 @@
 /**
  * DENTAL CRM - SUPABASE API SERVICE
- * Toàn bộ dữ liệu & tính toán hoa hồng được chuyển sang Supabase Postgres & RPC
+ * Toàn bộ dữ liệu & tính toán hoa hồng kết nối trực tiếp Supabase Postgres & RPC
+ * Hoạt động 100% trên dữ liệu thật, không sử dụng Mock Data
  */
 import { supabase } from '../lib/supabase';
-import { 
-  INITIAL_PARTNERS, 
-  INITIAL_SERVICES, 
-  INITIAL_CUSTOMERS, 
-  INITIAL_VISITS 
-} from '../data/initialData';
 
 // ----------------------------------------------------------------------------
 // 1. LẤY TOÀN BỘ DỮ LIỆU ĐANG HOẠT ĐỘNG
@@ -29,11 +24,11 @@ export async function fetchAllData() {
       supabase.from('settlements').select('*')
     ]);
 
-    if (!errPartners && partnersData && partnersData.length > 0) {
+    if (!errPartners && !errServices && !errCustomers) {
       return {
         isServer: true,
         data: {
-          partners: partnersData.map(p => ({
+          partners: (partnersData || []).map(p => ({
             id: p.id,
             code: p.code,
             name: p.name,
@@ -95,29 +90,18 @@ export async function fetchAllData() {
         }
       };
     }
+
+    if (errPartners || errServices || errCustomers) {
+      console.warn('[Supabase API] Query error:', errPartners || errServices || errCustomers);
+    }
   } catch (err) {
     console.warn('[Supabase API] Failed to fetch live data from Supabase:', err);
   }
 
-  // Chặn dữ liệu giả trên môi trường Production: TUYỆT ĐỐI KHÔNG fallback dữ liệu mẫu seed!
-  if (import.meta.env.PROD) {
-    return {
-      isServer: false,
-      data: null,
-      error: 'Không thể kết nối với máy chủ Supabase. Vui lòng kiểm tra cấu hình biến môi trường hoặc liên hệ quản trị viên.'
-    };
-  }
-
-  // Fallback seed ban đầu chỉ trong môi trường Dev (development)
   return {
     isServer: false,
-    data: {
-      partners: INITIAL_PARTNERS,
-      services: INITIAL_SERVICES,
-      customers: INITIAL_CUSTOMERS,
-      visits: INITIAL_VISITS,
-      settlements: []
-    }
+    data: null,
+    error: 'Không thể kết nối với máy chủ Supabase. Vui lòng kiểm tra kết nối mạng hoặc liên hệ quản trị viên.'
   };
 }
 

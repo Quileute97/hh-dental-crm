@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { ShieldCheck, Lock, Mail, ArrowRight, X, Calculator, Stethoscope, Users } from 'lucide-react';
+import { Lock, Mail, ArrowRight, X } from 'lucide-react';
 
 export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }) {
-  const { login, demoLogin } = useAuth();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,31 +21,6 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
       if (onLoginSuccess) onLoginSuccess();
     } else {
       setError(res.error || 'Email hoặc mật khẩu không chính xác.');
-    }
-  }
-
-  const DEMO_CREDENTIALS = {
-    admin: { email: 'admin@hhdental.vn', password: 'Admin@123456' },
-    accountant: { email: 'accountant@hhdental.vn', password: 'Ketoan@123456' },
-    frontdesk: { email: 'frontdesk@hhdental.vn', password: 'Letan@123456' },
-    partner: { email: 'partner@hhdental.vn', password: 'Doitac@123456' },
-  };
-
-  async function handleDemoAccess(targetRole) {
-    setError('');
-    setLoading(true);
-    const cred = DEMO_CREDENTIALS[targetRole];
-    if (cred) {
-      setEmail(cred.email);
-      setPassword(cred.password);
-      const res = await login(cred.email, cred.password);
-      setLoading(false);
-      if (res.ok) {
-        if (onLoginSuccess) onLoginSuccess();
-      } else {
-        demoLogin(targetRole);
-        if (onLoginSuccess) onLoginSuccess();
-      }
     }
   }
 
@@ -71,10 +46,10 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
           className="mx-auto h-12 w-auto object-contain mix-blend-multiply"
         />
         <h2 className="mt-2 text-center text-lg font-bold tracking-tight text-slate-900">
-          Đăng Nhập / Phân Quyền Vai Trò
+          Đăng Nhập Hệ Thống
         </h2>
         <p className="mt-0.5 text-center text-xs text-slate-500">
-          HH Dental Clinic &bull; Supabase Auth & RLS
+          HH Dental Clinic &bull; Cổng Quản Trị &amp; Đối Tác
         </p>
       </div>
 
@@ -130,62 +105,6 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </form>
-
-          {/* Quick Demo Access - Phân Quyền Thử Nghiệm */}
-          <div className="pt-4 border-t border-slate-100 space-y-2">
-            <span className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
-              Truy cập nhanh theo vai trò (Demo RLS)
-            </span>
-            <div className="grid grid-cols-2 gap-2 text-[11px]">
-              <button
-                type="button"
-                onClick={() => handleDemoAccess('admin')}
-                className="p-2 rounded border border-slate-200 bg-slate-50 hover:bg-sky-50 hover:border-sky-300 text-left transition-all flex items-center gap-2"
-              >
-                <ShieldCheck className="w-4 h-4 text-sky-600 shrink-0" />
-                <div>
-                  <div className="font-bold text-slate-900">Admin</div>
-                  <div className="text-[10px] text-slate-500">Toàn quyền hệ thống</div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleDemoAccess('accountant')}
-                className="p-2 rounded border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 text-left transition-all flex items-center gap-2"
-              >
-                <Calculator className="w-4 h-4 text-emerald-600 shrink-0" />
-                <div>
-                  <div className="font-bold text-slate-900">Kế Toán</div>
-                  <div className="text-[10px] text-slate-500">Đối soát & Chốt sổ</div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleDemoAccess('frontdesk')}
-                className="p-2 rounded border border-slate-200 bg-slate-50 hover:bg-amber-50 hover:border-amber-300 text-left transition-all flex items-center gap-2"
-              >
-                <Stethoscope className="w-4 h-4 text-amber-600 shrink-0" />
-                <div>
-                  <div className="font-bold text-slate-900">Lễ Tân</div>
-                  <div className="text-[10px] text-slate-500">Tiếp nhận khách hàng</div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleDemoAccess('partner', 'P1')}
-                className="p-2 rounded border border-slate-200 bg-slate-50 hover:bg-purple-50 hover:border-purple-300 text-left transition-all flex items-center gap-2"
-              >
-                <Users className="w-4 h-4 text-purple-600 shrink-0" />
-                <div>
-                  <div className="font-bold text-slate-900">Đối Tác (P1)</div>
-                  <div className="text-[10px] text-slate-500">Chỉ xem cây nhánh</div>
-                </div>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>

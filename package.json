@@ -12,6 +12,7 @@
     "migrate": "node scripts/migrate.mjs",
     "scan:secrets": "node scripts/scan-secrets.mjs",
     "verify:rls": "node scripts/verify-rls.mjs",
+    "clear:mock": "node scripts/clear-mock-data.mjs",
     "verify:all": "npm test && npm run golden && npm run scan:secrets && npm run build && npm run verify:rls"
   },
   "dependencies": {

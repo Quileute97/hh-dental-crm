@@ -21,11 +21,10 @@ export default function Sidebar({
   activeTab, 
   setActiveTab, 
   settlementStatus, 
-  onResetData,
   onOpenAuditLogs,
   onOpenLogin
 }) {
-  const { user, profile, role, logout, demoLogin, isAdmin, isAccountant } = useAuth();
+  const { user, profile, role, logout } = useAuth();
 
   const allMenuItems = [
     {

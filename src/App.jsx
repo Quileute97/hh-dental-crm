@@ -31,7 +31,6 @@ import {
   apiSaveService,
   apiDeleteService,
   apiSaveSettlement,
-  apiResetData,
   apiFetchAuditLogs,
   apiComputeMonth
 } from './services/api';
@@ -55,8 +54,9 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [partnerViewMode, setPartnerViewMode] = useState('tree');
 
-  // Chọn kỳ đối soát (mặc định '2026-11' khớp tập dữ liệu chuẩn 172.000.000 VNĐ)
-  const [selectedMonth, setSelectedMonth] = useState('2026-11');
+  // Chọn kỳ đối soát (mặc định tháng thực tế hiện tại)
+  const currentMonthStr = useMemo(() => new Date().toISOString().slice(0, 7), []);
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthStr);
 
   // Kết quả tính toán từ Supabase Postgres RPC (compute_month)
   const [rpcRows, setRpcRows] = useState(null);
@@ -472,16 +472,8 @@ export default function App() {
   }
 
   // --------------------------------------------------------------------------
-  // HANDLERS: RESET DỮ LIỆU & AUDIT LOGS
+  // HANDLERS: NHẬT KÝ KIỂM TOÁN (AUDIT LOGS)
   // --------------------------------------------------------------------------
-  async function handleResetData() {
-    if (window.confirm('Khôi phục lại dữ liệu mẫu chuẩn Plan V5 (172.000.000 VNĐ)? Mọi dữ liệu thử nghiệm sẽ được đưa về mặc định.')) {
-      const defaultState = await apiResetData();
-      setData(defaultState);
-      showToast('Đã khôi phục dữ liệu mẫu Plan V5 thành công!');
-    }
-  }
-
   async function handleOpenAuditLogs() {
     const logs = await apiFetchAuditLogs();
     setAuditLogs(logs);
@@ -539,30 +531,20 @@ export default function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         settlementStatus={displayedSettlementResult}
-        onResetData={handleResetData}
         onOpenAuditLogs={handleOpenAuditLogs}
         onOpenLogin={() => setLoginModalOpen(true)}
       />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Banner cảnh báo Offline / Dữ liệu mẫu */}
+        {/* Banner cảnh báo Offline */}
         {!isServerOnline && (
-          import.meta.env.PROD ? (
-            <div className="bg-rose-600 text-white px-4 py-2 text-xs font-bold flex items-center justify-between shrink-0 shadow-xs">
-              <span>🚨 CẢNH BÁO: Mất kết nối máy chủ Supabase — Dữ liệu hiển thị có thể không chính xác!</span>
-              <button onClick={loadData} className="underline text-white font-normal hover:text-slate-100 text-xs">
-                Thử lại
-              </button>
-            </div>
-          ) : (
-            <div className="bg-amber-100 text-amber-900 border-b border-amber-300 px-4 py-2 text-xs font-semibold flex items-center justify-between shrink-0">
-              <span>⚠️ DỮ LIỆU MẪU (dev) — Đang sử dụng seed cục bộ, chưa kết nối được máy chủ Supabase</span>
-              <button onClick={loadData} className="underline text-amber-900 font-normal hover:text-amber-950 text-xs">
-                Thử lại
-              </button>
-            </div>
-          )
+          <div className="bg-rose-600 text-white px-4 py-2 text-xs font-bold flex items-center justify-between shrink-0 shadow-xs">
+            <span>🚨 CẢNH BÁO: Mất kết nối máy chủ Supabase — Vui lòng kiểm tra lại đường truyền mạng!</span>
+            <button onClick={loadData} className="underline text-white font-normal hover:text-slate-100 text-xs">
+              Thử lại
+            </button>
+          </div>
         )}
 
         {/* Top Header with Month Selector */}
