@@ -32,15 +32,38 @@ import {
   apiDeleteService,
   apiSaveSettlement,
   apiFetchAuditLogs,
-  apiComputeMonth
+  apiComputeMonth,
+  apiResolveReferralCode
 } from './services/api';
 import { calculateMonthlySettlement, COMMISSION_POLICY } from './services/commissionEngine';
 import { useAuth } from './context/AuthContext';
 import { formatVND } from './utils/formatters';
-import { CheckCircle2, Network, List, Info, AlertTriangle, AlertCircle, ArrowLeft } from 'lucide-react';
+import {
+  buildPartnerReferralLink,
+  getReferralCodeFromUrl,
+  getSavedReferralCode,
+  saveReferralCode,
+  clearSavedReferralCode,
+  stripReferralFromUrl,
+  getRootF0Partner
+} from './utils/referral';
+import {
+  CheckCircle2,
+  Network,
+  List,
+  Info,
+  AlertTriangle,
+  AlertCircle,
+  ArrowLeft,
+  Link2,
+  Copy,
+  Check,
+  GitFork,
+  UserPlus
+} from 'lucide-react';
 
 export default function App() {
-  const { user, loading: authLoading, role, partnerId, isAdmin, isAccountant, isFrontdesk, isPartner } = useAuth();
+  const { user, loading: authLoading, role, partnerId, logout, isAdmin, isAccountant, isFrontdesk, isPartner } = useAuth();
 
   const [data, setData] = useState({
     partners: [],
@@ -87,6 +110,11 @@ export default function App() {
   const [toastMessage, setToastMessage] = useState(null);
   const [loadError, setLoadError] = useState(null);
 
+  // Phát hiện ?ref=... khi người dùng đang mở Link Giới Thiệu trong lúc đã đăng nhập
+  const [pendingRefCode, setPendingRefCode] = useState(() => getReferralCodeFromUrl() || getSavedReferralCode());
+  const [pendingRefPartner, setPendingRefPartner] = useState(null);
+  const [copiedDashboardLink, setCopiedDashboardLink] = useState(false);
+
   // Khởi tạo và nạp dữ liệu từ Backend Supabase Postgres khi có phiên đăng nhập
   async function loadData() {
     if (!user) return;
@@ -109,8 +137,36 @@ export default function App() {
   }
 
   useEffect(() => {
-    loadData();
-  }, [user]);
+    if (user) {
+      loadData();
+    }
+  }, [user?.id, role, partnerId]);
+
+  useEffect(() => {
+    const urlRef = getReferralCodeFromUrl();
+    if (urlRef) {
+      saveReferralCode(urlRef);
+      setPendingRefCode(urlRef);
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function resolvePendingRef() {
+      if (!pendingRefCode) {
+        setPendingRefPartner(null);
+        return;
+      }
+      const info = await apiResolveReferralCode(pendingRefCode);
+      if (!cancelled) {
+        setPendingRefPartner(info);
+      }
+    }
+    resolvePendingRef();
+    return () => {
+      cancelled = true;
+    };
+  }, [pendingRefCode]);
 
   // Gọi Postgres RPC compute_month trên Supabase khi thay đổi tháng hoặc dữ liệu
   useEffect(() => {
@@ -156,6 +212,54 @@ export default function App() {
     setTimeout(() => {
       setToastMessage(null);
     }, 4000);
+  }
+
+  async function copyTextToClipboard(text) {
+    if (navigator?.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return ok;
+  }
+
+  async function handleCopyPartnerReferralLink(partner) {
+    if (!partner?.code) {
+      showToast('Đối tác chưa có mã REF hợp lệ.', 'error');
+      return;
+    }
+    const url = buildPartnerReferralLink(partner.code);
+    try {
+      await copyTextToClipboard(url);
+      showToast(`Đã sao chép Link Giới Thiệu của ${partner.name || partner.code}`);
+      if (currentPartner && (partner.id === currentPartner.id || partner.code === currentPartner.code)) {
+        setCopiedDashboardLink(true);
+        setTimeout(() => setCopiedDashboardLink(false), 2000);
+      }
+    } catch {
+      showToast(`Link Giới Thiệu: ${url}`);
+    }
+  }
+
+  async function handleLogoutToRegisterWithReferral() {
+    if (pendingRefCode) {
+      saveReferralCode(pendingRefCode);
+    }
+    await logout();
+  }
+
+  function handleDismissPendingReferral() {
+    clearSavedReferralCode();
+    stripReferralFromUrl();
+    setPendingRefCode('');
+    setPendingRefPartner(null);
   }
 
   // --------------------------------------------------------------------------
@@ -554,6 +658,41 @@ export default function App() {
 
         {/* Dynamic Page Content */}
         <main className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Banner xử lý nếu đang mở ?ref=... trong khi đang đăng nhập */}
+          {pendingRefCode && (
+            <div className="p-3.5 rounded-xl bg-sky-50 border border-sky-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <GitFork className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold text-sky-950">
+                    Bạn đang mở Link Giới Thiệu ({pendingRefCode}
+                    {pendingRefPartner ? ` — ${pendingRefPartner.name}` : ''})
+                  </p>
+                  <p className="text-sky-800 mt-0.5">
+                    Hiện bạn đang đăng nhập với tài khoản <strong>{user.email}</strong> ({role}). Để tạo tài khoản mới và gắn vào cây đối tác này, hãy đăng xuất sang màn hình đăng ký.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleLogoutToRegisterWithReferral}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-semibold transition-colors"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>Đăng xuất &amp; Đăng ký qua link</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDismissPendingReferral}
+                  className="px-2.5 py-1.5 rounded-lg bg-white border border-sky-200 text-slate-600 hover:bg-slate-50 font-medium"
+                >
+                  Bỏ qua
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Banner thông báo chế độ offline khi bị từ chối quyền RPC */}
           {isRpcForbidden && (
             <div className="bg-amber-50 border border-amber-200 text-amber-800 px-3.5 py-2.5 rounded-lg text-xs flex items-center gap-2">
@@ -565,6 +704,56 @@ export default function App() {
           {/* TAB 1: DASHBOARD */}
           {activeTab === 'dashboard' && (
             <div className="space-y-6">
+              {/* Thẻ Link Giới Thiệu Đối Tác (hiển thị cho CTV/Đối tác đăng nhập) */}
+              {isPartner && currentPartner && (() => {
+                const partnerRefUrl = buildPartnerReferralLink(currentPartner.code);
+                const { root: rootF0 } = getRootF0Partner(currentPartner.id, data.partners);
+                return (
+                  <div className="p-4 bg-white border border-sky-200 rounded-xl shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-900">
+                          <Link2 className="w-4 h-4 text-sky-600" />
+                          Link Giới Thiệu Đối Tác Của Bạn (Referral Link)
+                        </span>
+                        <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-sky-50 text-sky-700 border border-sky-200 rounded">
+                          {currentPartner.code}
+                        </span>
+                        <span className="px-2 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-700 rounded">
+                          Tuyến {currentPartner.depth ?? 0}
+                        </span>
+                        {rootF0 && rootF0.id !== currentPartner.id && (
+                          <span className="px-2 py-0.5 text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded">
+                            Thuộc cây F0: {rootF0.name} ({rootF0.code})
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-500">
+                        Chia sẻ đường link này cho CTV mới — khi đăng ký qua link, tài khoản sẽ tự động gắn làm tuyến dưới trực tiếp của bạn trong cây đối tác.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 w-full lg:w-auto lg:min-w-[380px]">
+                      <input
+                        type="text"
+                        readOnly
+                        value={partnerRefUrl}
+                        onClick={e => e.target.select()}
+                        className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-mono text-xs text-slate-700 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleCopyPartnerReferralLink(currentPartner)}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-lg transition-colors shrink-0"
+                      >
+                        {copiedDashboardLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{copiedDashboardLink ? 'Đã sao chép' : 'Sao chép Link'}</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* 4 Chỉ số: Doanh thu kỳ · Hoa hồng CTV · Phần nền tảng · Phí nhánh 1% */}
               <StatCards 
                 settlementResult={displayedSettlementResult} 
@@ -638,6 +827,7 @@ export default function App() {
                       settlementResult={displayedSettlementResult}
                       onAddPartner={handleOpenNewPartner}
                       onSelectPartner={handleEditPartner}
+                      onCopyReferralLink={handleCopyPartnerReferralLink}
                     />
                   ) : (
                     <PartnerList
@@ -646,6 +836,7 @@ export default function App() {
                       onAddPartner={handleOpenNewPartner}
                       onEditPartner={handleEditPartner}
                       onToggleStatus={handleTogglePartnerStatus}
+                      onCopyReferralLink={handleCopyPartnerReferralLink}
                     />
                   )}
                 </div>
@@ -711,7 +902,12 @@ export default function App() {
             {/* TAB 6: TÀI KHOẢN & PHÂN QUYỀN (ACCOUNTS - ADMIN) */}
             {activeTab === 'accounts' && (
               <RequirePermission role={role} action="manageAccounts" onBack={() => setActiveTab('dashboard')}>
-                <AccountsView partners={data.partners} showToast={showToast} />
+                <AccountsView
+                  partners={data.partners}
+                  showToast={showToast}
+                  onRefreshData={loadData}
+                  onCopyReferralLink={handleCopyPartnerReferralLink}
+                />
               </RequirePermission>
             )}
 

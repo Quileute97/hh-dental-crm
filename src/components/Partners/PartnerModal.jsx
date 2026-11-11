@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, AlertTriangle, ShieldCheck, Check } from 'lucide-react';
+import { X, AlertTriangle, Check, Link2, Copy } from 'lucide-react';
 import { validateParentAssignment } from '../../services/commissionEngine';
 import { generateUuid, isUuid } from '../../utils/uuid';
+import { buildPartnerReferralLink } from '../../utils/referral';
 
 export default function PartnerModal({ isOpen, onClose, onSave, partnerToEdit, partners, defaultParentId }) {
   const [formData, setFormData] = useState({
@@ -18,6 +19,7 @@ export default function PartnerModal({ isOpen, onClose, onSave, partnerToEdit, p
   });
 
   const [error, setError] = useState('');
+  const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => {
     if (partnerToEdit) {
@@ -51,9 +53,23 @@ export default function PartnerModal({ isOpen, onClose, onSave, partnerToEdit, p
       });
     }
     setError('');
+    setCopiedLink(false);
   }, [partnerToEdit, defaultParentId, partners, isOpen]);
 
   if (!isOpen) return null;
+
+  const referralUrl = buildPartnerReferralLink(formData.code);
+
+  async function handleCopyModalLink() {
+    if (!referralUrl) return;
+    try {
+      await navigator.clipboard.writeText(referralUrl);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch {
+      // Fallback ignored
+    }
+  }
 
   function handleParentChange(newParentId) {
     const parent = partners.find(p => p.id === newParentId);
@@ -211,6 +227,38 @@ export default function PartnerModal({ isOpen, onClose, onSave, partnerToEdit, p
               </span>
             </div>
           </div>
+
+          {/* Link Giới Thiệu (Referral Link) */}
+          {referralUrl && (
+            <div className="p-3 bg-sky-50/70 border border-sky-200 rounded-lg space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-sky-900 flex items-center gap-1.5">
+                  <Link2 className="w-3.5 h-3.5 text-sky-600" />
+                  <span>Link Giới Thiệu Đối Tác (Referral Link)</span>
+                </span>
+                <span className="text-[10px] text-sky-700">
+                  {partnerToEdit ? 'Sẵn sàng chia sẻ' : 'Có hiệu lực ngay sau khi lưu'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={referralUrl}
+                  onClick={e => e.target.select()}
+                  className="flex-1 px-2.5 py-1.5 bg-white border border-sky-200 rounded font-mono text-[11px] text-slate-700 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleCopyModalLink}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold bg-sky-600 hover:bg-sky-700 text-white rounded transition-colors shrink-0"
+                >
+                  {copiedLink ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                  <span>{copiedLink ? 'Đã chép' : 'Sao chép'}</span>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Ngân hàng chuyển khoản */}
           <div className="space-y-2">

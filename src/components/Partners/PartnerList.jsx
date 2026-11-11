@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Plus, Edit2, CheckCircle2, XCircle, Clock, ShieldCheck, CreditCard } from 'lucide-react';
+import { Search, Plus, Edit2, CheckCircle2, XCircle, Clock, Link2 } from 'lucide-react';
 import { formatVND } from '../../utils/formatters';
 import { useAuth } from '../../context/AuthContext';
 import { can } from '../../config/permissions';
@@ -9,7 +9,8 @@ export default function PartnerList({
   settlementResult,
   onAddPartner,
   onEditPartner,
-  onToggleStatus
+  onToggleStatus,
+  onCopyReferralLink
 }) {
   const { role } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
@@ -139,27 +140,37 @@ export default function PartnerList({
 
                     {/* Cột 9: Thao tác */}
                     <td className="py-3 px-4 text-right">
-                      {can(role, 'managePartners') ? (
-                        <div className="flex items-center justify-end gap-1.5">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {onCopyReferralLink && (
                           <button
-                            onClick={() => onEditPartner(partnerObj || row)}
-                            className="p-1.5 rounded hover:bg-slate-100 text-slate-500 hover:text-slate-800"
-                            title="Sửa đối tác"
+                            onClick={() => onCopyReferralLink(partnerObj || { id: row.partnerId, code: row.partnerCode, name: row.partnerName })}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 transition-colors"
+                            title={`Sao chép Link giới thiệu (${row.partnerCode})`}
                           >
-                            <Edit2 className="w-3.5 h-3.5" />
+                            <Link2 className="w-3 h-3" />
+                            <span>Link GT</span>
                           </button>
-                          <button
-                            onClick={() => onToggleStatus(row.partnerId)}
-                            className={`p-1.5 rounded transition-colors ${isActive ? 'text-emerald-600 hover:bg-emerald-50' : 'text-slate-400 hover:bg-slate-100'
-                              }`}
-                            title={isActive ? 'Đang hoạt động (Bấm để tạm dừng)' : 'Đang tạm dừng (Bấm để kích hoạt)'}
-                          >
-                            {isActive ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 font-mono">—</span>
-                      )}
+                        )}
+                        {can(role, 'managePartners') && (
+                          <>
+                            <button
+                              onClick={() => onEditPartner(partnerObj || row)}
+                              className="p-1.5 rounded hover:bg-slate-100 text-slate-500 hover:text-slate-800"
+                              title="Sửa đối tác"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => onToggleStatus(row.partnerId)}
+                              className={`p-1.5 rounded transition-colors ${isActive ? 'text-emerald-600 hover:bg-emerald-50' : 'text-slate-400 hover:bg-slate-100'
+                                }`}
+                              title={isActive ? 'Đang hoạt động (Bấm để tạm dừng)' : 'Đang tạm dừng (Bấm để kích hoạt)'}
+                            >
+                              {isActive ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

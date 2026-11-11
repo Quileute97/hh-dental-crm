@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { apiProvisionAccountRecords } from '../services/api';
+import { sanitizeSelfSignupRole } from '../utils/referral';
 
 const AuthContext = createContext(null);
 
@@ -18,8 +20,8 @@ export function AuthProvider({ children }) {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user && mounted) {
-          setUser(session.user);
-          await loadUserProfile(session.user.id);
+          await loadUserProfile(session.user);
+          if (mounted) setUser(session.user);
         } else {
           // Khởi tạo mặc định admin cho môi trường dev nếu chưa đăng nhập
           setRole('admin');
@@ -36,11 +38,13 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!mounted) return;
       if (session?.user) {
-        setUser(session.user);
-        await loadUserProfile(session.user.id);
+        await loadUserProfile(session.user);
+        if (mounted) setUser(session.user);
       } else {
         setUser(null);
         setProfile(null);
+        setRole('admin');
+        setPartnerId(null);
       }
       setLoading(false);
     });
@@ -51,22 +55,65 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  async function loadUserProfile(userId) {
+  async function loadUserProfile(userOrId) {
+    const userObj = typeof userOrId === 'string' ? null : userOrId;
+    const userId = typeof userOrId === 'string' ? userOrId : userOrId?.id;
+    if (!userId) return null;
+
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (!error && data) {
         setProfile(data);
-        setRole(data.role || 'admin');
+        setRole(data.role || 'frontdesk');
         setPartnerId(data.partner_id || null);
+        return data;
+      }
+
+      // Nếu chưa có dòng profiles (VD: người dùng mới xác nhận email hoặc vừa signUp),
+      // tự động cấp phát hồ sơ từ user_metadata một cách an toàn (chỉ cho frontdesk / partner).
+      const meta = userObj?.user_metadata || {};
+      if (meta.requested_role === 'frontdesk' || meta.requested_role === 'partner') {
+        const safeRole = sanitizeSelfSignupRole(meta.requested_role);
+        const prov = await apiProvisionAccountRecords({
+          userId,
+          email: userObj.email || '',
+          fullName: meta.full_name || '',
+          phone: meta.phone || '',
+          role: safeRole,
+          partnerCode: meta.partner_code || '',
+          parentPartnerId: meta.parent_partner_id || null,
+          existingPartnerId: meta.existing_partner_id || null,
+          referrerCode: meta.referrer_code || '',
+          forceUpdate: false
+        });
+
+        if (prov?.ok && prov.profile) {
+          setProfile(prov.profile);
+          setRole(prov.profile.role || safeRole);
+          setPartnerId(prov.profile.partner_id || null);
+          return prov.profile;
+        }
+
+        const fallbackProfile = {
+          user_id: userId,
+          role: safeRole,
+          partner_id: null,
+          full_name: meta.full_name || userObj.email || 'Thành viên mới'
+        };
+        setProfile(fallbackProfile);
+        setRole(safeRole);
+        setPartnerId(null);
+        return fallbackProfile;
       }
     } catch (err) {
       console.warn('[AuthContext] Failed to load profile:', err);
     }
+    return null;
   }
 
   // Đăng nhập bằng Email & Mật khẩu Supabase Auth
@@ -78,8 +125,8 @@ export function AuthProvider({ children }) {
       });
       if (error) throw error;
       if (data?.user) {
+        await loadUserProfile(data.user);
         setUser(data.user);
-        await loadUserProfile(data.user.id);
       }
       return { ok: true };
     } catch (err) {
@@ -116,6 +163,11 @@ export function AuthProvider({ children }) {
     });
   }
 
+  async function refreshProfile() {
+    if (!user) return null;
+    return await loadUserProfile(user);
+  }
+
   const value = {
     user,
     profile,
@@ -125,6 +177,7 @@ export function AuthProvider({ children }) {
     login,
     logout,
     demoLogin,
+    refreshProfile,
     isAdmin: role === 'admin',
     isAccountant: role === 'accountant' || role === 'admin',
     isFrontdesk: role === 'frontdesk' || role === 'admin',

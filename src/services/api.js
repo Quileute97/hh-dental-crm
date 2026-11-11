@@ -3,8 +3,13 @@
  * Toàn bộ dữ liệu & tính toán hoa hồng kết nối trực tiếp Supabase Postgres & RPC
  * Hoạt động 100% trên dữ liệu thật, không sử dụng Mock Data
  */
-import { supabase } from '../lib/supabase.js';
+import { supabase, createEphemeralAuthClient } from '../lib/supabase.js';
 import { generateUuid, isUuid } from '../utils/uuid.js';
+import {
+  generatePartnerRefCode,
+  normalizeRefCode,
+  sanitizeSelfSignupRole
+} from '../utils/referral.js';
 
 // ----------------------------------------------------------------------------
 // 1. LẤY TOÀN BỘ DỮ LIỆU ĐANG HOẠT ĐỘNG
@@ -511,8 +516,404 @@ export async function apiFetchAuditLogs(limit = 100) {
 }
 
 // ----------------------------------------------------------------------------
-// 8. QUẢN LÝ TÀI KHOẢN & PHÂN QUYỀN (PROFILES - ADMIN)
+// 8. QUẢN LÝ TÀI KHOẢN, PHÂN QUYỀN & LINK GIỚI THIỆU (REFERRAL / PROFILES)
 // ----------------------------------------------------------------------------
+function mapAuthErrorMessage(err) {
+  const msg = (err?.message || '').toLowerCase();
+  if (msg.includes('user already registered') || msg.includes('already been registered')) {
+    return 'Email này đã được đăng ký trong hệ thống. Vui lòng đăng nhập hoặc dùng email khác.';
+  }
+  if (msg.includes('password should be at least') || msg.includes('weak password')) {
+    return 'Mật khẩu phải có tối thiểu 6 ký tự.';
+  }
+  if (msg.includes('invalid email') || msg.includes('unable to validate email')) {
+    return 'Địa chỉ email không đúng định dạng.';
+  }
+  if (msg.includes('rate limit') || msg.includes('too many requests') || msg.includes('email_send_rate_limit')) {
+    return 'Thao tác gửi yêu cầu quá nhanh. Vui lòng đợi ít phút rồi thử lại.';
+  }
+  if (msg.includes('signup is disabled') || msg.includes('signups not allowed')) {
+    return 'Hệ thống Supabase Auth hiện đang tắt chế độ tự đăng ký. Vui lòng kiểm tra cấu hình Auth.';
+  }
+  return err?.message || 'Không thể tạo tài khoản. Vui lòng thử lại.';
+}
+
+/**
+ * Tra cứu đối tác theo mã giới thiệu (REF code), kèm đối tác Gốc F0 của nhánh.
+ * Ưu tiên gọi RPC get_partner_by_ref_code (hoạt động an toàn cả khi anon & RLS chặt),
+ * fallback sang truy vấn bảng partners trực tiếp nếu chưa chạy migration 009.
+ */
+export async function apiResolveReferralCode(refCode) {
+  const normalized = normalizeRefCode(refCode);
+  if (!normalized) return null;
+
+  try {
+    const { data: rpcData, error: rpcErr } = await supabase.rpc('get_partner_by_ref_code', {
+      p_code: normalized
+    });
+
+    if (!rpcErr && rpcData) {
+      const row = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+      if (row?.id) {
+        return {
+          id: row.id,
+          code: row.code,
+          name: row.name,
+          title: row.title || null,
+          depth: Number(row.depth ?? 0),
+          f0Id: row.f0_id || row.id,
+          f0Code: row.f0_code || row.code,
+          f0Name: row.f0_name || row.name
+        };
+      }
+      return null;
+    }
+  } catch {
+    // Fallback sang bảng partners nếu RPC 009 chưa được deploy
+  }
+
+  try {
+    const { data: target, error } = await supabase
+      .from('partners')
+      .select('id, code, name, title, depth, parent_id, status')
+      .ilike('code', normalized)
+      .maybeSingle();
+
+    if (error || !target || (target.status || 'ACTIVE').toUpperCase() !== 'ACTIVE') {
+      return null;
+    }
+
+    // Lần ngược cây parent_id tối đa 30 bước để tìm đối tác gốc F0
+    let root = target;
+    const visited = new Set([target.id]);
+    let cursorParentId = target.parent_id;
+    let steps = 0;
+
+    while (cursorParentId && !visited.has(cursorParentId) && steps < 30) {
+      visited.add(cursorParentId);
+      steps += 1;
+      const { data: parentRow } = await supabase
+        .from('partners')
+        .select('id, code, name, parent_id')
+        .eq('id', cursorParentId)
+        .maybeSingle();
+      if (!parentRow) break;
+      root = parentRow;
+      cursorParentId = parentRow.parent_id;
+    }
+
+    return {
+      id: target.id,
+      code: target.code,
+      name: target.name,
+      title: target.title || null,
+      depth: Number(target.depth ?? 0),
+      f0Id: root.id,
+      f0Code: root.code,
+      f0Name: root.name
+    };
+  } catch (err) {
+    console.warn('[apiResolveReferralCode error]:', err);
+    return null;
+  }
+}
+
+const inFlightProvision = new Map();
+
+/**
+ * Cấp phát / đồng bộ bản ghi partners & profiles cho một Auth User đã tồn tại.
+ * Bảo vệ idempotent + single-flight để tránh tạo trùng đối tác khi AuthContext và Form cùng chạy.
+ */
+export async function apiProvisionAccountRecords({
+  userId,
+  email = '',
+  fullName = '',
+  phone = '',
+  role = 'partner',
+  partnerCode = '',
+  parentPartnerId = null,
+  parentDepthHint = null,
+  existingPartnerId = null,
+  referrerCode = '',
+  forceUpdate = false
+}) {
+  if (!isUuid(userId)) {
+    return { ok: false, error: 'User ID không hợp lệ.' };
+  }
+
+  if (!forceUpdate && inFlightProvision.has(userId)) {
+    return await inFlightProvision.get(userId);
+  }
+
+  const execPromise = (async () => {
+    try {
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (existingProfile && !forceUpdate) {
+        let existingPartner = null;
+        if (existingProfile.partner_id) {
+          const { data: pRow } = await supabase
+            .from('partners')
+            .select('*')
+            .eq('id', existingProfile.partner_id)
+            .maybeSingle();
+          if (pRow) {
+            existingPartner = {
+              id: pRow.id,
+              code: pRow.code,
+              name: pRow.name,
+              title: pRow.title,
+              phone: pRow.phone,
+              email: pRow.email,
+              parentId: pRow.parent_id,
+              depth: pRow.depth,
+              status: pRow.status
+            };
+          }
+        }
+        return { ok: true, profile: existingProfile, partner: existingPartner, alreadyExisted: true };
+      }
+
+      const displayName = (fullName || '').trim() || (email ? email.split('@')[0] : 'Thành viên mới');
+      let resolvedPartnerId = null;
+      let createdPartner = null;
+
+      if (role === 'partner') {
+        if (isUuid(existingPartnerId)) {
+          resolvedPartnerId = existingPartnerId;
+        } else if (!forceUpdate && existingProfile?.partner_id) {
+          resolvedPartnerId = existingProfile.partner_id;
+        } else if (existingProfile?.partner_id && forceUpdate && !isUuid(parentPartnerId) && !normalizeRefCode(referrerCode)) {
+          resolvedPartnerId = existingProfile.partner_id;
+        } else {
+          // Tìm đối tác tuyến trên / F0
+          let parentRow = null;
+          if (isUuid(parentPartnerId)) {
+            const { data: pById } = await supabase
+              .from('partners')
+              .select('id, code, name, depth')
+              .eq('id', parentPartnerId)
+              .maybeSingle();
+            if (pById) {
+              parentRow = pById;
+            } else if (parentDepthHint !== null && parentDepthHint !== undefined) {
+              parentRow = { id: parentPartnerId, depth: Number(parentDepthHint) };
+            } else {
+              parentRow = { id: parentPartnerId, depth: 0 };
+            }
+          } else if (normalizeRefCode(referrerCode)) {
+            const refInfo = await apiResolveReferralCode(referrerCode);
+            if (refInfo?.id) {
+              parentRow = { id: refInfo.id, code: refInfo.code, name: refInfo.name, depth: refInfo.depth };
+            }
+          }
+
+          const depth = parentRow ? Number(parentRow.depth ?? 0) + 1 : 0;
+          const title = parentRow ? `Đối tác Tuyến ${depth}` : 'Đối tác F0 (Gốc)';
+          let candidateCode = normalizeRefCode(partnerCode) || generatePartnerRefCode();
+
+          let partnerSaveRes = await apiSavePartner({
+            code: candidateCode,
+            name: displayName,
+            title,
+            phone: (phone || '').trim(),
+            email: (email || '').trim() || null,
+            parentId: parentRow?.id || null,
+            depth,
+            status: 'ACTIVE'
+          });
+
+          if (!partnerSaveRes.ok && (partnerSaveRes.error || '').toLowerCase().includes('duplicate')) {
+            candidateCode = generatePartnerRefCode();
+            partnerSaveRes = await apiSavePartner({
+              code: candidateCode,
+              name: displayName,
+              title,
+              phone: (phone || '').trim(),
+              email: (email || '').trim() || null,
+              parentId: parentRow?.id || null,
+              depth,
+              status: 'ACTIVE'
+            });
+          }
+
+          if (!partnerSaveRes.ok) {
+            return {
+              ok: false,
+              pendingTrigger: isForbiddenError({ message: partnerSaveRes.error }),
+              error: partnerSaveRes.error || 'Không thể khởi tạo hồ sơ đối tác.'
+            };
+          }
+
+          createdPartner = partnerSaveRes.data;
+          resolvedPartnerId = createdPartner.id;
+        }
+      }
+
+      const { data: savedProf, error: profErr } = await supabase
+        .from('profiles')
+        .upsert({
+          user_id: userId,
+          role,
+          partner_id: role === 'partner' ? resolvedPartnerId : null,
+          full_name: displayName
+        })
+        .select()
+        .maybeSingle();
+
+      if (profErr) {
+        return {
+          ok: false,
+          pendingTrigger: isForbiddenError(profErr),
+          error: profErr.message
+        };
+      }
+
+      return {
+        ok: true,
+        profile: savedProf || {
+          user_id: userId,
+          role,
+          partner_id: role === 'partner' ? resolvedPartnerId : null,
+          full_name: displayName
+        },
+        partner: createdPartner
+      };
+    } catch (err) {
+      return { ok: false, error: err?.message || 'Lỗi đồng bộ hồ sơ tài khoản.' };
+    }
+  })();
+
+  if (!forceUpdate) {
+    inFlightProvision.set(userId, execPromise);
+  }
+  try {
+    return await execPromise;
+  } finally {
+    if (!forceUpdate) {
+      inFlightProvision.delete(userId);
+    }
+  }
+}
+
+/**
+ * Tạo tài khoản Supabase Auth kèm Tick phân quyền ngay từ đầu & Gắn cây Đối tác F0 (nếu là CTV).
+ * - useEphemeralClient = true (Admin): Không ghi đè phiên đăng nhập Admin hiện tại.
+ * - useEphemeralClient = false (Người dùng tự đăng ký): Giới hạn role chỉ nhận 'partner' | 'frontdesk'.
+ */
+export async function apiCreateAccountWithRole({
+  email,
+  password,
+  fullName,
+  phone = '',
+  role = 'partner',
+  partnerCode = '',
+  parentPartnerId = null,
+  existingPartnerId = null,
+  referrerCode = '',
+  useEphemeralClient = false
+}) {
+  const cleanEmail = (email || '').trim().toLowerCase();
+  const cleanName = (fullName || '').trim();
+  const cleanPhone = (phone || '').trim();
+  const cleanRef = normalizeRefCode(referrerCode);
+  const effectiveRole = useEphemeralClient ? role : sanitizeSelfSignupRole(role);
+
+  if (!cleanEmail || !password || password.length < 6) {
+    return { ok: false, error: 'Vui lòng nhập email hợp lệ và mật khẩu tối thiểu 6 ký tự.' };
+  }
+
+  let resolvedReferrer = null;
+  let finalParentId = isUuid(parentPartnerId) ? parentPartnerId : null;
+  let parentDepthHint = null;
+
+  if (effectiveRole === 'partner' && !isUuid(existingPartnerId) && cleanRef && !finalParentId) {
+    resolvedReferrer = await apiResolveReferralCode(cleanRef);
+    if (!resolvedReferrer) {
+      return { ok: false, error: `Mã giới thiệu "${cleanRef}" không tồn tại hoặc đang tạm dừng.` };
+    }
+    finalParentId = resolvedReferrer.id;
+    parentDepthHint = resolvedReferrer.depth;
+  }
+
+  const finalPartnerCode =
+    effectiveRole === 'partner' && !isUuid(existingPartnerId)
+      ? (normalizeRefCode(partnerCode) || generatePartnerRefCode())
+      : null;
+
+  const authClient = useEphemeralClient ? createEphemeralAuthClient() : supabase;
+
+  try {
+    const { data, error } = await authClient.auth.signUp({
+      email: cleanEmail,
+      password,
+      options: {
+        data: {
+          full_name: cleanName || cleanEmail.split('@')[0],
+          phone: cleanPhone,
+          requested_role: effectiveRole,
+          partner_code: finalPartnerCode,
+          parent_partner_id: effectiveRole === 'partner' ? finalParentId : null,
+          existing_partner_id: effectiveRole === 'partner' && isUuid(existingPartnerId) ? existingPartnerId : null,
+          referrer_code: effectiveRole === 'partner' ? (cleanRef || resolvedReferrer?.code || null) : null
+        }
+      }
+    });
+
+    if (error) {
+      return { ok: false, error: mapAuthErrorMessage(error) };
+    }
+
+    if (data?.user?.identities && data.user.identities.length === 0) {
+      return { ok: false, error: 'Email này đã được đăng ký trong hệ thống. Vui lòng đăng nhập hoặc dùng email khác.' };
+    }
+
+    const createdUser = data?.user;
+    if (!createdUser?.id) {
+      return { ok: false, error: 'Không nhận được thông tin tài khoản từ Supabase Auth.' };
+    }
+
+    const provisionRes = await apiProvisionAccountRecords({
+      userId: createdUser.id,
+      email: cleanEmail,
+      fullName: cleanName,
+      phone: cleanPhone,
+      role: effectiveRole,
+      partnerCode: finalPartnerCode,
+      parentPartnerId: finalParentId,
+      parentDepthHint,
+      existingPartnerId,
+      referrerCode: cleanRef,
+      forceUpdate: useEphemeralClient
+    });
+
+    if (!provisionRes.ok && useEphemeralClient) {
+      return {
+        ok: false,
+        user: createdUser,
+        error: `Tài khoản Auth đã tạo nhưng lỗi lưu hồ sơ: ${provisionRes.error}`
+      };
+    }
+
+    return {
+      ok: true,
+      user: createdUser,
+      session: data?.session || null,
+      requiresEmailConfirmation: !data?.session,
+      profile: provisionRes.profile || null,
+      partner: provisionRes.partner || null,
+      resolvedReferrer,
+      pendingTrigger: Boolean(provisionRes.pendingTrigger)
+    };
+  } catch (err) {
+    return { ok: false, error: mapAuthErrorMessage(err) };
+  }
+}
+
 export async function apiFetchProfiles() {
   try {
     const { data, error } = await supabase
