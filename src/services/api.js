@@ -10,6 +10,38 @@ import {
   normalizeRefCode,
   sanitizeSelfSignupRole
 } from '../utils/referral.js';
+import {
+  validateIdCardFile,
+  compressIdCardImage,
+  buildPartnerDocumentPath
+} from '../utils/imageUpload.js';
+
+export function mapPartnerRow(p, docFallback = null) {
+  if (!p) return null;
+  const hasNativeFront = Object.prototype.hasOwnProperty.call(p, 'id_card_front');
+  const hasNativeBack = Object.prototype.hasOwnProperty.call(p, 'id_card_back');
+  const rawFront = hasNativeFront ? p.id_card_front : (docFallback?.idCardFront ?? null);
+  const rawBack = hasNativeBack ? p.id_card_back : (docFallback?.idCardBack ?? null);
+
+  return {
+    id: p.id,
+    code: p.code,
+    name: p.name,
+    title: p.title,
+    phone: p.phone,
+    email: p.email,
+    parentId: p.parent_id,
+    depth: p.depth,
+    status: p.status,
+    bankName: p.bank_name,
+    bankAccountNo: p.bank_account_no,
+    bankAccountName: p.bank_account_name,
+    idCardFront: rawFront || null,
+    idCardBack: rawBack || null,
+    joinedAt: p.joined_at,
+    createdAt: p.created_at
+  };
+}
 
 // ----------------------------------------------------------------------------
 // 1. LẤY TOÀN BỘ DỮ LIỆU ĐANG HOẠT ĐỘNG
@@ -45,25 +77,41 @@ export async function fetchAllData() {
       };
     }
 
+    // Fallback đọc ảnh CCCD từ audit_logs nếu migration 010 chưa được áp dụng lên Supabase
+    const kycDocMap = new Map();
+    const needsKycFallback =
+      Array.isArray(partnersData) &&
+      partnersData.length > 0 &&
+      !Object.prototype.hasOwnProperty.call(partnersData[0], 'id_card_front');
+
+    if (needsKycFallback) {
+      try {
+        const { data: kycLogs, error: kycErr } = await supabase
+          .from('audit_logs')
+          .select('payload, created_at')
+          .eq('action', 'PARTNER_KYC_DOCUMENT')
+          .order('created_at', { ascending: false })
+          .limit(500);
+        if (!kycErr && Array.isArray(kycLogs)) {
+          for (const row of kycLogs) {
+            const pid = row?.payload?.partner_id;
+            if (pid && !kycDocMap.has(pid)) {
+              kycDocMap.set(pid, {
+                idCardFront: row.payload.id_card_front || null,
+                idCardBack: row.payload.id_card_back || null
+              });
+            }
+          }
+        }
+      } catch {
+        // Bỏ qua nếu RLS hạn chế truy cập audit_logs
+      }
+    }
+
     return {
       isServer: true,
       data: {
-        partners: (partnersData || []).map(p => ({
-          id: p.id,
-          code: p.code,
-          name: p.name,
-          title: p.title,
-          phone: p.phone,
-          email: p.email,
-          parentId: p.parent_id,
-          depth: p.depth,
-          status: p.status,
-          bankName: p.bank_name,
-          bankAccountNo: p.bank_account_no,
-          bankAccountName: p.bank_account_name,
-          joinedAt: p.joined_at,
-          createdAt: p.created_at
-        })),
+        partners: (partnersData || []).map(p => mapPartnerRow(p, kycDocMap.get(p.id) || null)),
         services: (servicesData || []).map(s => ({
           id: s.id,
           code: s.code,
@@ -236,12 +284,95 @@ export async function apiSettleMonth(month, force = false) {
 export const apiSaveSettlement = apiSettleMonth;
 
 // ----------------------------------------------------------------------------
-// 4. QUẢN LÝ ĐỐI TÁC (PARTNERS)
+// 4. QUẢN LÝ ĐỐI TÁC (PARTNERS) & HỒ SƠ CCCD
 // ----------------------------------------------------------------------------
+function isMissingColumnError(error) {
+  if (!error) return false;
+  const code = error.code || '';
+  const msg = (error.message || '').toLowerCase();
+  return code === 'PGRST204' || code === '42703' || msg.includes('schema cache') || msg.includes('column');
+}
+
+export async function apiUploadPartnerIdCard(partnerId, side = 'front', file) {
+  const validation = validateIdCardFile(file);
+  if (!validation.ok) {
+    return { ok: false, error: validation.error };
+  }
+
+  try {
+    const compressed = await compressIdCardImage(file, {
+      maxWidth: 1080,
+      maxHeight: 1080,
+      quality: 0.74
+    });
+
+    const targetPartnerId = isUuid(partnerId) ? partnerId : (partnerId || 'draft');
+    const storagePath = buildPartnerDocumentPath(targetPartnerId, side, 'jpg');
+
+    if (compressed.blob) {
+      try {
+        const { error: uploadErr } = await supabase.storage
+          .from('partner-documents')
+          .upload(storagePath, compressed.blob, {
+            contentType: 'image/jpeg',
+            upsert: true
+          });
+
+        if (!uploadErr) {
+          const { data: pubData } = supabase.storage
+            .from('partner-documents')
+            .getPublicUrl(storagePath);
+
+          if (pubData?.publicUrl) {
+            return {
+              ok: true,
+              url: pubData.publicUrl,
+              path: storagePath,
+              storage: 'supabase_storage'
+            };
+          }
+        }
+      } catch {
+        // Fallback sang ảnh nén inline nếu Storage bucket chưa được khởi tạo
+      }
+    }
+
+    // Nếu Storage không sẵn sàng, nén nhẹ hơn nếu chuỗi base64 quá lớn (>350KB)
+    let fallbackUrl = compressed.dataUrl;
+    if (fallbackUrl && fallbackUrl.length > 350000) {
+      try {
+        const smaller = await compressIdCardImage(file, {
+          maxWidth: 860,
+          maxHeight: 860,
+          quality: 0.58
+        });
+        if (smaller?.dataUrl) {
+          fallbackUrl = smaller.dataUrl;
+        }
+      } catch {
+        // Giữ bản nén ban đầu
+      }
+    }
+
+    return {
+      ok: true,
+      url: fallbackUrl,
+      path: null,
+      storage: 'inline_compressed'
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err?.message || 'Không thể xử lý ảnh CCCD. Vui lòng thử ảnh JPG hoặc PNG.'
+    };
+  }
+}
+
 export async function apiSavePartner(partner) {
   try {
     const isEdit = isUuid(partner.id);
     const parentIdValid = isUuid(partner.parentId) ? partner.parentId : null;
+    const hasCardFields = partner.idCardFront !== undefined || partner.idCardBack !== undefined;
 
     const record = {
       ...(isEdit ? { id: partner.id } : { id: generateUuid() }),
@@ -255,10 +386,62 @@ export async function apiSavePartner(partner) {
       status: partner.status || 'ACTIVE',
       bank_name: partner.bankName || null,
       bank_account_no: partner.bankAccountNo || null,
-      bank_account_name: partner.bankAccountName || null
+      bank_account_name: partner.bankAccountName || null,
+      ...(partner.idCardFront !== undefined ? { id_card_front: partner.idCardFront || null } : {}),
+      ...(partner.idCardBack !== undefined ? { id_card_back: partner.idCardBack || null } : {})
     };
 
-    const { data, error } = await supabase.from('partners').upsert(record).select().single();
+    let { data, error } = await supabase.from('partners').upsert(record).select().single();
+    let docFallback = null;
+
+    if (error && hasCardFields && isMissingColumnError(error)) {
+      const fallbackRecord = { ...record };
+      delete fallbackRecord.id_card_front;
+      delete fallbackRecord.id_card_back;
+
+      const retryRes = await supabase.from('partners').upsert(fallbackRecord).select().single();
+      data = retryRes.data;
+      error = retryRes.error;
+
+      if (!error && data) {
+        const nextFront = partner.idCardFront || null;
+        const nextBack = partner.idCardBack || null;
+        docFallback = { idCardFront: nextFront, idCardBack: nextBack };
+
+        let shouldWriteDocLog = Boolean(nextFront || nextBack || partner.hadIdCardDocs);
+        if (!shouldWriteDocLog) {
+          try {
+            const { data: prevDocLogs } = await supabase
+              .from('audit_logs')
+              .select('id')
+              .eq('action', 'PARTNER_KYC_DOCUMENT')
+              .contains('payload', { partner_id: data.id })
+              .limit(1);
+            shouldWriteDocLog = Array.isArray(prevDocLogs) && prevDocLogs.length > 0;
+          } catch {
+            shouldWriteDocLog = false;
+          }
+        }
+
+        if (shouldWriteDocLog) {
+          try {
+            await supabase.from('audit_logs').insert({
+              action: 'PARTNER_KYC_DOCUMENT',
+              entity: 'PARTNER_DOC',
+              payload: {
+                partner_id: data.id,
+                partner_code: data.code,
+                id_card_front: nextFront,
+                id_card_back: nextBack
+              }
+            });
+          } catch {
+            // Không chặn luồng lưu chính nếu audit_logs bị hạn chế
+          }
+        }
+      }
+    }
+
     if (error) {
       console.error('[apiSavePartner error]:', error);
       return { ok: false, error: error.message };
@@ -266,26 +449,82 @@ export async function apiSavePartner(partner) {
 
     return {
       ok: true,
-      data: {
-        id: data.id,
-        code: data.code,
-        name: data.name,
-        title: data.title,
-        phone: data.phone,
-        email: data.email,
-        parentId: data.parent_id,
-        depth: data.depth,
-        status: data.status,
-        bankName: data.bank_name,
-        bankAccountNo: data.bank_account_no,
-        bankAccountName: data.bank_account_name,
-        joinedAt: data.joined_at,
-        createdAt: data.created_at
-      }
+      data: mapPartnerRow(data, docFallback)
     };
   } catch (err) {
     console.error('[apiSavePartner exception]:', err);
     return { ok: false, error: err.message };
+  }
+}
+
+export async function apiUpdateMyPartnerKyc({
+  partnerId,
+  idCardFront = null,
+  idCardBack = null,
+  bankName = null,
+  bankAccountNo = null,
+  bankAccountName = null,
+  currentPartner = null
+}) {
+  try {
+    const { data: rpcData, error: rpcErr } = await supabase.rpc('update_my_partner_kyc', {
+      p_id_card_front: idCardFront || null,
+      p_id_card_back: idCardBack || null,
+      p_bank_name: bankName ?? null,
+      p_bank_account_no: bankAccountNo ?? null,
+      p_bank_account_name: bankAccountName ?? null
+    });
+
+    if (!rpcErr && rpcData) {
+      const row = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+      if (row) {
+        return { ok: true, data: mapPartnerRow(row) };
+      }
+    }
+
+    if (rpcErr && isForbiddenError(rpcErr)) {
+      return {
+        ok: false,
+        error: rpcErr.message || 'Không có quyền cập nhật hồ sơ đối tác.'
+      };
+    }
+
+    // Fallback nếu migration 010 chưa được áp dụng lên Supabase
+    if (currentPartner?.id) {
+      const saveRes = await apiSavePartner({
+        ...currentPartner,
+        id: partnerId || currentPartner.id,
+        idCardFront: idCardFront || null,
+        idCardBack: idCardBack || null,
+        bankName: bankName ?? currentPartner.bankName,
+        bankAccountNo: bankAccountNo ?? currentPartner.bankAccountNo,
+        bankAccountName: bankAccountName ?? currentPartner.bankAccountName,
+        hadIdCardDocs: Boolean(currentPartner.idCardFront || currentPartner.idCardBack)
+      });
+
+      if (saveRes.ok) {
+        return saveRes;
+      }
+
+      if (isForbiddenError({ message: saveRes.error })) {
+        return {
+          ok: false,
+          requiresMigration: true,
+          error: 'Cần chạy migration 010_partner_cccd_images.sql trên Supabase để đối tác tự lưu ảnh CCCD và thông tin ngân hàng.'
+        };
+      }
+      return saveRes;
+    }
+
+    return {
+      ok: false,
+      error: rpcErr?.message || 'Không thể cập nhật hồ sơ đối tác.'
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err?.message || 'Lỗi kết nối khi cập nhật hồ sơ đối tác.'
+    };
   }
 }
 
@@ -662,17 +901,7 @@ export async function apiProvisionAccountRecords({
             .eq('id', existingProfile.partner_id)
             .maybeSingle();
           if (pRow) {
-            existingPartner = {
-              id: pRow.id,
-              code: pRow.code,
-              name: pRow.name,
-              title: pRow.title,
-              phone: pRow.phone,
-              email: pRow.email,
-              parentId: pRow.parent_id,
-              depth: pRow.depth,
-              status: pRow.status
-            };
+            existingPartner = mapPartnerRow(pRow);
           }
         }
         return { ok: true, profile: existingProfile, partner: existingPartner, alreadyExisted: true };

@@ -94,6 +94,8 @@ const dbPartner = {
   bank_name: 'Vietcombank',
   bank_account_no: '0011002233',
   bank_account_name: 'NGUYEN VAN A',
+  id_card_front: 'https://cdn.test/cccd-front.jpg',
+  id_card_back: 'https://cdn.test/cccd-back.jpg',
   joined_at: '2026-11-01T00:00:00Z',
   created_at: '2026-11-01T00:00:00Z'
 };
@@ -111,11 +113,15 @@ const appPartner = {
   bankName: dbPartner.bank_name,
   bankAccountNo: dbPartner.bank_account_no,
   bankAccountName: dbPartner.bank_account_name,
+  idCardFront: dbPartner.id_card_front,
+  idCardBack: dbPartner.id_card_back,
   joinedAt: dbPartner.joined_at,
   createdAt: dbPartner.created_at
 };
 assert(appPartner.parentId === null, 'Contract Partners: parentId <=> parent_id');
 assert(appPartner.bankName === 'Vietcombank', 'Contract Partners: bankName <=> bank_name');
+assertEqual(appPartner.idCardFront, 'https://cdn.test/cccd-front.jpg', 'Contract Partners: idCardFront <=> id_card_front');
+assertEqual(appPartner.idCardBack, 'https://cdn.test/cccd-back.jpg', 'Contract Partners: idCardBack <=> id_card_back');
 
 // Contract: Visits (4 cột mới)
 const dbVisit = {

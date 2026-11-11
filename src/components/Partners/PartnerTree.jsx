@@ -4,12 +4,15 @@ import {
   ChevronDown,
   ChevronRight,
   Plus,
-  Link2
+  Link2,
+  ShieldCheck,
+  CreditCard
 } from 'lucide-react';
 import { buildPartnerTree } from '../../services/commissionEngine';
 import { formatVND } from '../../utils/formatters';
 import { useAuth } from '../../context/AuthContext';
 import { can } from '../../config/permissions';
+import { isValidImageSource } from '../../utils/imageUpload';
 
 export default function PartnerTree({
   partners,
@@ -87,6 +90,9 @@ function TreeNode({ node, settlementResult, onSelectPartner, onAddSubPartner, on
 
   const hasChildren = node.children && node.children.length > 0;
   const depth = node.depth !== undefined ? node.depth : 0;
+  const hasFront = isValidImageSource(node.idCardFront);
+  const hasBack = isValidImageSource(node.idCardBack);
+  const cccdCount = (hasFront ? 1 : 0) + (hasBack ? 1 : 0);
 
   return (
     <div className="relative pl-6 border-l-2 border-slate-200 ml-3">
@@ -109,13 +115,34 @@ function TreeNode({ node, settlementResult, onSelectPartner, onAddSubPartner, on
             )}
 
             <div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <span className="font-bold text-slate-900 text-sm hover:text-sky-700 cursor-pointer" onClick={() => onSelectPartner(node)}>
                   {node.name}
                 </span>
                 <span className="text-[10px] bg-sky-50 text-sky-700 font-mono px-1.5 py-0.2 rounded border border-sky-200">
                   {node.code}
                 </span>
+                {cccdCount === 2 ? (
+                  <button
+                    type="button"
+                    onClick={() => onSelectPartner(node)}
+                    className="inline-flex items-center gap-0.5 text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.2 rounded font-semibold hover:bg-emerald-100"
+                    title="Đã đủ 2 mặt CCCD — Bấm xem hồ sơ"
+                  >
+                    <ShieldCheck className="w-2.5 h-2.5" />
+                    <span>CCCD</span>
+                  </button>
+                ) : cccdCount === 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => onSelectPartner(node)}
+                    className="inline-flex items-center gap-0.5 text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.2 rounded font-semibold hover:bg-amber-100"
+                    title="Mới có 1/2 mặt CCCD — Bấm để bổ sung"
+                  >
+                    <CreditCard className="w-2.5 h-2.5" />
+                    <span>CCCD 1/2</span>
+                  </button>
+                ) : null}
               </div>
               <div className="text-[11px] text-slate-500 mt-0.5">
                 {node.title || (depth === 0 ? 'Bác sĩ Sáng lập' : `Đối tác Tuyến ${depth}`)}

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Search, Plus, Edit2, CheckCircle2, XCircle, Clock, Link2 } from 'lucide-react';
+import { Search, Plus, Edit2, CheckCircle2, XCircle, Clock, Link2, ShieldCheck, CreditCard } from 'lucide-react';
 import { formatVND } from '../../utils/formatters';
 import { useAuth } from '../../context/AuthContext';
 import { can } from '../../config/permissions';
+import { isValidImageSource } from '../../utils/imageUpload';
 
 export default function PartnerList({
   partners,
@@ -79,17 +80,45 @@ export default function PartnerList({
               filteredRows.map(row => {
                 const partnerObj = partners.find(p => p.id === row.partnerId);
                 const isActive = partnerObj?.status === 'ACTIVE';
+                const hasFront = isValidImageSource(partnerObj?.idCardFront);
+                const hasBack = isValidImageSource(partnerObj?.idCardBack);
+                const cccdCount = (hasFront ? 1 : 0) + (hasBack ? 1 : 0);
 
                 return (
                   <tr key={row.partnerId} className="hover:bg-slate-50 transition-colors">
                     {/* Cột 1: Đối tác */}
                     <td className="py-3 px-4">
                       <div className="font-bold text-slate-900">{row.partnerName}</div>
-                      <div className="flex items-center gap-2 mt-0.5">
+                      <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                         <span className="font-mono text-[11px] text-slate-500">{row.partnerCode}</span>
                         <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-medium">
                           Độ sâu {row.depth}
                         </span>
+                        {cccdCount === 2 ? (
+                          <button
+                            type="button"
+                            onClick={() => can(role, 'managePartners') && partnerObj && onEditPartner(partnerObj)}
+                            className={`inline-flex items-center gap-1 text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.2 rounded font-semibold ${can(role, 'managePartners') ? 'hover:bg-emerald-100 cursor-pointer' : 'cursor-default'}`}
+                            title="Đã tải đủ 2 mặt CCCD"
+                          >
+                            <ShieldCheck className="w-2.5 h-2.5" />
+                            <span>CCCD 2 mặt</span>
+                          </button>
+                        ) : cccdCount === 1 ? (
+                          <button
+                            type="button"
+                            onClick={() => can(role, 'managePartners') && partnerObj && onEditPartner(partnerObj)}
+                            className={`inline-flex items-center gap-1 text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.2 rounded font-semibold ${can(role, 'managePartners') ? 'hover:bg-amber-100 cursor-pointer' : 'cursor-default'}`}
+                            title="Mới có 1 mặt ảnh CCCD"
+                          >
+                            <CreditCard className="w-2.5 h-2.5" />
+                            <span>CCCD 1/2</span>
+                          </button>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] bg-slate-100 text-slate-400 px-1.5 py-0.2 rounded">
+                            <span>Chưa CCCD</span>
+                          </span>
+                        )}
                       </div>
                     </td>
 

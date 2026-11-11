@@ -5,6 +5,7 @@ import StatCards from './components/Dashboard/StatCards';
 import RecentReferrals from './components/Dashboard/RecentReferrals';
 import TopPartners from './components/Dashboard/TopPartners';
 import PartnerModal from './components/Partners/PartnerModal';
+import PartnerSelfProfileModal from './components/Partners/PartnerSelfProfileModal';
 import CustomerModal from './components/Customers/CustomerModal';
 import AddVisitModal from './components/Customers/AddVisitModal';
 import CustomerProfileModal from './components/Customers/CustomerProfileModal';
@@ -25,6 +26,7 @@ import { can } from './config/permissions';
 import {
   fetchAllData,
   apiSavePartner,
+  apiUpdateMyPartnerKyc,
   apiTogglePartnerStatus,
   apiSaveCustomer,
   apiAddVisit,
@@ -37,6 +39,7 @@ import {
 import { calculateMonthlySettlement, COMMISSION_POLICY } from './services/commissionEngine';
 import { useAuth } from './context/AuthContext';
 import { formatVND } from './utils/formatters';
+import { isValidImageSource } from './utils/imageUpload';
 import {
   buildPartnerReferralLink,
   getReferralCodeFromUrl,
@@ -55,7 +58,10 @@ import {
   Link2,
   Copy,
   Check,
-  UserPlus
+  UserPlus,
+  CreditCard,
+  ShieldCheck,
+  Upload
 } from 'lucide-react';
 
 export default function App() {
@@ -87,6 +93,7 @@ export default function App() {
   const [partnerModalOpen, setPartnerModalOpen] = useState(false);
   const [partnerToEdit, setPartnerToEdit] = useState(null);
   const [defaultParentId, setDefaultParentId] = useState(null);
+  const [partnerSelfProfileOpen, setPartnerSelfProfileOpen] = useState(false);
 
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
   const [customerProfileModalOpen, setCustomerProfileModalOpen] = useState(false);
@@ -431,7 +438,7 @@ export default function App() {
     const res = await apiSavePartner(savedPartner);
     if (!res.ok) {
       showToast(`Lỗi lưu đối tác: ${res.error || 'Không thể lưu'}`, 'error');
-      return;
+      return false;
     }
     const saved = res.data || savedPartner;
     setData(prev => {
@@ -446,6 +453,27 @@ export default function App() {
     });
 
     showToast(`Đã lưu đối tác ${saved.name} vào hệ thống!`);
+    return true;
+  }
+
+  async function handleSaveMyPartnerProfile(profilePayload) {
+    const res = await apiUpdateMyPartnerKyc({
+      ...profilePayload,
+      currentPartner
+    });
+    if (!res.ok) {
+      showToast(res.error || 'Không thể lưu hồ sơ đối tác.', 'error');
+      return res;
+    }
+    const updatedPartner = res.data;
+    if (updatedPartner?.id) {
+      setData(prev => ({
+        ...prev,
+        partners: prev.partners.map(p => (p.id === updatedPartner.id ? { ...p, ...updatedPartner } : p))
+      }));
+    }
+    showToast('Đã cập nhật ảnh CCCD & hồ sơ đối tác!');
+    return res;
   }
 
   async function handleTogglePartnerStatus(partnerId) {
@@ -682,45 +710,115 @@ export default function App() {
           {/* TAB 1: DASHBOARD */}
           {activeTab === 'dashboard' && (
             <div className="space-y-6">
-              {/* Thẻ Link Giới Thiệu Đối Tác (hiển thị cho CTV/Đối tác đăng nhập) */}
+              {/* Thẻ Link Giới Thiệu & Hồ sơ CCCD Đối Tác (hiển thị cho CTV/Đối tác đăng nhập) */}
               {isPartner && currentPartner && (() => {
                 const partnerRefUrl = buildPartnerReferralLink(currentPartner.code);
+                const hasFront = isValidImageSource(currentPartner.idCardFront);
+                const hasBack = isValidImageSource(currentPartner.idCardBack);
+                const hasFullCccd = hasFront && hasBack;
                 return (
-                  <div className="p-4 bg-white border border-sky-200 rounded-xl shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-900">
-                          <Link2 className="w-4 h-4 text-sky-600" />
-                          Link Giới Thiệu Đối Tác Của Bạn (Referral Link)
-                        </span>
-                        <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-sky-50 text-sky-700 border border-sky-200 rounded">
-                          {currentPartner.code}
-                        </span>
-                        <span className="px-2 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-700 rounded">
-                          Tuyến {currentPartner.depth ?? 0}
-                        </span>
+                  <div className="space-y-4">
+                    <div className="p-4 bg-white border border-sky-200 rounded-xl shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-900">
+                            <Link2 className="w-4 h-4 text-sky-600" />
+                            Link Giới Thiệu Đối Tác Của Bạn (Referral Link)
+                          </span>
+                          <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-sky-50 text-sky-700 border border-sky-200 rounded">
+                            {currentPartner.code}
+                          </span>
+                          <span className="px-2 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-700 rounded">
+                            Tuyến {currentPartner.depth ?? 0}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          Chia sẻ đường link này cho đối tác mới — khi đăng ký qua link, tài khoản sẽ tự động gắn làm tuyến dưới trong cây đối tác của bạn.
+                        </p>
                       </div>
-                      <p className="text-xs text-slate-500">
-                        Chia sẻ đường link này cho đối tác mới — khi đăng ký qua link, tài khoản sẽ tự động gắn làm tuyến dưới trong cây đối tác của bạn.
-                      </p>
+
+                      <div className="flex items-center gap-2 w-full lg:w-auto lg:min-w-[380px]">
+                        <input
+                          type="text"
+                          readOnly
+                          value={partnerRefUrl}
+                          onClick={e => e.target.select()}
+                          className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-mono text-xs text-slate-700 focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleCopyPartnerReferralLink(currentPartner)}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-lg transition-colors shrink-0"
+                        >
+                          {copiedDashboardLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                          <span>{copiedDashboardLink ? 'Đã sao chép' : 'Sao chép Link'}</span>
+                        </button>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2 w-full lg:w-auto lg:min-w-[380px]">
-                      <input
-                        type="text"
-                        readOnly
-                        value={partnerRefUrl}
-                        onClick={e => e.target.select()}
-                        className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-mono text-xs text-slate-700 focus:outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleCopyPartnerReferralLink(currentPartner)}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-lg transition-colors shrink-0"
-                      >
-                        {copiedDashboardLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                        <span>{copiedDashboardLink ? 'Đã sao chép' : 'Sao chép Link'}</span>
-                      </button>
+                    {/* Hồ sơ Cá nhân & Ảnh Căn cước công dân (CCCD) */}
+                    <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                      <div className="space-y-1.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-900">
+                            <CreditCard className="w-4 h-4 text-sky-600" />
+                            Hồ sơ Đối tác &amp; Ảnh Căn cước công dân (CCCD)
+                          </span>
+                          {hasFullCccd ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full">
+                              <ShieldCheck className="w-3 h-3" />
+                              Đã đủ 2 mặt CCCD
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 rounded-full">
+                              {hasFront || hasBack ? 'Mới tải 1/2 mặt CCCD' : 'Chưa cập nhật ảnh CCCD'}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          Ngân hàng nhận hoa hồng:{' '}
+                          <strong className="text-slate-700">
+                            {currentPartner.bankAccountNo
+                              ? `${currentPartner.bankName || 'Ngân hàng'} • ${currentPartner.bankAccountNo}`
+                              : 'Chưa cập nhật số tài khoản'}
+                          </strong>
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          {[
+                            { key: 'front', label: 'Mặt trước', src: currentPartner.idCardFront, valid: hasFront },
+                            { key: 'back', label: 'Mặt sau', src: currentPartner.idCardBack, valid: hasBack }
+                          ].map(slot => (
+                            <button
+                              key={slot.key}
+                              type="button"
+                              onClick={() => setPartnerSelfProfileOpen(true)}
+                              className="relative w-20 aspect-[1.6/1] rounded-lg border border-slate-200 bg-slate-50 hover:border-sky-400 overflow-hidden flex flex-col items-center justify-center transition-colors group"
+                              title={`Bấm để tải/xem ảnh CCCD ${slot.label.toLowerCase()}`}
+                            >
+                              {slot.valid ? (
+                                <img src={slot.src} alt={`CCCD ${slot.label}`} className="w-full h-full object-cover" />
+                              ) : (
+                                <>
+                                  <Upload className="w-3.5 h-3.5 text-slate-400 group-hover:text-sky-600" />
+                                  <span className="text-[9px] text-slate-500 mt-0.5 font-medium">{slot.label}</span>
+                                </>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setPartnerSelfProfileOpen(true)}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-lg transition-colors shrink-0"
+                        >
+                          <CreditCard className="w-3.5 h-3.5" />
+                          <span>{hasFullCccd ? 'Xem & Cập nhật CCCD' : 'Tải ảnh CCCD & Hồ sơ'}</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -926,6 +1024,13 @@ export default function App() {
         defaultParentId={defaultParentId}
       />
 
+      <PartnerSelfProfileModal
+        isOpen={partnerSelfProfileOpen}
+        onClose={() => setPartnerSelfProfileOpen(false)}
+        partner={currentPartner}
+        onSaveProfile={handleSaveMyPartnerProfile}
+      />
+
       <CustomerModal
         isOpen={customerModalOpen}
         onClose={() => setCustomerModalOpen(false)}
@@ -974,7 +1079,11 @@ export default function App() {
       {/* Toast popup */}
       {toastMessage && (
         <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 px-4 py-3 bg-slate-900 text-white text-xs rounded-lg shadow-lg animate-in slide-in-from-bottom-3 duration-200">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          {toastMessage.type === 'error' ? (
+            <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+          ) : (
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          )}
           <span>{toastMessage.message}</span>
         </div>
       )}
