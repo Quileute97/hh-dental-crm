@@ -830,14 +830,20 @@ export async function apiCreateAccountWithRole({
   let resolvedReferrer = null;
   let finalParentId = isUuid(parentPartnerId) ? parentPartnerId : null;
   let parentDepthHint = null;
+  let effectiveRefCode = cleanRef;
 
-  if (effectiveRole === 'partner' && !isUuid(existingPartnerId) && cleanRef && !finalParentId) {
-    resolvedReferrer = await apiResolveReferralCode(cleanRef);
-    if (!resolvedReferrer) {
-      return { ok: false, error: `Mã giới thiệu "${cleanRef}" không tồn tại hoặc đang tạm dừng.` };
+  if (effectiveRole === 'partner' && !isUuid(existingPartnerId) && effectiveRefCode && !finalParentId) {
+    resolvedReferrer = await apiResolveReferralCode(effectiveRefCode);
+    if (resolvedReferrer) {
+      finalParentId = resolvedReferrer.id;
+      parentDepthHint = resolvedReferrer.depth;
+      effectiveRefCode = resolvedReferrer.code;
+    } else if (useEphemeralClient) {
+      return { ok: false, error: `Mã giới thiệu "${effectiveRefCode}" không tồn tại hoặc đang tạm dừng.` };
+    } else {
+      // Nếu tự đăng ký qua URL mà mã ?ref= không tồn tại/tạm dừng -> âm thầm tạo đối tác gốc F0
+      effectiveRefCode = '';
     }
-    finalParentId = resolvedReferrer.id;
-    parentDepthHint = resolvedReferrer.depth;
   }
 
   const finalPartnerCode =
@@ -859,7 +865,7 @@ export async function apiCreateAccountWithRole({
           partner_code: finalPartnerCode,
           parent_partner_id: effectiveRole === 'partner' ? finalParentId : null,
           existing_partner_id: effectiveRole === 'partner' && isUuid(existingPartnerId) ? existingPartnerId : null,
-          referrer_code: effectiveRole === 'partner' ? (cleanRef || resolvedReferrer?.code || null) : null
+          referrer_code: effectiveRole === 'partner' ? (effectiveRefCode || null) : null
         }
       }
     });
@@ -887,7 +893,7 @@ export async function apiCreateAccountWithRole({
       parentPartnerId: finalParentId,
       parentDepthHint,
       existingPartnerId,
-      referrerCode: cleanRef,
+      referrerCode: effectiveRefCode,
       forceUpdate: useEphemeralClient
     });
 

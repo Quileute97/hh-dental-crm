@@ -32,8 +32,7 @@ import {
   apiDeleteService,
   apiSaveSettlement,
   apiFetchAuditLogs,
-  apiComputeMonth,
-  apiResolveReferralCode
+  apiComputeMonth
 } from './services/api';
 import { calculateMonthlySettlement, COMMISSION_POLICY } from './services/commissionEngine';
 import { useAuth } from './context/AuthContext';
@@ -41,11 +40,9 @@ import { formatVND } from './utils/formatters';
 import {
   buildPartnerReferralLink,
   getReferralCodeFromUrl,
-  getSavedReferralCode,
   saveReferralCode,
   clearSavedReferralCode,
-  stripReferralFromUrl,
-  getRootF0Partner
+  stripReferralFromUrl
 } from './utils/referral';
 import {
   CheckCircle2,
@@ -58,7 +55,6 @@ import {
   Link2,
   Copy,
   Check,
-  GitFork,
   UserPlus
 } from 'lucide-react';
 
@@ -110,9 +106,8 @@ export default function App() {
   const [toastMessage, setToastMessage] = useState(null);
   const [loadError, setLoadError] = useState(null);
 
-  // Phát hiện ?ref=... khi người dùng đang mở Link Giới Thiệu trong lúc đã đăng nhập
-  const [pendingRefCode, setPendingRefCode] = useState(() => getReferralCodeFromUrl() || getSavedReferralCode());
-  const [pendingRefPartner, setPendingRefPartner] = useState(null);
+  // Phát hiện ?ref=... khi người dùng mở link trong lúc đã đăng nhập
+  const [pendingRefCode, setPendingRefCode] = useState(() => getReferralCodeFromUrl());
   const [copiedDashboardLink, setCopiedDashboardLink] = useState(false);
 
   // Khởi tạo và nạp dữ liệu từ Backend Supabase Postgres khi có phiên đăng nhập
@@ -147,26 +142,11 @@ export default function App() {
     if (urlRef) {
       saveReferralCode(urlRef);
       setPendingRefCode(urlRef);
+    } else {
+      clearSavedReferralCode();
+      setPendingRefCode('');
     }
   }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function resolvePendingRef() {
-      if (!pendingRefCode) {
-        setPendingRefPartner(null);
-        return;
-      }
-      const info = await apiResolveReferralCode(pendingRefCode);
-      if (!cancelled) {
-        setPendingRefPartner(info);
-      }
-    }
-    resolvePendingRef();
-    return () => {
-      cancelled = true;
-    };
-  }, [pendingRefCode]);
 
   // Gọi Postgres RPC compute_month trên Supabase khi thay đổi tháng hoặc dữ liệu
   useEffect(() => {
@@ -259,7 +239,6 @@ export default function App() {
     clearSavedReferralCode();
     stripReferralFromUrl();
     setPendingRefCode('');
-    setPendingRefPartner(null);
   }
 
   // --------------------------------------------------------------------------
@@ -658,18 +637,17 @@ export default function App() {
 
         {/* Dynamic Page Content */}
         <main className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Banner xử lý nếu đang mở ?ref=... trong khi đang đăng nhập */}
+          {/* Banner xử lý nếu mở liên kết tạo tài khoản khi đang đăng nhập sẵn */}
           {pendingRefCode && (
             <div className="p-3.5 rounded-xl bg-sky-50 border border-sky-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-start gap-2.5">
-                <GitFork className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
+                <UserPlus className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
                 <div>
                   <p className="font-bold text-sky-950">
-                    Bạn đang mở Link Giới Thiệu ({pendingRefCode}
-                    {pendingRefPartner ? ` — ${pendingRefPartner.name}` : ''})
+                    Bạn đang mở liên kết đăng ký tài khoản mới
                   </p>
                   <p className="text-sky-800 mt-0.5">
-                    Hiện bạn đang đăng nhập với tài khoản <strong>{user.email}</strong> ({role}). Để tạo tài khoản mới và gắn vào cây đối tác này, hãy đăng xuất sang màn hình đăng ký.
+                    Hiện bạn đang đăng nhập với tài khoản <strong>{user.email}</strong> ({role}). Hãy đăng xuất nếu bạn muốn tạo tài khoản mới.
                   </p>
                 </div>
               </div>
@@ -680,7 +658,7 @@ export default function App() {
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-semibold transition-colors"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
-                  <span>Đăng xuất &amp; Đăng ký qua link</span>
+                  <span>Đăng xuất &amp; Đăng ký</span>
                 </button>
                 <button
                   type="button"
@@ -707,7 +685,6 @@ export default function App() {
               {/* Thẻ Link Giới Thiệu Đối Tác (hiển thị cho CTV/Đối tác đăng nhập) */}
               {isPartner && currentPartner && (() => {
                 const partnerRefUrl = buildPartnerReferralLink(currentPartner.code);
-                const { root: rootF0 } = getRootF0Partner(currentPartner.id, data.partners);
                 return (
                   <div className="p-4 bg-white border border-sky-200 rounded-xl shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     <div className="space-y-1">
@@ -722,14 +699,9 @@ export default function App() {
                         <span className="px-2 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-700 rounded">
                           Tuyến {currentPartner.depth ?? 0}
                         </span>
-                        {rootF0 && rootF0.id !== currentPartner.id && (
-                          <span className="px-2 py-0.5 text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded">
-                            Thuộc cây F0: {rootF0.name} ({rootF0.code})
-                          </span>
-                        )}
                       </div>
                       <p className="text-xs text-slate-500">
-                        Chia sẻ đường link này cho CTV mới — khi đăng ký qua link, tài khoản sẽ tự động gắn làm tuyến dưới trực tiếp của bạn trong cây đối tác.
+                        Chia sẻ đường link này cho đối tác mới — khi đăng ký qua link, tài khoản sẽ tự động gắn làm tuyến dưới trong cây đối tác của bạn.
                       </p>
                     </div>
 

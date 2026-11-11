@@ -9,8 +9,6 @@ import {
   LogIn,
   User,
   Phone,
-  Link2,
-  GitFork,
   Check,
   CheckCircle2,
   AlertTriangle,
@@ -24,16 +22,17 @@ import {
   saveReferralCode,
   clearSavedReferralCode,
   stripReferralFromUrl,
-  normalizeRefCode,
   sanitizeSelfSignupRole
 } from '../../utils/referral';
 
 export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }) {
   const { login, refreshProfile } = useAuth();
 
-  const initialRef = getReferralCodeFromUrl() || getSavedReferralCode();
+  // Nếu vào từ link trang chủ không có ?ref=, xóa ref cũ (nếu còn sót) để mặc định làm Đối tác gốc F0
+  const urlRef = getReferralCodeFromUrl();
+  const initialSilentRef = urlRef || '';
 
-  const [mode, setMode] = useState(initialRef ? 'register' : 'login'); // 'login' | 'register'
+  const [mode, setMode] = useState(initialSilentRef ? 'register' : 'login'); // 'login' | 'register'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -43,87 +42,44 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
   // Tick phân quyền ngay từ đầu cho đăng ký mới ('partner' | 'frontdesk')
   const [selectedRole, setSelectedRole] = useState('partner');
 
-  // State cho Link Referral (F0 / Cấp trên)
-  const [urlRefCode, setUrlRefCode] = useState(initialRef);
-  const [manualRefInput, setManualRefInput] = useState(initialRef);
-  const [resolvedReferrer, setResolvedReferrer] = useState(null);
-  const [resolvingRef, setResolvingRef] = useState(Boolean(initialRef));
-  const [refLookupError, setRefLookupError] = useState('');
+  // Lưu mã ref âm thầm phía nền — không hiển thị thông tin đối tác mời trên giao diện
+  const [silentRefCode, setSilentRefCode] = useState(initialSilentRef);
+  const [silentParentPartner, setSilentParentPartner] = useState(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [registerSuccessInfo, setRegisterSuccessInfo] = useState(null);
 
-  // Tự động tra cứu mã giới thiệu khi mở trang từ ?ref=...
+  // Âm thầm đọc và tra cứu mã ?ref=... (nếu có) để gắn vào cây đối tác F0 tương ứng mà không hiển thị UI mời
   useEffect(() => {
     let cancelled = false;
-    async function resolveInitialRef() {
-      const urlCode = getReferralCodeFromUrl();
-      const effectiveCode = urlCode || getSavedReferralCode();
-      if (!effectiveCode) {
-        setResolvingRef(false);
+    async function syncSilentReferral() {
+      const currentUrlRef = getReferralCodeFromUrl();
+      if (!currentUrlRef) {
+        if (getSavedReferralCode()) {
+          clearSavedReferralCode();
+        }
+        setSilentRefCode('');
+        setSilentParentPartner(null);
         return;
       }
 
-      if (urlCode) {
-        saveReferralCode(urlCode);
-      }
-
-      setUrlRefCode(effectiveCode);
-      setManualRefInput(effectiveCode);
+      saveReferralCode(currentUrlRef);
+      setSilentRefCode(currentUrlRef);
       setMode('register');
       setSelectedRole('partner');
-      setResolvingRef(true);
-      setRefLookupError('');
 
-      const partnerInfo = await apiResolveReferralCode(effectiveCode);
-      if (cancelled) return;
-      setResolvingRef(false);
-
-      if (partnerInfo) {
-        setResolvedReferrer(partnerInfo);
-      } else {
-        setResolvedReferrer(null);
-        setRefLookupError(`Mã giới thiệu "${effectiveCode}" không tồn tại hoặc đang tạm dừng hoạt động.`);
+      const info = await apiResolveReferralCode(currentUrlRef);
+      if (!cancelled) {
+        setSilentParentPartner(info || null);
       }
     }
 
-    resolveInitialRef();
+    syncSilentReferral();
     return () => {
       cancelled = true;
     };
   }, []);
-
-  async function handleLookupManualRef(codeToCheck) {
-    const clean = normalizeRefCode(codeToCheck ?? manualRefInput);
-    if (!clean) {
-      setResolvedReferrer(null);
-      setRefLookupError('');
-      return;
-    }
-
-    setResolvingRef(true);
-    setRefLookupError('');
-    const info = await apiResolveReferralCode(clean);
-    setResolvingRef(false);
-
-    if (info) {
-      setResolvedReferrer(info);
-      setRefLookupError('');
-    } else {
-      setResolvedReferrer(null);
-      setRefLookupError(`Không tìm thấy đối tác đang hoạt động với mã "${clean}".`);
-    }
-  }
-
-  function handleClearReferral() {
-    clearSavedReferralCode();
-    stripReferralFromUrl();
-    setUrlRefCode('');
-    setManualRefInput('');
-    setResolvedReferrer(null);
-    setRefLookupError('');
-  }
 
   function handleSwitchMode(nextMode) {
     setMode(nextMode);
@@ -151,9 +107,7 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
     setError('');
     setRegisterSuccessInfo(null);
 
-    const safeRole = resolvedReferrer && urlRefCode
-      ? 'partner'
-      : sanitizeSelfSignupRole(selectedRole);
+    const safeRole = sanitizeSelfSignupRole(selectedRole);
 
     if (!fullName.trim()) {
       setError('Vui lòng nhập họ và tên.');
@@ -172,14 +126,10 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
       return;
     }
 
-    const activeRefCode = safeRole === 'partner'
-      ? normalizeRefCode(resolvedReferrer?.code || manualRefInput || urlRefCode)
-      : '';
-
-    if (safeRole === 'partner' && activeRefCode && !resolvedReferrer && refLookupError) {
-      setError(refLookupError);
-      return;
-    }
+    // Nếu đăng ký qua link ?ref= và chọn CTV -> âm thầm gắn tuyến dưới đối tác mời;
+    // Nếu mở từ trang chủ không có ?ref= -> parentPartnerId = null (Đối tác gốc F0)
+    const activeRefCode = safeRole === 'partner' ? silentRefCode : '';
+    const activeParentId = safeRole === 'partner' ? (silentParentPartner?.id || null) : null;
 
     setLoading(true);
     const res = await apiCreateAccountWithRole({
@@ -188,8 +138,8 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
       fullName,
       phone,
       role: safeRole,
-      parentPartnerId: safeRole === 'partner' ? (resolvedReferrer?.id || null) : null,
-      referrerCode: safeRole === 'partner' ? activeRefCode : '',
+      parentPartnerId: activeParentId,
+      referrerCode: activeRefCode,
       useEphemeralClient: false
     });
     setLoading(false);
@@ -199,20 +149,17 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
       return;
     }
 
-    // Dọn dẹp mã referral sau khi đăng ký thành công
     clearSavedReferralCode();
     stripReferralFromUrl();
 
     if (res.requiresEmailConfirmation) {
       setRegisterSuccessInfo({
         email: email.trim().toLowerCase(),
-        role: safeRole,
-        referrer: resolvedReferrer || res.resolvedReferrer || null
+        role: safeRole
       });
       return;
     }
 
-    // Đã tự động đăng nhập ngay sau khi signUp
     await refreshProfile?.();
     if (onLoginSuccess) onLoginSuccess();
   }
@@ -225,8 +172,6 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
   const cardClass = isModal
     ? 'space-y-4'
     : 'bg-white py-6 px-5 shadow-sm border border-slate-200 rounded-xl sm:px-8 space-y-5';
-
-  const isLockedByUrlReferral = Boolean(urlRefCode && resolvedReferrer);
 
   return (
     <div className={containerClass}>
@@ -279,11 +224,6 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
             >
               <UserPlus className="w-3.5 h-3.5" />
               <span>Đăng ký tài khoản</span>
-              {urlRefCode && (
-                <span className="ml-0.5 px-1.5 py-0.2 text-[9px] bg-sky-100 text-sky-700 rounded-full border border-sky-200">
-                  Link GT
-                </span>
-              )}
             </button>
           </div>
 
@@ -358,15 +298,7 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
                         ? 'Lễ tân (Frontdesk)'
                         : 'Cộng tác viên / Đối tác'}
                     </strong>
-                    {registerSuccessInfo.referrer && (
-                      <>
-                        {' '}và đã gắn vào cây đối tác của{' '}
-                        <strong>
-                          {registerSuccessInfo.referrer.f0Name || registerSuccessInfo.referrer.name}
-                        </strong>
-                        .
-                      </>
-                    )}
+                    .
                   </p>
                   <p className="text-emerald-700">
                     Vui lòng kiểm tra hộp thư email của bạn để bấm xác nhận kích hoạt, sau đó đăng nhập lại.
@@ -386,83 +318,14 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
             </div>
           )}
 
-          {/* MÀN HÌNH ĐĂNG KÝ VỚI TICK PHÂN QUYỀN & REFERRAL F0 */}
+          {/* MÀN HÌNH ĐĂNG KÝ VỚI TICK PHÂN QUYỀN (GIAO DIỆN ĐỒNG NHẤT, KHÔNG HIỂN THỊ NGƯỜI MỜI / Ô MÃ GT) */}
           {mode === 'register' && !registerSuccessInfo && (
             <form className="space-y-4" onSubmit={handleRegisterSubmit}>
-              {/* Banner Link Giới Thiệu Đối Tác / F0 */}
-              {resolvingRef && (
-                <div className="p-3 rounded-lg bg-sky-50 border border-sky-200 text-sky-800 text-xs">
-                  Đang kiểm tra thông tin Link Giới Thiệu...
-                </div>
-              )}
-
-              {!resolvingRef && resolvedReferrer && (
-                <div className="p-3.5 rounded-lg bg-sky-50 border border-sky-200 text-xs space-y-1.5">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-1.5 font-bold text-sky-900">
-                      <GitFork className="w-4 h-4 text-sky-600 shrink-0" />
-                      <span>Đăng ký qua Link Giới Thiệu Đối Tác</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleClearReferral}
-                      className="text-[11px] text-slate-500 hover:text-rose-600 underline shrink-0"
-                    >
-                      Xóa link
-                    </button>
-                  </div>
-                  <p className="text-sky-800">
-                    Người mời trực tiếp:{' '}
-                    <strong>{resolvedReferrer.name}</strong>{' '}
-                    <span className="font-mono text-[11px] bg-white px-1.5 py-0.5 rounded border border-sky-200">
-                      {resolvedReferrer.code}
-                    </span>{' '}
-                    (Tuyến {resolvedReferrer.depth})
-                  </p>
-                  <p className="text-[11px] text-sky-700">
-                    {resolvedReferrer.f0Id && resolvedReferrer.f0Id !== resolvedReferrer.id ? (
-                      <>
-                        Sẽ gắn làm <strong>Tuyến {resolvedReferrer.depth + 1}</strong> trong cây đối tác của F0{' '}
-                        <strong>{resolvedReferrer.f0Name}</strong> ({resolvedReferrer.f0Code}).
-                      </>
-                    ) : (
-                      <>
-                        Sẽ gắn trực tiếp làm <strong>Tuyến 1</strong> trong cây đối tác của F0{' '}
-                        <strong>{resolvedReferrer.name}</strong>.
-                      </>
-                    )}
-                  </p>
-                </div>
-              )}
-
-              {!resolvingRef && refLookupError && (
-                <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start justify-between gap-2">
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                    <span>{refLookupError}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleClearReferral}
-                    className="text-[11px] underline shrink-0"
-                  >
-                    Bỏ mã
-                  </button>
-                </div>
-              )}
-
               {/* Tick phân quyền ngay từ đầu */}
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs font-semibold text-slate-700">
-                    Tick chọn phân quyền tài khoản ngay từ đầu <span className="text-rose-500">*</span>
-                  </label>
-                  {isLockedByUrlReferral && (
-                    <span className="text-[10px] font-medium text-sky-700">
-                      Mặc định CTV theo Link GT
-                    </span>
-                  )}
-                </div>
+                <label className="block text-xs font-semibold text-slate-700">
+                  Tick chọn phân quyền tài khoản ngay từ đầu <span className="text-rose-500">*</span>
+                </label>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5" role="radiogroup" aria-label="Chọn phân quyền tài khoản">
                   {/* Tick CTV / Đối tác */}
@@ -490,7 +353,7 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
                         <span>Cộng tác viên / Đối tác</span>
                       </div>
                       <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                        Gắn cây đối tác F0, nhận link giới thiệu &amp; theo dõi hoa hồng
+                        Theo dõi sổ khách hàng &amp; hoa hồng giới thiệu
                       </p>
                     </div>
                   </button>
@@ -500,29 +363,19 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
                     type="button"
                     role="radio"
                     aria-checked={selectedRole === 'frontdesk'}
-                    disabled={isLockedByUrlReferral}
                     onClick={() => setSelectedRole('frontdesk')}
-                    title={
-                      isLockedByUrlReferral
-                        ? 'Đang mở từ Link Giới Thiệu đối tác — bấm "Xóa link" ở trên nếu muốn đăng ký Lễ tân'
-                        : 'Chọn vai trò Lễ tân'
-                    }
-                    className={`p-3 rounded-lg border text-left transition-all flex items-start gap-2.5 ${isLockedByUrlReferral
-                        ? 'border-slate-200 bg-slate-50 opacity-50 cursor-not-allowed'
-                        : selectedRole === 'frontdesk'
-                          ? 'border-emerald-600 bg-emerald-50/70 ring-1 ring-emerald-600'
-                          : 'border-slate-200 bg-white hover:border-slate-300'
+                    className={`p-3 rounded-lg border text-left transition-all flex items-start gap-2.5 ${selectedRole === 'frontdesk'
+                        ? 'border-emerald-600 bg-emerald-50/70 ring-1 ring-emerald-600'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
                       }`}
                   >
                     <span
-                      className={`mt-0.5 w-4 h-4 rounded flex items-center justify-center border shrink-0 transition-colors ${selectedRole === 'frontdesk' && !isLockedByUrlReferral
+                      className={`mt-0.5 w-4 h-4 rounded flex items-center justify-center border shrink-0 transition-colors ${selectedRole === 'frontdesk'
                           ? 'bg-emerald-600 border-emerald-600 text-white'
                           : 'bg-white border-slate-300'
                         }`}
                     >
-                      {selectedRole === 'frontdesk' && !isLockedByUrlReferral && (
-                        <Check className="w-3 h-3 stroke-[3]" />
-                      )}
+                      {selectedRole === 'frontdesk' && <Check className="w-3 h-3 stroke-[3]" />}
                     </span>
                     <div className="min-w-0">
                       <div className="text-xs font-bold text-slate-900 flex items-center gap-1">
@@ -530,7 +383,7 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
                         <span>Lễ tân (Frontdesk)</span>
                       </div>
                       <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                        Tiếp nhận khách hàng, gắn nguồn CTV &amp; ghi nhận doanh thu
+                        Tiếp nhận khách hàng &amp; ghi nhận doanh thu khám
                       </p>
                     </div>
                   </button>
@@ -629,43 +482,9 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
                 </div>
               </div>
 
-              {/* Nhập mã giới thiệu thủ công nếu chọn CTV mà chưa có link ?ref= */}
-              {selectedRole === 'partner' && !isLockedByUrlReferral && (
-                <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5">
-                  <label className="block text-xs font-semibold text-slate-700">
-                    Mã giới thiệu của Cấp trên / F0 (tùy chọn)
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <div className="relative flex-1">
-                      <input
-                        type="text"
-                        value={manualRefInput}
-                        onChange={e => {
-                          setManualRefInput(e.target.value.toUpperCase());
-                          if (resolvedReferrer) setResolvedReferrer(null);
-                          if (refLookupError) setRefLookupError('');
-                        }}
-                        onBlur={() => manualRefInput.trim() && handleLookupManualRef(manualRefInput)}
-                        placeholder="VD: REF-A-FOUNDER (để trống nếu là F0 gốc)"
-                        className="w-full pl-9 pr-3 py-1.5 border border-slate-300 rounded-md font-mono text-xs uppercase bg-white focus:ring-1 focus:ring-sky-500 focus:outline-none"
-                      />
-                      <Link2 className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleLookupManualRef(manualRefInput)}
-                      disabled={resolvingRef || !manualRefInput.trim()}
-                      className="px-3 py-1.5 text-xs font-semibold text-sky-700 bg-sky-50 border border-sky-200 hover:bg-sky-100 rounded-md disabled:opacity-50 transition-colors shrink-0"
-                    >
-                      Kiểm tra mã
-                    </button>
-                  </div>
-                </div>
-              )}
-
               <button
                 type="submit"
-                disabled={loading || resolvingRef}
+                disabled={loading}
                 className="w-full flex justify-center items-center gap-2 py-2.5 px-4 border border-transparent rounded-md shadow-xs text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 disabled:opacity-60 focus:outline-none transition-colors"
               >
                 <UserPlus className="w-3.5 h-3.5" />
@@ -674,9 +493,7 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
                     ? 'Đang khởi tạo tài khoản...'
                     : selectedRole === 'frontdesk'
                       ? 'Tạo tài khoản Lễ tân'
-                      : resolvedReferrer
-                        ? `Tạo CTV & Gắn vào cây ${resolvedReferrer.f0Name || resolvedReferrer.name}`
-                        : 'Tạo tài khoản Cộng tác viên'}
+                      : 'Tạo tài khoản Cộng tác viên'}
                 </span>
               </button>
             </form>
