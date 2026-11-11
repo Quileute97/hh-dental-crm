@@ -138,7 +138,7 @@ export function AuthProvider({ children }) {
   async function logout() {
     try {
       await supabase.auth.signOut();
-    } catch (e) {}
+    } catch (e) { }
     setUser(null);
     setProfile(null);
     setRole('admin');
@@ -153,8 +153,8 @@ export function AuthProvider({ children }) {
     setProfile({
       role: targetRole,
       full_name: targetRole === 'admin' ? 'Quản Trị Viên (Admin)' :
-                 targetRole === 'accountant' ? 'Kế Toán Trưởng' :
-                 targetRole === 'frontdesk' ? 'Lễ Tân Tiếp Đón' : 'Đối Tác CTV (Bs. Nguyễn Văn A)',
+        targetRole === 'accountant' ? 'Kế Toán Trưởng' :
+          targetRole === 'frontdesk' ? 'Lễ Tân Tiếp Đón' : 'Đối Tác CTV (Bs. Nguyễn Văn A)',
       partner_id: defaultPartnerId
     });
     setUser({

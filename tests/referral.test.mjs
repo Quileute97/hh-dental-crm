@@ -119,3 +119,4 @@ const cycleRes = getRootF0Partner('p1', cyclic);
 assert(cycleRes.chain.length === 2, 'Chống vòng lặp vô hạn khi parentId trỏ chéo nhau');
 
 console.log('\n🎉 TOÀN BỘ KIỂM THỬ REFERRAL & CÂY ĐỐI TÁC F0 ĐÃ PASS 100%!');
+

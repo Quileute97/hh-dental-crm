@@ -353,7 +353,7 @@ export default function App() {
   // --------------------------------------------------------------------------
   const currentPartner = useMemo(() => {
     if (!isPartner) return null;
-    return (data.partners || []).find(p => 
+    return (data.partners || []).find(p =>
       (partnerId && (p.id === partnerId || p.code === partnerId)) ||
       (!partnerId && (p.id === 'P1' || p.code === 'REF-A-FOUNDER'))
     ) || null;
@@ -377,8 +377,8 @@ export default function App() {
     // Tìm dòng tính toán của đối tác hiện tại
     const partnerRow = (settlementResult.partnerRows || []).find(
       r => (currentPartner && (r.partnerId === currentPartner.id || r.partnerCode === currentPartner.code)) ||
-           (partnerId && (r.partnerId === partnerId || r.partnerCode === partnerId)) ||
-           r.partnerId === 'P1'
+        (partnerId && (r.partnerId === partnerId || r.partnerCode === partnerId)) ||
+        r.partnerId === 'P1'
     );
 
     if (!partnerRow) {
@@ -755,8 +755,8 @@ export default function App() {
               })()}
 
               {/* 4 Chỉ số: Doanh thu kỳ · Hoa hồng CTV · Phần nền tảng · Phí nhánh 1% */}
-              <StatCards 
-                settlementResult={displayedSettlementResult} 
+              <StatCards
+                settlementResult={displayedSettlementResult}
                 customers={displayedCustomers}
                 visits={data.visits}
               />
@@ -801,8 +801,8 @@ export default function App() {
                       <button
                         onClick={() => setPartnerViewMode('tree')}
                         className={`inline-flex items-center gap-1 px-2.5 py-1 rounded transition-colors ${partnerViewMode === 'tree'
-                            ? 'bg-sky-50 text-sky-700 font-semibold'
-                            : 'text-slate-600 hover:text-slate-900'
+                          ? 'bg-sky-50 text-sky-700 font-semibold'
+                          : 'text-slate-600 hover:text-slate-900'
                           }`}
                       >
                         <Network className="w-3.5 h-3.5" />
@@ -811,8 +811,8 @@ export default function App() {
                       <button
                         onClick={() => setPartnerViewMode('list')}
                         className={`inline-flex items-center gap-1 px-2.5 py-1 rounded transition-colors ${partnerViewMode === 'list'
-                            ? 'bg-sky-50 text-sky-700 font-semibold'
-                            : 'text-slate-600 hover:text-slate-900'
+                          ? 'bg-sky-50 text-sky-700 font-semibold'
+                          : 'text-slate-600 hover:text-slate-900'
                           }`}
                       >
                         <List className="w-3.5 h-3.5" />

@@ -261,11 +261,10 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
             <button
               type="button"
               onClick={() => handleSwitchMode('login')}
-              className={`flex items-center justify-center gap-1.5 py-2 rounded-md transition-colors ${
-                mode === 'login'
+              className={`flex items-center justify-center gap-1.5 py-2 rounded-md transition-colors ${mode === 'login'
                   ? 'bg-white text-slate-900 shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
-              }`}
+                }`}
             >
               <LogIn className="w-3.5 h-3.5" />
               <span>Đăng nhập</span>
@@ -273,11 +272,10 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
             <button
               type="button"
               onClick={() => handleSwitchMode('register')}
-              className={`flex items-center justify-center gap-1.5 py-2 rounded-md transition-colors ${
-                mode === 'register'
+              className={`flex items-center justify-center gap-1.5 py-2 rounded-md transition-colors ${mode === 'register'
                   ? 'bg-white text-sky-700 shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
-              }`}
+                }`}
             >
               <UserPlus className="w-3.5 h-3.5" />
               <span>Đăng ký tài khoản</span>
@@ -473,18 +471,16 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
                     role="radio"
                     aria-checked={selectedRole === 'partner'}
                     onClick={() => setSelectedRole('partner')}
-                    className={`p-3 rounded-lg border text-left transition-all flex items-start gap-2.5 ${
-                      selectedRole === 'partner'
+                    className={`p-3 rounded-lg border text-left transition-all flex items-start gap-2.5 ${selectedRole === 'partner'
                         ? 'border-sky-600 bg-sky-50/70 ring-1 ring-sky-600'
                         : 'border-slate-200 bg-white hover:border-slate-300'
-                    }`}
+                      }`}
                   >
                     <span
-                      className={`mt-0.5 w-4 h-4 rounded flex items-center justify-center border shrink-0 transition-colors ${
-                        selectedRole === 'partner'
+                      className={`mt-0.5 w-4 h-4 rounded flex items-center justify-center border shrink-0 transition-colors ${selectedRole === 'partner'
                           ? 'bg-sky-600 border-sky-600 text-white'
                           : 'bg-white border-slate-300'
-                      }`}
+                        }`}
                     >
                       {selectedRole === 'partner' && <Check className="w-3 h-3 stroke-[3]" />}
                     </span>
@@ -511,20 +507,18 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
                         ? 'Đang mở từ Link Giới Thiệu đối tác — bấm "Xóa link" ở trên nếu muốn đăng ký Lễ tân'
                         : 'Chọn vai trò Lễ tân'
                     }
-                    className={`p-3 rounded-lg border text-left transition-all flex items-start gap-2.5 ${
-                      isLockedByUrlReferral
+                    className={`p-3 rounded-lg border text-left transition-all flex items-start gap-2.5 ${isLockedByUrlReferral
                         ? 'border-slate-200 bg-slate-50 opacity-50 cursor-not-allowed'
                         : selectedRole === 'frontdesk'
                           ? 'border-emerald-600 bg-emerald-50/70 ring-1 ring-emerald-600'
                           : 'border-slate-200 bg-white hover:border-slate-300'
-                    }`}
+                      }`}
                   >
                     <span
-                      className={`mt-0.5 w-4 h-4 rounded flex items-center justify-center border shrink-0 transition-colors ${
-                        selectedRole === 'frontdesk' && !isLockedByUrlReferral
+                      className={`mt-0.5 w-4 h-4 rounded flex items-center justify-center border shrink-0 transition-colors ${selectedRole === 'frontdesk' && !isLockedByUrlReferral
                           ? 'bg-emerald-600 border-emerald-600 text-white'
                           : 'bg-white border-slate-300'
-                      }`}
+                        }`}
                     >
                       {selectedRole === 'frontdesk' && !isLockedByUrlReferral && (
                         <Check className="w-3 h-3 stroke-[3]" />
