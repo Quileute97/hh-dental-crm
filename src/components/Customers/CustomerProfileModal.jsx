@@ -614,8 +614,8 @@ export default function CustomerProfileModal({
             )}
 
             {/* Bảng danh sách lượt khám */}
-            <div className="border border-slate-200 rounded-lg overflow-x-auto">
-              <table className="w-full min-w-[32rem] text-xs text-left">
+            <div className="border border-slate-200 rounded-lg overflow-hidden">
+              <table className="w-full text-xs text-left">
                 <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
                   <tr>
                     <th className="py-2.5 px-3 text-center w-10">#</th>

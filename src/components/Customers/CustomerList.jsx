@@ -64,10 +64,10 @@ export default function CustomerList({
             onChange={(e) => setDepthFilter(e.target.value)}
             className="w-full sm:w-auto text-base sm:text-xs border border-slate-300 rounded-md py-1.5 px-2.5 bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
           >
-            <option value="ALL">Tất cả độ sâu</option>
-            <option value="1">Tầng 1 (Trực tiếp: CTV {COMMISSION_POLICY.depth1}%)</option>
-            <option value="2">Tầng 2 (Hạ tầng: CTV {COMMISSION_POLICY.depth2}%)</option>
-            <option value="3">Tầng 3+ (Hạ tầng: CTV {COMMISSION_POLICY.depth3Plus}%)</option>
+            <option value="ALL">Tất cả chuỗi khách</option>
+            <option value="1">1. KH trực tiếp ({COMMISSION_POLICY.depth1}%)</option>
+            <option value="2">2. KH gián tiếp 1 ({COMMISSION_POLICY.depth2}%)</option>
+            <option value="3">3. KH gián tiếp 2 và mở rộng ({COMMISSION_POLICY.depth3Plus}%)</option>
           </select>
         </div>
 
@@ -89,7 +89,7 @@ export default function CustomerList({
           <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 whitespace-nowrap">
             <tr>
               <th className="py-2.5 px-3 sm:px-4">Mã KH / Tên khách hàng</th>
-              <th className="py-2.5 px-3 sm:px-4 text-center">Độ sâu (Depth)</th>
+              <th className="py-2.5 px-3 sm:px-4 text-center">Chuỗi khách</th>
               <th className="py-2.5 px-3 sm:px-4">Đối tác sở hữu (CTV)</th>
               <th className="py-2.5 px-3 sm:px-4">Khách giới thiệu (Cha)</th>
               <th className="py-2.5 px-3 sm:px-4">Dịch vụ điều trị</th>
@@ -138,7 +138,7 @@ export default function CustomerList({
                         </div>
                       </td>
 
-                      {/* Cột 2: Độ sâu (Depth) */}
+                      {/* Cột 2: Chuỗi khách */}
                       <td className="py-3 px-3 sm:px-4 text-center whitespace-nowrap">
                         <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-bold ${
                           cust.depth === 1 
@@ -147,7 +147,7 @@ export default function CustomerList({
                             ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                             : 'bg-purple-100 text-purple-800 border border-purple-200'
                         }`}>
-                          Tầng {cust.depth || 1}
+                          {cust.depth === 1 ? '1. KH trực tiếp' : cust.depth === 2 ? '2. KH gián tiếp 1' : `3. KH gián tiếp ${cust.depth - 1}`}
                         </span>
                       </td>
 
@@ -165,7 +165,7 @@ export default function CustomerList({
                             <span className="text-[10px] text-slate-400 block font-mono">({parentCust.code})</span>
                           </div>
                         ) : (
-                          <span className="text-slate-400 italic">Trực tiếp từ CTV</span>
+                          <span className="text-slate-400 italic">1. KH trực tiếp từ CTV</span>
                         )}
                       </td>
 

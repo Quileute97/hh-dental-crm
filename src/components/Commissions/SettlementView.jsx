@@ -142,7 +142,7 @@ export default function SettlementView({
           <span className="font-bold text-emerald-700 text-xs sm:text-sm truncate block">{formatVND(totalCtvCommission)}</span>
         </div>
         <div className="bg-white border border-slate-200 rounded-lg p-2.5 sm:p-3 text-xs">
-          <span className="text-amber-600 text-[10px] block">Phí nhánh 1%</span>
+          <span className="text-amber-600 text-[10px] block">Thưởng quản lý 1%</span>
           <span className="font-bold text-amber-700 text-xs sm:text-sm truncate block">{formatVND(totalBranchFee)}</span>
         </div>
         <div className="bg-white border border-slate-200 rounded-lg p-2.5 sm:p-3 text-xs">
@@ -186,7 +186,7 @@ export default function SettlementView({
                 <th className="py-2.5 px-3 sm:px-4 text-right">Sổ khách</th>
                 <th className="py-2.5 px-3 sm:px-4 text-right">Doanh thu nhánh</th>
                 <th className="py-2.5 px-3 sm:px-4 text-right">Hoa hồng CTV</th>
-                <th className="py-2.5 px-3 sm:px-4 text-right">Phí nhánh 1%</th>
+                <th className="py-2.5 px-3 sm:px-4 text-right" title="Thưởng doanh số cấp quản lí 1%">Thưởng QL 1%</th>
                 <th className="py-2.5 px-3 sm:px-4 text-right font-bold text-slate-900">Tổng phải trả</th>
                 <th className="py-2.5 px-3 sm:px-4">Thông tin chuyển khoản</th>
                 <th className="py-2.5 px-3 sm:px-4 text-center">Trạng thái chốt</th>

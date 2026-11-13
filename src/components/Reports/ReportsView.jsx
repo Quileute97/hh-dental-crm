@@ -139,7 +139,7 @@ export default function ReportsView({
           </div>
 
           <div className="bg-amber-50/60 p-3 sm:p-3.5 rounded-lg border border-amber-200">
-            <span className="text-[10px] sm:text-[11px] text-amber-700 block">Phí nhánh 1%</span>
+            <span className="text-[10px] sm:text-[11px] text-amber-700 block">Thưởng QL 1%</span>
             <span className="text-base sm:text-lg font-bold text-amber-800 truncate block">{formatVND(totalBranchFee)}</span>
           </div>
         </div>

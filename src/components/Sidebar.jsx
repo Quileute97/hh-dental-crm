@@ -52,9 +52,9 @@ export default function Sidebar({
     },
     {
       id: 'partners',
-      label: 'Cây đối tác & Phí nhánh',
+      label: 'Cây đối tác & Thưởng quản lí',
       icon: Network,
-      badge: 'Phí 1%',
+      badge: 'Thưởng 1%',
       badgeColor: 'sky',
       visible: can(role, 'viewOtherPartners'),
     },
@@ -209,37 +209,37 @@ export default function Sidebar({
 
       {/* Policy card: Plan V5 Two Independent Systems */}
       <div className="p-3 mx-3 my-2 rounded-lg bg-slate-50 border border-slate-200 text-xs">
-        <div className="font-semibold text-slate-900 flex items-center justify-between mb-1.5">
-          <span className="flex items-center gap-1">
+        <div className="font-semibold text-slate-900 flex items-center justify-between mb-2">
+          <span className="flex items-center gap-1.5 font-bold">
             <GitFork className="w-3.5 h-3.5 text-sky-600" />
-            <span>Chính sách Plan V5</span>
+            <span>Chính sách chiết khấu</span>
           </span>
-          <span className="text-[10px] text-sky-700 bg-white px-1.5 py-0.5 rounded border border-sky-300 font-bold">Postgres RPC</span>
+          <span className="text-[10px] text-sky-700 bg-white px-1.5 py-0.5 rounded border border-sky-300 font-bold">Plan V5</span>
         </div>
         
-        {/* Hệ thống 1: Chuỗi khách */}
-        <div className="space-y-1 text-[11px] text-slate-600 border-b border-slate-200 pb-2 mb-2">
-          <div className="font-semibold text-slate-800 text-[10px] uppercase">1. Chuỗi khách (Độ sâu)</div>
-          <div className="flex justify-between">
-            <span>Tầng 1 (Trực tiếp):</span>
-            <span className="font-bold text-sky-700">CTV {COMMISSION_POLICY.depth1}%</span>
+        {/* A. Chuỗi khách: */}
+        <div className="space-y-1.5 text-[11px] text-slate-600 border-b border-slate-200 pb-2 mb-2">
+          <div className="font-bold text-slate-800 text-[11px]">A. Chuỗi khách:</div>
+          <div className="flex justify-between pl-1">
+            <span>1. KH trực tiếp:</span>
+            <span className="font-bold text-sky-700">{COMMISSION_POLICY.depth1}%</span>
           </div>
-          <div className="flex justify-between">
-            <span>Tầng 2+ (Hạ tầng):</span>
-            <span className="font-bold text-sky-700">CTV {COMMISSION_POLICY.depth2}%</span>
+          <div className="flex justify-between pl-1">
+            <span>2. KH gián tiếp 1:</span>
+            <span className="font-bold text-sky-700">{COMMISSION_POLICY.depth2}%</span>
           </div>
-          <div className="flex justify-between">
-            <span>Tầng 3 đến tầng n:</span>
-            <span className="font-bold text-sky-700">CTV {COMMISSION_POLICY.depth3Plus}%</span>
+          <div className="flex justify-between pl-1">
+            <span>3. KH gián tiếp 2 và mở rộng :</span>
+            <span className="font-bold text-sky-700">{COMMISSION_POLICY.depth3Plus}%</span>
           </div>
         </div>
 
-        {/* Hệ thống 2: Cây đối tác */}
-        <div className="space-y-1 text-[11px] text-slate-600">
-          <div className="font-semibold text-slate-800 text-[10px] uppercase">2. Cây đối tác (Không giới hạn)</div>
-          <div className="flex justify-between font-semibold text-emerald-800">
-            <span>Phí nhánh cấp trên:</span>
-            <span className="bg-emerald-100 text-emerald-800 px-1 rounded font-bold">1% nhánh</span>
+        {/* B. Cây đối tác: */}
+        <div className="space-y-1.5 text-[11px] text-slate-600">
+          <div className="font-bold text-slate-800 text-[11px]">B. Cây đối tác:</div>
+          <div className="flex justify-between font-semibold text-emerald-800 pl-1">
+            <span>- Thưởng doanh số cấp quản lí:</span>
+            <span className="bg-emerald-100 text-emerald-800 px-1 rounded font-bold">{COMMISSION_POLICY.branchFee}%.</span>
           </div>
         </div>
       </div>

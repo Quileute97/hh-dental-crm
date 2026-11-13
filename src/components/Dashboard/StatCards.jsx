@@ -178,10 +178,10 @@ export default function StatCards({
           </div>
         </div>
 
-        {/* Chỉ số 3: Phí nhánh 1% */}
+        {/* Chỉ số 3: Thưởng quản lý 1% */}
         <div className="bg-white border border-slate-200 rounded-lg p-3.5 sm:p-4 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider">Phí nhánh 1%</span>
+            <span className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider">Thưởng QL 1%</span>
             <div className="w-8 h-8 rounded-md bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
               <GitFork className="w-4 h-4" />
             </div>
@@ -189,7 +189,7 @@ export default function StatCards({
           <div className="mt-2.5 sm:mt-3">
             <div className="text-xl sm:text-2xl font-bold text-amber-700 truncate">{formatVND(totalBranchFee)}</div>
             <p className="text-[10px] sm:text-[11px] text-slate-500 mt-1">
-              {isPartner ? 'Nhận từ doanh thu nhánh con' : 'Phân bổ trên toàn nhánh con'}
+              Thưởng doanh số cấp quản lí 1%
             </p>
           </div>
         </div>
