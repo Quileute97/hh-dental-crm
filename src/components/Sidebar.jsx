@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
   LayoutDashboard, 
   Network, 
@@ -12,7 +12,8 @@ import {
   LogOut,
   ShieldCheck,
   UserCheck,
-  UserCog
+  UserCog,
+  X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { can } from '../config/permissions';
@@ -23,9 +24,23 @@ export default function Sidebar({
   setActiveTab, 
   settlementStatus, 
   onOpenAuditLogs,
-  onOpenLogin
+  onOpenLogin,
+  mobileMenuOpen = false,
+  onCloseMobileMenu = () => {}
 }) {
   const { user, profile, role, logout } = useAuth();
+
+  // Đóng sidebar khi nhấn phím Escape trên mobile
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') {
+        onCloseMobileMenu();
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mobileMenuOpen, onCloseMobileMenu]);
 
   const allMenuItems = [
     {
@@ -90,79 +105,107 @@ export default function Sidebar({
   const currentRoleInfo = roleLabels[role] || roleLabels.admin;
 
   return (
-    <aside className="w-64 bg-white border-r border-slate-200 flex flex-col shrink-0 min-h-screen">
-      {/* Brand logo */}
-      <div className="h-16 px-4 border-b border-slate-200 flex items-center justify-between bg-white">
-        <div className="flex items-center gap-2.5">
-          <img 
-            src="/logo.png" 
-            alt="HH Dental Clinic Logo" 
-            className="h-11 w-auto object-contain mix-blend-multiply"
-          />
-          <div className="border-l border-slate-200 pl-2.5">
-            <p className="text-[10px] text-sky-600 font-bold uppercase tracking-wider">Hệ Thống</p>
-            <p className="text-[11px] text-slate-700 font-semibold leading-tight">Quản Trị CRM</p>
+    <>
+      {/* Backdrop overlay mờ cho mobile / tablet */}
+      {mobileMenuOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-xs lg:hidden transition-opacity"
+          onClick={onCloseMobileMenu}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white border-r border-slate-200 flex flex-col shrink-0 h-full transition-transform duration-200 ease-in-out lg:static lg:w-64 lg:h-screen lg:translate-x-0 ${
+        mobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'
+      }`}>
+        {/* Brand logo & mobile close button */}
+        <div className="h-16 px-4 border-b border-slate-200 flex items-center justify-between bg-white shrink-0">
+          <div className="flex items-center gap-2.5">
+            <img 
+              src="/logo.png" 
+              alt="HH Dental Clinic Logo" 
+              className="h-11 w-auto object-contain mix-blend-multiply"
+            />
+            <div className="border-l border-slate-200 pl-2.5">
+              <p className="text-[10px] text-sky-600 font-bold uppercase tracking-wider">Hệ Thống</p>
+              <p className="text-[11px] text-slate-700 font-semibold leading-tight">Quản Trị CRM</p>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Navigation menu */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
-        <div className="px-3 pb-2 flex items-center justify-between">
-          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-            Phân Hệ Quản Trị
-          </p>
-          <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded border ${currentRoleInfo.color}`}>
-            {currentRoleInfo.label}
-          </span>
+          {/* Nút đóng Sidebar trên mobile */}
+          <button
+            type="button"
+            onClick={onCloseMobileMenu}
+            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+            title="Đóng menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        {visibleMenuItems.map(item => {
-          const Icon = item.icon;
-          const isActive = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-colors text-left ${
-                isActive
-                  ? 'bg-sky-50 text-sky-700 font-semibold'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-sky-600' : 'text-slate-500'}`} />
-                <span>{item.label}</span>
-              </div>
-              {item.badge && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
-                  item.badgeColor === 'amber'
-                    ? 'bg-amber-100 text-amber-800'
-                    : item.badgeColor === 'emerald'
-                    ? 'bg-emerald-100 text-emerald-800'
-                    : item.badgeColor === 'sky'
-                    ? 'bg-sky-100 text-sky-800'
-                    : 'bg-slate-100 text-slate-600'
-                }`}>
-                  {item.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
-
-        {can(role, 'viewAudit') && (
-          <div className="pt-2">
-            <button
-              onClick={onOpenAuditLogs}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
-            >
-              <ClipboardList className="w-4 h-4 text-slate-500" />
-              <span>Sổ kiểm toán (Audit Log)</span>
-            </button>
+        {/* Navigation menu */}
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+          <div className="px-3 pb-2 flex items-center justify-between">
+            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+              Phân Hệ Quản Trị
+            </p>
+            <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded border ${currentRoleInfo.color}`}>
+              {currentRoleInfo.label}
+            </span>
           </div>
-        )}
-      </nav>
+
+          {visibleMenuItems.map(item => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  onCloseMobileMenu();
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-colors text-left ${
+                  isActive
+                    ? 'bg-sky-50 text-sky-700 font-semibold'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-sky-600' : 'text-slate-500'}`} />
+                  <span>{item.label}</span>
+                </div>
+                {item.badge && (
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                    item.badgeColor === 'amber'
+                      ? 'bg-amber-100 text-amber-800'
+                      : item.badgeColor === 'emerald'
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : item.badgeColor === 'sky'
+                      ? 'bg-sky-100 text-sky-800'
+                      : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+
+          {can(role, 'viewAudit') && (
+            <div className="pt-2">
+              <button
+                onClick={() => {
+                  onOpenAuditLogs();
+                  onCloseMobileMenu();
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+              >
+                <ClipboardList className="w-4 h-4 text-slate-500" />
+                <span>Sổ kiểm toán (Audit Log)</span>
+              </button>
+            </div>
+          )}
+        </nav>
 
       {/* Policy card: Plan V5 Two Independent Systems */}
       <div className="p-3 mx-3 my-2 rounded-lg bg-slate-50 border border-slate-200 text-xs">
@@ -237,5 +280,6 @@ export default function Sidebar({
         </div>
       </div>
     </aside>
+    </>
   );
 }

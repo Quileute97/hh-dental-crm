@@ -27,7 +27,7 @@ export default function PartnerTree({
   return (
     <div className="space-y-4">
       {/* Policy banner */}
-      <div className="bg-sky-50 border border-sky-200 rounded-lg p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs">
+      <div className="bg-sky-50 border border-sky-200 rounded-lg p-3.5 sm:p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-sky-600 text-white flex items-center justify-center shrink-0">
             <Network className="w-4 h-4" />
@@ -41,8 +41,9 @@ export default function PartnerTree({
         </div>
         {can(role, 'managePartners') && (
           <button
+            type="button"
             onClick={() => onAddPartner()}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded shadow-sm transition-colors shrink-0"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 md:py-1.5 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded shadow-xs transition-colors shrink-0"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Thêm đối tác gốc mới</span>
@@ -51,13 +52,13 @@ export default function PartnerTree({
       </div>
 
       {/* Tree container */}
-      <div className="bg-white border border-slate-200 rounded-lg p-6 overflow-x-auto min-h-[480px]">
+      <div className="bg-white border border-slate-200 rounded-lg p-3.5 sm:p-4 md:p-6 overflow-x-auto min-h-[480px]">
         {treeRoots.length === 0 ? (
           <div className="text-center py-12 text-slate-400 text-sm">
             Chưa có đối tác nào trong cây phả hệ.
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {treeRoots.map(rootNode => (
               <TreeNode
                 key={rootNode.id}
@@ -95,9 +96,9 @@ function TreeNode({ node, settlementResult, onSelectPartner, onAddSubPartner, on
   const cccdCount = (hasFront ? 1 : 0) + (hasBack ? 1 : 0);
 
   return (
-    <div className="relative pl-6 border-l-2 border-slate-200 ml-3">
+    <div className="relative pl-3 sm:pl-6 border-l-2 border-slate-200 ml-1.5 sm:ml-3">
       {/* Node card */}
-      <div className="inline-block min-w-[360px] max-w-[440px] bg-white border border-slate-200 hover:border-sky-300 rounded-lg p-3.5 transition-all text-xs mb-3 shadow-xs">
+      <div className="inline-block min-w-[270px] sm:min-w-[340px] max-w-[420px] w-full sm:w-auto bg-white border border-slate-200 hover:border-sky-300 rounded-lg p-3 sm:p-3.5 transition-all text-xs mb-3 shadow-xs">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2">
             {hasChildren ? (

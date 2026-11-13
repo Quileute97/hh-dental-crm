@@ -46,23 +46,23 @@ export default function CustomerList({
   return (
     <div className="bg-white border border-slate-200 rounded-lg shadow-xs">
       {/* Header controls & filter */}
-      <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+      <div className="p-3.5 sm:p-4 border-b border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
           <div className="relative w-full sm:w-64">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               placeholder="Tìm theo tên, SĐT, mã KH, dịch vụ..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500"
+              className="w-full pl-9 pr-3 py-1.5 text-base sm:text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500"
             />
           </div>
 
           <select
             value={depthFilter}
             onChange={(e) => setDepthFilter(e.target.value)}
-            className="text-xs border border-slate-300 rounded-md py-1.5 px-2.5 bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
+            className="w-full sm:w-auto text-base sm:text-xs border border-slate-300 rounded-md py-1.5 px-2.5 bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
           >
             <option value="ALL">Tất cả độ sâu</option>
             <option value="1">Tầng 1 (Trực tiếp: CTV {COMMISSION_POLICY.depth1}%)</option>
@@ -73,8 +73,9 @@ export default function CustomerList({
 
         {can(role, 'manageCustomers') && (
           <button
+            type="button"
             onClick={onNewCustomer}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors shrink-0 shadow-sm"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors shrink-0 shadow-xs"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Tiếp nhận khách hàng mới</span>
@@ -84,18 +85,18 @@ export default function CustomerList({
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-xs text-left">
-          <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+        <table className="w-full text-xs text-left min-w-[56rem]">
+          <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 whitespace-nowrap">
             <tr>
-              <th className="py-2.5 px-4">Mã KH / Tên khách hàng</th>
-              <th className="py-2.5 px-4 text-center">Độ sâu (Depth)</th>
-              <th className="py-2.5 px-4">Đối tác sở hữu (CTV)</th>
-              <th className="py-2.5 px-4">Khách giới thiệu (Cha)</th>
-              <th className="py-2.5 px-4">Dịch vụ điều trị</th>
-              <th className="py-2.5 px-4 text-right">Doanh thu cộng dồn</th>
-              <th className="py-2.5 px-4 text-center">Credit tích lũy</th>
-              <th className="py-2.5 px-4 text-center">Số lần khám</th>
-              <th className="py-2.5 px-4 text-right">Thao tác</th>
+              <th className="py-2.5 px-3 sm:px-4">Mã KH / Tên khách hàng</th>
+              <th className="py-2.5 px-3 sm:px-4 text-center">Độ sâu (Depth)</th>
+              <th className="py-2.5 px-3 sm:px-4">Đối tác sở hữu (CTV)</th>
+              <th className="py-2.5 px-3 sm:px-4">Khách giới thiệu (Cha)</th>
+              <th className="py-2.5 px-3 sm:px-4">Dịch vụ điều trị</th>
+              <th className="py-2.5 px-3 sm:px-4 text-right">Doanh thu cộng dồn</th>
+              <th className="py-2.5 px-3 sm:px-4 text-center">Credit tích lũy</th>
+              <th className="py-2.5 px-3 sm:px-4 text-center">Số lần khám</th>
+              <th className="py-2.5 px-3 sm:px-4 text-right">Thao tác</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -117,7 +118,7 @@ export default function CustomerList({
                   <React.Fragment key={cust.id}>
                     <tr className="hover:bg-slate-50 transition-colors">
                       {/* Cột 1: Mã KH / Tên */}
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-3 sm:px-4 whitespace-nowrap">
                         <div 
                           onClick={() => onViewCustomerProfile && onViewCustomerProfile(cust)}
                           className="font-bold text-slate-900 hover:text-sky-600 cursor-pointer transition-colors"
@@ -138,7 +139,7 @@ export default function CustomerList({
                       </td>
 
                       {/* Cột 2: Độ sâu (Depth) */}
-                      <td className="py-3 px-4 text-center">
+                      <td className="py-3 px-3 sm:px-4 text-center whitespace-nowrap">
                         <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-bold ${
                           cust.depth === 1 
                             ? 'bg-sky-100 text-sky-800 border border-sky-200' 
@@ -151,13 +152,13 @@ export default function CustomerList({
                       </td>
 
                       {/* Cột 3: Đối tác CTV sở hữu */}
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-3 sm:px-4 whitespace-nowrap">
                         <div className="font-semibold text-slate-800">{owner?.name || 'N/A'}</div>
                         <div className="text-[10px] text-slate-400 font-mono">{owner?.code}</div>
                       </td>
 
                       {/* Cột 4: Khách giới thiệu */}
-                      <td className="py-3 px-4 text-slate-600">
+                      <td className="py-3 px-3 sm:px-4 text-slate-600 whitespace-nowrap">
                         {parentCust ? (
                           <div>
                             <span className="font-medium text-slate-800">{parentCust.name}</span>
@@ -169,7 +170,7 @@ export default function CustomerList({
                       </td>
 
                       {/* Cột 5: Gói dịch vụ & Bước điều trị lâm sàng */}
-                      <td className="py-3 px-4 text-slate-700 max-w-[220px]">
+                      <td className="py-3 px-3 sm:px-4 text-slate-700 max-w-[220px]">
                         <div className="font-bold text-slate-900 text-xs truncate" title={cust.treatment}>
                           {cust.treatment || 'Chưa chọn gói'}
                         </div>
@@ -203,12 +204,12 @@ export default function CustomerList({
                       </td>
 
                       {/* Cột 6: Doanh thu cộng dồn */}
-                      <td className="py-3 px-4 text-right font-bold text-emerald-700 text-sm">
+                      <td className="py-3 px-3 sm:px-4 text-right font-bold text-emerald-700 text-sm whitespace-nowrap">
                         {formatVND(totalRevenue)}
                       </td>
 
                       {/* Cột 6.5: Credit tích lũy từ giới thiệu */}
-                      <td className="py-3 px-4 text-center">
+                      <td className="py-3 px-3 sm:px-4 text-center whitespace-nowrap">
                         {(() => {
                           const credit = calculateCustomerCredit(customers, cust.id);
                           return credit > 0 ? (
@@ -223,8 +224,9 @@ export default function CustomerList({
                       </td>
 
                       {/* Cột 7: Số lần khám */}
-                      <td className="py-3 px-4 text-center">
+                      <td className="py-3 px-3 sm:px-4 text-center whitespace-nowrap">
                         <button
+                          type="button"
                           onClick={() => setExpandedCustomerId(isExpanded ? null : cust.id)}
                           className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs text-sky-700 hover:bg-sky-50 font-medium"
                           title="Bấm để xem lịch sử các lượt khám"
@@ -235,9 +237,10 @@ export default function CustomerList({
                       </td>
 
                       {/* Cột 8: Xem Hồ sơ & Thêm Doanh thu */}
-                      <td className="py-3 px-4 text-right">
+                      <td className="py-3 px-3 sm:px-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
+                            type="button"
                             onClick={() => onViewCustomerProfile && onViewCustomerProfile(cust)}
                             className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded transition-colors"
                             title="Xem chi tiết hồ sơ khách hàng, tiến độ gói và CTV gán cứng"
@@ -248,6 +251,7 @@ export default function CustomerList({
 
                           {can(role, 'recordVisit') && (
                             <button
+                              type="button"
                               onClick={() => onOpenAddVisit(cust, totalRevenue)}
                               className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded transition-colors"
                               title="Ghi nhận lần tái khám / điều trị bổ sung"

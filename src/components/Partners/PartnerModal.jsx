@@ -142,28 +142,28 @@ export default function PartnerModal({ isOpen, onClose, onSave, partnerToEdit, p
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
-      <div className="bg-white rounded-xl border border-slate-200 max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-xl animate-in fade-in zoom-in-95 duration-100">
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between shrink-0 bg-slate-50/70">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl border border-slate-200 max-w-2xl w-full my-4 sm:my-6 max-h-[94vh] sm:max-h-[90vh] flex flex-col overflow-hidden shadow-xl animate-in fade-in zoom-in-95 duration-100">
+        <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-200 flex items-center justify-between shrink-0 bg-slate-50/70">
           <div>
             <h3 className="font-bold text-slate-900 text-sm">
               {partnerToEdit ? 'Chỉnh Sửa Hồ Sơ Đối Tác' : 'Thêm Đối Tác Mới Vào Cây Phả Hệ'}
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
               Hệ thống không giới hạn số tầng — Hưởng 1% phí nhánh toàn cây con
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+            className="w-7 h-7 rounded flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 text-xs">
-          <div className="p-5 space-y-4 overflow-y-auto flex-1">
+          <div className="p-3.5 sm:p-5 space-y-3.5 sm:space-y-4 overflow-y-auto flex-1">
             {error && (
               <div className="p-3 rounded bg-rose-50 border border-rose-200 text-rose-700 flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
@@ -182,7 +182,7 @@ export default function PartnerModal({ isOpen, onClose, onSave, partnerToEdit, p
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
                   placeholder="VD: Trần Văn Bình"
-                  className="w-full px-3 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                  className="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded text-base sm:text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
                 />
               </div>
 
@@ -196,7 +196,7 @@ export default function PartnerModal({ isOpen, onClose, onSave, partnerToEdit, p
                   value={formData.code}
                   onChange={e => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
                   placeholder="REF-XXX"
-                  className="w-full px-3 py-1.5 border border-slate-300 rounded font-mono focus:ring-1 focus:ring-sky-500 focus:outline-none uppercase"
+                  className="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded font-mono text-base sm:text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none uppercase"
                 />
               </div>
             </div>
@@ -207,12 +207,12 @@ export default function PartnerModal({ isOpen, onClose, onSave, partnerToEdit, p
                   Số điện thoại <span className="text-rose-500">*</span>
                 </label>
                 <input
-                  type="text"
+                  type="tel"
                   required
                   value={formData.phone}
                   onChange={e => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="09xx xxx xxx"
-                  className="w-full px-3 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                  className="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded text-base sm:text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
                 />
               </div>
 
@@ -223,7 +223,7 @@ export default function PartnerModal({ isOpen, onClose, onSave, partnerToEdit, p
                   value={formData.email}
                   onChange={e => setFormData({ ...formData, email: e.target.value })}
                   placeholder="doitac@gmail.com"
-                  className="w-full px-3 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                  className="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded text-base sm:text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
                 />
               </div>
             </div>
@@ -247,7 +247,7 @@ export default function PartnerModal({ isOpen, onClose, onSave, partnerToEdit, p
               <select
                 value={formData.parentId}
                 onChange={e => handleParentChange(e.target.value)}
-                className="w-full px-3 py-1.5 border border-slate-300 rounded bg-white focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                className="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded bg-white text-base sm:text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
               >
                 <option value="">Không có (Là Đối tác Gốc / Bác sĩ Sáng lập — Độ sâu 0)</option>
                 {partners
@@ -279,18 +279,18 @@ export default function PartnerModal({ isOpen, onClose, onSave, partnerToEdit, p
                     {partnerToEdit ? 'Sẵn sàng chia sẻ' : 'Có hiệu lực ngay sau khi lưu'}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   <input
                     type="text"
                     readOnly
                     value={referralUrl}
                     onClick={e => e.target.select()}
-                    className="flex-1 px-2.5 py-1.5 bg-white border border-sky-200 rounded font-mono text-[11px] text-slate-700 focus:outline-none"
+                    className="w-full sm:flex-1 px-2.5 py-1.5 bg-white border border-sky-200 rounded font-mono text-base sm:text-[11px] text-slate-700 focus:outline-none"
                   />
                   <button
                     type="button"
                     onClick={handleCopyModalLink}
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold bg-sky-600 hover:bg-sky-700 text-white rounded transition-colors shrink-0"
+                    className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 text-xs sm:text-[11px] font-semibold bg-sky-600 hover:bg-sky-700 text-white rounded transition-colors shrink-0"
                   >
                     {copiedLink ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                     <span>{copiedLink ? 'Đã chép' : 'Sao chép'}</span>
@@ -307,7 +307,7 @@ export default function PartnerModal({ isOpen, onClose, onSave, partnerToEdit, p
                   <select
                     value={formData.bankName}
                     onChange={e => setFormData({ ...formData, bankName: e.target.value })}
-                    className="w-full px-2 py-1.5 border border-slate-300 rounded bg-white text-xs"
+                    className="w-full px-2 py-2 sm:py-1.5 border border-slate-300 rounded bg-white text-base sm:text-xs"
                   >
                     <option value="Vietcombank">Vietcombank</option>
                     <option value="Techcombank">Techcombank</option>
@@ -324,7 +324,7 @@ export default function PartnerModal({ isOpen, onClose, onSave, partnerToEdit, p
                     value={formData.bankAccountNo}
                     onChange={e => setFormData({ ...formData, bankAccountNo: e.target.value })}
                     placeholder="Số tài khoản ngân hàng"
-                    className="w-full px-3 py-1.5 border border-slate-300 rounded font-mono text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                    className="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded font-mono text-base sm:text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -333,7 +333,7 @@ export default function PartnerModal({ isOpen, onClose, onSave, partnerToEdit, p
                     value={formData.bankAccountName}
                     onChange={e => setFormData({ ...formData, bankAccountName: e.target.value.toUpperCase() })}
                     placeholder="Tên chủ tài khoản"
-                    className="w-full px-3 py-1.5 border border-slate-300 rounded text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none uppercase"
+                    className="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded text-base sm:text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none uppercase"
                   />
                 </div>
               </div>

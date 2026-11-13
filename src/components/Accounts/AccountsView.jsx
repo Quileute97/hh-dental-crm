@@ -487,7 +487,7 @@ export default function AccountsView({
                     placeholder="VD: Trần Minh Tâm"
                     value={createForm.fullName}
                     onChange={e => setCreateForm({ ...createForm, fullName: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-500"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-base sm:text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
                   />
                 </div>
 
@@ -501,7 +501,7 @@ export default function AccountsView({
                     placeholder="ten@hhdental.vn"
                     value={createForm.email}
                     onChange={e => setCreateForm({ ...createForm, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-500"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-base sm:text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
                   />
                 </div>
 
@@ -516,7 +516,7 @@ export default function AccountsView({
                     placeholder="Tối thiểu 6 ký tự"
                     value={createForm.password}
                     onChange={e => setCreateForm({ ...createForm, password: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-500"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-base sm:text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
                   />
                 </div>
 
@@ -530,7 +530,7 @@ export default function AccountsView({
                     placeholder="09xx xxx xxx"
                     value={createForm.phone}
                     onChange={e => setCreateForm({ ...createForm, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-500"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-base sm:text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
                   />
                 </div>
               </div>
@@ -578,7 +578,7 @@ export default function AccountsView({
                             required
                             value={createForm.partnerCode}
                             onChange={e => setCreateForm({ ...createForm, partnerCode: e.target.value.toUpperCase() })}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono uppercase bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono uppercase bg-white text-base sm:text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
                           />
                           <button
                             type="button"
@@ -602,14 +602,14 @@ export default function AccountsView({
                               value={parentSearch}
                               onChange={e => setParentSearch(e.target.value)}
                               placeholder="Tìm nhanh tên, mã REF, SĐT..."
-                              className="w-full pl-8 pr-2 py-2 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
+                              className="w-full pl-8 pr-2 py-2 border border-slate-300 rounded-lg bg-white text-base sm:text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
                             />
                             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                           </div>
                           <select
                             value={createForm.parentPartnerId}
                             onChange={e => setCreateForm({ ...createForm, parentPartnerId: e.target.value })}
-                            className="sm:col-span-3 px-3 py-2 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
+                            className="sm:col-span-3 px-3 py-2 border border-slate-300 rounded-lg bg-white text-base sm:text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
                           >
                             <option value="">Không có — Là Đối tác Gốc (F0 • Độ sâu 0)</option>
                             {filteredParentPartners.map(p => {
@@ -634,7 +634,7 @@ export default function AccountsView({
                         required
                         value={createForm.existingPartnerId}
                         onChange={e => setCreateForm({ ...createForm, existingPartnerId: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-base sm:text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
                       >
                         <option value="">-- Chọn đối tác --</option>
                         {partners.map(p => (
@@ -683,7 +683,7 @@ export default function AccountsView({
                     placeholder="VD: 550e8400-e29b-41d4-a716-..."
                     value={newProfileForm.userId}
                     onChange={e => setNewProfileForm({ ...newProfileForm, userId: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono text-[11px] text-slate-800 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono text-base sm:text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-sky-500"
                   />
                 </div>
 
@@ -694,7 +694,7 @@ export default function AccountsView({
                     placeholder="VD: Nguyễn Văn A"
                     value={newProfileForm.fullName}
                     onChange={e => setNewProfileForm({ ...newProfileForm, fullName: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-base sm:text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-sky-500"
                   />
                 </div>
 
@@ -703,7 +703,7 @@ export default function AccountsView({
                   <select
                     value={newProfileForm.role}
                     onChange={e => setNewProfileForm({ ...newProfileForm, role: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-base sm:text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-sky-500"
                   >
                     <option value="frontdesk">Lễ tân (frontdesk)</option>
                     <option value="partner">Đối tác / CTV (partner)</option>
@@ -719,7 +719,7 @@ export default function AccountsView({
                       required
                       value={newProfileForm.partnerId}
                       onChange={e => setNewProfileForm({ ...newProfileForm, partnerId: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-base sm:text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-sky-500"
                     >
                       <option value="">-- Chọn đối tác --</option>
                       {partners.map(p => (
@@ -776,14 +776,14 @@ export default function AccountsView({
       {/* Profiles Table */}
       <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="w-full text-left text-xs border-collapse min-w-[50rem]">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-medium">
-                <th className="py-3 px-4">Tài khoản / Tên hiển thị</th>
-                <th className="py-3 px-4">User UID (Supabase Auth)</th>
-                <th className="py-3 px-4">Vai trò (Role)</th>
-                <th className="py-3 px-4">Đối tác liên kết &amp; Link Giới Thiệu</th>
-                <th className="py-3 px-4 text-right">Thao tác</th>
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-medium whitespace-nowrap">
+                <th className="py-2.5 sm:py-3 px-3 sm:px-4">Tài khoản / Tên hiển thị</th>
+                <th className="py-2.5 sm:py-3 px-3 sm:px-4">User UID (Supabase Auth)</th>
+                <th className="py-2.5 sm:py-3 px-3 sm:px-4">Vai trò (Role)</th>
+                <th className="py-2.5 sm:py-3 px-3 sm:px-4">Đối tác liên kết &amp; Link Giới Thiệu</th>
+                <th className="py-2.5 sm:py-3 px-3 sm:px-4 text-right">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -809,15 +809,15 @@ export default function AccountsView({
                   };
 
                   return (
-                    <tr key={prof.user_id} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="py-3 px-4">
+                    <tr key={prof.user_id} className="hover:bg-slate-50/70 transition-colors whitespace-nowrap">
+                      <td className="py-2.5 sm:py-3 px-3 sm:px-4">
                         {isEditing ? (
                           <input
                             type="text"
                             value={editForm.fullName}
                             onChange={e => setEditForm({ ...editForm, fullName: e.target.value })}
                             placeholder="Họ và tên"
-                            className="px-2 py-1 border border-slate-300 rounded text-xs w-full max-w-[200px]"
+                            className="px-2 py-1 border border-slate-300 rounded text-base sm:text-xs w-full max-w-[200px]"
                           />
                         ) : (
                           <div className="font-semibold text-slate-900">
@@ -826,7 +826,7 @@ export default function AccountsView({
                         )}
                       </td>
 
-                      <td className="py-3 px-4">
+                      <td className="py-2.5 sm:py-3 px-3 sm:px-4">
                         <span
                           className="font-mono text-[11px] text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-200 select-all"
                           title={prof.user_id}
@@ -835,12 +835,12 @@ export default function AccountsView({
                         </span>
                       </td>
 
-                      <td className="py-3 px-4">
+                      <td className="py-2.5 sm:py-3 px-3 sm:px-4">
                         {isEditing ? (
                           <select
                             value={editForm.role}
                             onChange={e => setEditForm({ ...editForm, role: e.target.value })}
-                            className="px-2 py-1 border border-slate-300 rounded text-xs bg-white"
+                            className="px-2 py-1 border border-slate-300 rounded text-base sm:text-xs bg-white"
                           >
                             <option value="admin">Quản trị viên (admin)</option>
                             <option value="accountant">Kế toán (accountant)</option>
@@ -854,13 +854,13 @@ export default function AccountsView({
                         )}
                       </td>
 
-                      <td className="py-3 px-4">
+                      <td className="py-2.5 sm:py-3 px-3 sm:px-4">
                         {isEditing ? (
                           editForm.role === 'partner' ? (
                             <select
                               value={editForm.partnerId}
                               onChange={e => setEditForm({ ...editForm, partnerId: e.target.value })}
-                              className="px-2 py-1 border border-slate-300 rounded text-xs bg-white"
+                              className="px-2 py-1 border border-slate-300 rounded text-base sm:text-xs bg-white"
                             >
                               <option value="">-- Chưa gắn --</option>
                               {partners.map(p => (

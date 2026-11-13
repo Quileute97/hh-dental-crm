@@ -129,3 +129,4 @@ assertEqual(fallbackMapped.idCardFront, 'data:image/jpeg;base64,FRONT', 'Fallbac
 assertEqual(fallbackMapped.idCardBack, 'data:image/jpeg;base64,BACK', 'Fallback audit_logs mặt sau hoạt động');
 
 console.log('\n🎉 TOÀN BỘ KIỂM THỬ UPLOAD ẢNH CCCD ĐÃ THÀNH CÔNG 100%!');
+

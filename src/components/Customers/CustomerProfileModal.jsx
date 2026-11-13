@@ -159,24 +159,24 @@ export default function CustomerProfileModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl border border-slate-200 max-w-3xl w-full my-6 max-h-[92vh] flex flex-col overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl border border-slate-200 max-w-3xl w-full my-4 sm:my-6 max-h-[94vh] sm:max-h-[92vh] flex flex-col overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-100">
         
         {/* ================================================================= */}
         {/* HEADER HỒ SƠ KHÁCH HÀNG */}
         {/* ================================================================= */}
-        <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between shrink-0">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-sky-600 text-white font-bold flex items-center justify-center text-sm shadow-xs">
+            <div className="w-10 h-10 rounded-full bg-sky-600 text-white font-bold flex items-center justify-center text-sm shadow-xs shrink-0">
               {customer.name?.charAt(0)?.toUpperCase() || 'K'}
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="font-bold text-slate-900 text-base">{customer.name}</h2>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="font-bold text-slate-900 text-sm sm:text-base">{customer.name}</h2>
                 <span className="font-mono text-xs px-2 py-0.5 bg-slate-100 border border-slate-200 text-slate-700 rounded font-semibold">
                   {customer.code || customer.id}
                 </span>
-                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                <span className={`text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full font-bold ${
                   customer.status === 'completed'
                     ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                     : customer.status === 'arrived'
@@ -186,16 +186,17 @@ export default function CustomerProfileModal({
                   {customer.status === 'completed' ? 'Đã hoàn tất' : customer.status === 'arrived' ? 'Đã đến khám' : 'Tiềm năng (Lead)'}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-2">
-                <span>Hồ sơ khách hàng H&H Dental</span>
+              <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <span>Hồ sơ khách hàng H&amp;H Dental</span>
                 <span>&bull;</span>
                 <span>Ngày tiếp nhận: {formatDate(customer.createdAt)}</span>
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-200/70 transition-colors"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-200/70 transition-colors shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
@@ -204,7 +205,7 @@ export default function CustomerProfileModal({
         {/* ================================================================= */}
         {/* BODY NỘI DUNG HỒ SƠ */}
         {/* ================================================================= */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-3.5 sm:p-6 space-y-4 sm:space-y-6">
 
           {/* HÀNG 1: THÔNG TIN KHÁCH HÀNG & CTV BẢO TRỢ GÁN CỨNG */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -517,7 +518,7 @@ export default function CustomerProfileModal({
                         placeholder="VD: Gắn mắc cài, Lấy dấu, Siết răng..."
                         value={visitStep}
                         onChange={e => setVisitStep(e.target.value)}
-                        className="w-full px-2.5 py-1.5 border border-slate-300 rounded-md font-semibold text-xs bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                        className="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded-md font-semibold text-base sm:text-xs bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       />
                     </div>
 
@@ -533,7 +534,7 @@ export default function CustomerProfileModal({
                         placeholder="VD: 5000000"
                         value={visitAmount}
                         onChange={e => setVisitAmount(e.target.value)}
-                        className="w-full px-2.5 py-1.5 border border-slate-300 rounded-md font-bold text-xs bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                        className="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded-md font-bold text-base sm:text-xs bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       />
                       {visitAmount && !isNaN(visitAmount) && (
                         <span className="text-[10px] text-emerald-700 font-medium block mt-0.5">
@@ -556,7 +557,7 @@ export default function CustomerProfileModal({
                             key={item.id}
                             type="button"
                             onClick={() => setVisitPaymentStatus(item.id)}
-                            className={`py-1 px-2 rounded-md border text-center transition-all text-[11px] font-semibold flex items-center justify-center gap-1 ${
+                            className={`py-1.5 sm:py-1 px-2 rounded-md border text-center transition-all text-[11px] font-semibold flex items-center justify-center gap-1 ${
                               isChosen
                                 ? `${item.badgeClass} ring-2 ring-emerald-500/30 shadow-2xs`
                                 : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
@@ -577,7 +578,7 @@ export default function CustomerProfileModal({
                         type="date"
                         value={visitDate}
                         onChange={e => setVisitDate(e.target.value)}
-                        className="w-full px-2.5 py-1.5 border border-slate-300 rounded-md text-xs bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                        className="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded-md text-base sm:text-xs bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       />
                     </div>
                     <div>
@@ -587,7 +588,7 @@ export default function CustomerProfileModal({
                         placeholder="Ghi chú lâm sàng..."
                         value={visitNote}
                         onChange={e => setVisitNote(e.target.value)}
-                        className="w-full px-2.5 py-1.5 border border-slate-300 rounded-md text-xs bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                        className="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded-md text-base sm:text-xs bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       />
                     </div>
                   </div>
@@ -613,8 +614,8 @@ export default function CustomerProfileModal({
             )}
 
             {/* Bảng danh sách lượt khám */}
-            <div className="border border-slate-200 rounded-lg overflow-hidden">
-              <table className="w-full text-xs text-left">
+            <div className="border border-slate-200 rounded-lg overflow-x-auto">
+              <table className="w-full min-w-[32rem] text-xs text-left">
                 <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
                   <tr>
                     <th className="py-2.5 px-3 text-center w-10">#</th>

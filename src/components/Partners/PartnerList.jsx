@@ -28,24 +28,25 @@ export default function PartnerList({
   return (
     <div className="bg-white border border-slate-200 rounded-lg shadow-xs">
       {/* Table filters and controls */}
-      <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="p-3.5 sm:p-4 border-b border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3">
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <div className="relative w-full sm:w-72">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               placeholder="Tìm theo tên đối tác, mã REF..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500"
+              className="w-full pl-9 pr-3 py-1.5 text-base sm:text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500"
             />
           </div>
         </div>
 
         {can(role, 'managePartners') && (
           <button
+            type="button"
             onClick={() => onAddPartner()}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors shrink-0"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors shrink-0 shadow-xs"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Thêm đối tác mới</span>
@@ -55,18 +56,18 @@ export default function PartnerList({
 
       {/* Table 3.3 Chuẩn Plan v5 */}
       <div className="overflow-x-auto">
-        <table className="w-full text-xs text-left">
-          <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+        <table className="w-full text-xs text-left min-w-[52rem]">
+          <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 whitespace-nowrap">
             <tr>
-              <th className="py-2.5 px-4">Đối tác</th>
-              <th className="py-2.5 px-4">Cấp trên</th>
-              <th className="py-2.5 px-4 text-right">Sổ khách</th>
-              <th className="py-2.5 px-4 text-right">Doanh thu nhánh</th>
-              <th className="py-2.5 px-4 text-right">Hoa hồng CTV</th>
-              <th className="py-2.5 px-4 text-right">Phí nhánh 1%</th>
-              <th className="py-2.5 px-4 text-right font-bold text-slate-900">Tổng phải trả</th>
-              <th className="py-2.5 px-4 text-center">Đã chốt</th>
-              <th className="py-2.5 px-4 text-right">Thao tác</th>
+              <th className="py-2.5 px-3 sm:px-4">Đối tác</th>
+              <th className="py-2.5 px-3 sm:px-4">Cấp trên</th>
+              <th className="py-2.5 px-3 sm:px-4 text-right">Sổ khách</th>
+              <th className="py-2.5 px-3 sm:px-4 text-right">Doanh thu nhánh</th>
+              <th className="py-2.5 px-3 sm:px-4 text-right">Hoa hồng CTV</th>
+              <th className="py-2.5 px-3 sm:px-4 text-right">Phí nhánh 1%</th>
+              <th className="py-2.5 px-3 sm:px-4 text-right font-bold text-slate-900">Tổng phải trả</th>
+              <th className="py-2.5 px-3 sm:px-4 text-center">Đã chốt</th>
+              <th className="py-2.5 px-3 sm:px-4 text-right">Thao tác</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -85,9 +86,9 @@ export default function PartnerList({
                 const cccdCount = (hasFront ? 1 : 0) + (hasBack ? 1 : 0);
 
                 return (
-                  <tr key={row.partnerId} className="hover:bg-slate-50 transition-colors">
+                  <tr key={row.partnerId} className="hover:bg-slate-50 transition-colors whitespace-nowrap">
                     {/* Cột 1: Đối tác */}
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-3 sm:px-4">
                       <div className="font-bold text-slate-900">{row.partnerName}</div>
                       <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                         <span className="font-mono text-[11px] text-slate-500">{row.partnerCode}</span>
@@ -123,37 +124,37 @@ export default function PartnerList({
                     </td>
 
                     {/* Cột 2: Cấp trên */}
-                    <td className="py-3 px-4 text-slate-600">
+                    <td className="py-3 px-3 sm:px-4 text-slate-600">
                       {row.parentName}
                     </td>
 
                     {/* Cột 3: Sổ khách */}
-                    <td className="py-3 px-4 text-right font-medium text-slate-800">
+                    <td className="py-3 px-3 sm:px-4 text-right font-medium text-slate-800">
                       {formatVND(row.ownRevenue)}
                     </td>
 
                     {/* Cột 4: Doanh thu nhánh */}
-                    <td className="py-3 px-4 text-right font-medium text-sky-700">
+                    <td className="py-3 px-3 sm:px-4 text-right font-medium text-sky-700">
                       {formatVND(row.branchRevenue)}
                     </td>
 
                     {/* Cột 5: Hoa hồng CTV */}
-                    <td className="py-3 px-4 text-right font-medium text-emerald-700">
+                    <td className="py-3 px-3 sm:px-4 text-right font-medium text-emerald-700">
                       {formatVND(row.commission)}
                     </td>
 
                     {/* Cột 6: Phí nhánh 1% */}
-                    <td className="py-3 px-4 text-right font-medium text-amber-700">
+                    <td className="py-3 px-3 sm:px-4 text-right font-medium text-amber-700">
                       {formatVND(row.branchFee)}
                     </td>
 
                     {/* Cột 7: Tổng phải trả */}
-                    <td className="py-3 px-4 text-right font-bold text-slate-900 text-sm">
+                    <td className="py-3 px-3 sm:px-4 text-right font-bold text-slate-900 text-sm">
                       {formatVND(row.total)}
                     </td>
 
                     {/* Cột 8: Đã chốt (Badge) */}
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-3 px-3 sm:px-4 text-center">
                       {row.isSettled ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
                           <CheckCircle2 className="w-3 h-3 text-emerald-600" />
@@ -168,10 +169,11 @@ export default function PartnerList({
                     </td>
 
                     {/* Cột 9: Thao tác */}
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3 px-3 sm:px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         {onCopyReferralLink && (
                           <button
+                            type="button"
                             onClick={() => onCopyReferralLink(partnerObj || { id: row.partnerId, code: row.partnerCode, name: row.partnerName })}
                             className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 transition-colors"
                             title={`Sao chép Link giới thiệu (${row.partnerCode})`}
@@ -183,6 +185,7 @@ export default function PartnerList({
                         {can(role, 'managePartners') && (
                           <>
                             <button
+                              type="button"
                               onClick={() => onEditPartner(partnerObj || row)}
                               className="p-1.5 rounded hover:bg-slate-100 text-slate-500 hover:text-slate-800"
                               title="Sửa đối tác"
@@ -190,6 +193,7 @@ export default function PartnerList({
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button
+                              type="button"
                               onClick={() => onToggleStatus(row.partnerId)}
                               className={`p-1.5 rounded transition-colors ${isActive ? 'text-emerald-600 hover:bg-emerald-50' : 'text-slate-400 hover:bg-slate-100'
                                 }`}

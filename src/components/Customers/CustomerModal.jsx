@@ -219,28 +219,29 @@ export default function CustomerModal({
     : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl border border-slate-200 max-w-2xl w-full my-6 overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-100 flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl border border-slate-200 max-w-2xl w-full my-4 sm:my-6 overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-100 flex flex-col max-h-[94vh] sm:max-h-[90vh]">
         {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between shrink-0 bg-slate-50/70">
+        <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-200 flex items-center justify-between shrink-0 bg-slate-50/70">
           <div>
             <h3 className="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2">
-              <Users className="w-4 h-4 text-sky-600" />
+              <Users className="w-4 h-4 text-sky-600 shrink-0" />
               <span>Tiếp Nhận Khách Hàng & Chỉ Định Gói Điều Trị</span>
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
               Tách biệt Gói tổng thể & Bước điều trị lâm sàng theo buổi khám (Step)
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-5 text-xs overflow-y-auto flex-1">
+        <form onSubmit={handleSubmit} className="p-3.5 sm:p-5 space-y-4 sm:space-y-5 text-xs overflow-y-auto flex-1">
           {error && (
             <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 font-medium">
               {error}
@@ -260,7 +261,7 @@ export default function CustomerModal({
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
                   placeholder="VD: Nguyễn Văn Nam"
-                  className="w-full px-3 py-1.5 border border-slate-300 rounded-md focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                  className="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded-md text-base sm:text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
                 />
               </div>
 
@@ -269,18 +270,18 @@ export default function CustomerModal({
                   Số điện thoại <span className="text-rose-500">*</span>
                 </label>
                 <input
-                  type="text"
+                  type="tel"
                   required
                   value={formData.phone}
                   onChange={e => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="09xx xxx xxx"
-                  className="w-full px-3 py-1.5 border border-slate-300 rounded-md focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                  className="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded-md text-base sm:text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
                 />
               </div>
             </div>
 
             {/* Phân cấp chuỗi khách & CTV */}
-            <div className="p-3.5 bg-slate-50/90 rounded-xl border border-slate-200 space-y-3">
+            <div className="p-3 sm:p-3.5 bg-slate-50/90 rounded-xl border border-slate-200 space-y-3">
               {/* Mục 1: Khách hàng giới thiệu (Referrer Customer) */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
@@ -303,7 +304,7 @@ export default function CustomerModal({
                       value={referrerSearch}
                       onChange={e => setReferrerSearch(e.target.value)}
                       placeholder="Tìm nhanh KH (Tên, SĐT, Mã)..."
-                      className="w-full pl-8 pr-7 py-1.5 border border-slate-300 rounded-md bg-white text-xs placeholder:text-slate-400 focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                      className="w-full pl-8 pr-7 py-2 sm:py-1.5 border border-slate-300 rounded-md bg-white text-base sm:text-xs placeholder:text-slate-400 focus:ring-1 focus:ring-sky-500 focus:outline-none"
                     />
                     {referrerSearch && (
                       <button
@@ -321,7 +322,7 @@ export default function CustomerModal({
                   <select
                     value={formData.referrerCustomerId}
                     onChange={e => handleReferrerChange(e.target.value)}
-                    className="w-full px-3 py-1.5 border border-slate-300 rounded-md bg-white text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none truncate"
+                    className="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded-md bg-white text-base sm:text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none truncate"
                   >
                     <option value="">Không có (Khách trực tiếp từ CTV — Tầng 1)</option>
                     {displayedReferrerOptions.map(c => (
@@ -377,7 +378,7 @@ export default function CustomerModal({
                         value={partnerSearch}
                         onChange={e => setPartnerSearch(e.target.value)}
                         placeholder="Tìm nhanh CTV (Tên, SĐT, Mã REF)..."
-                        className="w-full pl-8 pr-7 py-1.5 border border-slate-300 rounded-md bg-white text-xs placeholder:text-slate-400 focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                        className="w-full pl-8 pr-7 py-2 sm:py-1.5 border border-slate-300 rounded-md bg-white text-base sm:text-xs placeholder:text-slate-400 focus:ring-1 focus:ring-sky-500 focus:outline-none"
                       />
                       {partnerSearch && (
                         <button
@@ -395,7 +396,7 @@ export default function CustomerModal({
                     <select
                       value={formData.ownerPartnerId}
                       onChange={e => setFormData({ ...formData, ownerPartnerId: e.target.value })}
-                      className="w-full px-3 py-1.5 border border-slate-300 rounded-md bg-white text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none truncate"
+                      className="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded-md bg-white text-base sm:text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none truncate"
                     >
                       {displayedPartnerOptions.map(p => (
                         <option key={p.id} value={p.id}>
@@ -415,10 +416,10 @@ export default function CustomerModal({
           {/* ================================================================= */}
           {/* PHẦN 1: CHỌN GÓI DỊCH VỤ ĐIỀU TRỊ (TREATMENT PACKAGE) */}
           {/* ================================================================= */}
-          <div className="p-4 bg-sky-50/50 rounded-xl border border-sky-200 space-y-3">
+          <div className="p-3.5 sm:p-4 bg-sky-50/50 rounded-xl border border-sky-200 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-md bg-sky-600 text-white flex items-center justify-center font-bold text-xs">
+                <div className="w-6 h-6 rounded-md bg-sky-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
                   1
                 </div>
                 <div>
@@ -481,7 +482,7 @@ export default function CustomerModal({
                 <select
                   value={formData.treatment}
                   onChange={e => handleServiceChange(e.target.value)}
-                  className="w-full px-3 py-1.5 border border-slate-300 rounded-md bg-white text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                  className="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded-md bg-white text-base sm:text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
                 >
                   {services.map(s => (
                     <option key={s.id} value={s.name}>
@@ -493,7 +494,7 @@ export default function CustomerModal({
 
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">Giá trị gói niêm yết</label>
-                <div className="px-3 py-1.5 bg-white border border-slate-300 rounded-md font-bold text-sky-900 text-xs flex items-center justify-between">
+                <div className="px-3 py-2 sm:py-1.5 bg-white border border-slate-300 rounded-md font-bold text-sky-900 text-base sm:text-xs flex items-center justify-between">
                   <span>{formatVND(formData.packagePrice)}</span>
                   <span className="text-[10px] text-slate-400 font-normal">Trọn gói phác đồ</span>
                 </div>
@@ -504,9 +505,9 @@ export default function CustomerModal({
           {/* ================================================================= */}
           {/* PHẦN 2: NỘI DUNG ĐIỀU TRỊ ĐỢT NÀY (STEP) & THANH TOÁN */}
           {/* ================================================================= */}
-          <div className="p-4 bg-emerald-50/40 rounded-xl border border-emerald-200 space-y-3">
+          <div className="p-3.5 sm:p-4 bg-emerald-50/40 rounded-xl border border-emerald-200 space-y-3">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">
+              <div className="w-6 h-6 rounded-md bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
                 2
               </div>
               <div>
@@ -559,7 +560,7 @@ export default function CustomerModal({
                   value={formData.step}
                   onChange={e => setFormData({ ...formData, step: e.target.value })}
                   placeholder="VD: Gắn mắc cài, Lấy dấu, Siết răng..."
-                  className="w-full px-3 py-1.5 border border-slate-300 rounded-md font-semibold text-slate-800 text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                  className="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded-md font-semibold text-slate-800 text-base sm:text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:outline-none"
                 />
               </div>
 
@@ -575,7 +576,7 @@ export default function CustomerModal({
                     required
                     value={formData.initialAmount}
                     onChange={e => setFormData({ ...formData, initialAmount: e.target.value })}
-                    className="w-full pl-3 pr-12 py-1.5 border border-slate-300 rounded-md font-bold text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                    className="w-full pl-3 pr-12 py-2 sm:py-1.5 border border-slate-300 rounded-md font-bold text-base sm:text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:outline-none"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-semibold text-[11px]">
                     VNĐ
@@ -622,7 +623,7 @@ export default function CustomerModal({
                 value={formData.note}
                 onChange={e => setFormData({ ...formData, note: e.target.value })}
                 placeholder="VD: Khách hẹn tái khám sau 3 tuần, gắn mắc cài hàm trên..."
-                className="w-full px-3 py-1.5 border border-slate-300 rounded-md text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                className="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded-md text-base sm:text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:outline-none"
               />
             </div>
           </div>
@@ -638,7 +639,7 @@ export default function CustomerModal({
             </button>
             <button
               type="submit"
-              className="px-5 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-lg transition-colors shadow-sm inline-flex items-center gap-1.5"
+              className="px-5 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-lg transition-colors shadow-xs inline-flex items-center gap-1.5"
             >
               <Check className="w-4 h-4" />
               <span>Tiếp nhận khách hàng</span>

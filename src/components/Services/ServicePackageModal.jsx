@@ -92,32 +92,33 @@ export default function ServicePackageModal({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
-      <div className="bg-white rounded-xl border border-slate-200 max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl border border-slate-200 max-w-2xl w-full my-4 sm:my-6 max-h-[94vh] sm:max-h-[90vh] flex flex-col overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-100">
         {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-sky-600 flex items-center justify-center text-white shadow-xs">
+            <div className="w-8 h-8 rounded-lg bg-sky-600 flex items-center justify-center text-white shadow-xs shrink-0">
               <Tag className="w-4 h-4" />
             </div>
             <div>
               <h3 className="font-bold text-slate-900 text-sm">Quản Lý Gói Dịch Vụ Nha Khoa</h3>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
                 Thêm gói và giá niêm yết để chọn nhanh khi tiếp nhận khách hàng
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            className="w-7 h-7 rounded flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-3.5 sm:p-6 space-y-4 sm:space-y-6">
           {/* Form Thêm / Sửa Gói */}
-          <div className={`p-4 rounded-lg border transition-all ${
+          <div className={`p-3.5 sm:p-4 rounded-lg border transition-all ${
             editingId 
               ? 'bg-amber-50/60 border-amber-300 ring-1 ring-amber-300' 
               : 'bg-slate-50 border-slate-200'
@@ -166,7 +167,7 @@ export default function ServicePackageModal({
                     placeholder="VD: Niềng răng mắc cài kim loại"
                     value={formData.name}
                     onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                    className="w-full px-3 py-2 sm:py-1.5 bg-white border border-slate-300 rounded text-base sm:text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
                   />
                 </div>
 
@@ -183,7 +184,7 @@ export default function ServicePackageModal({
                       placeholder="VD: 15000000"
                       value={formData.defaultPrice}
                       onChange={e => setFormData({ ...formData, defaultPrice: e.target.value })}
-                      className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded text-xs font-semibold focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                      className="w-full px-3 py-2 sm:py-1.5 bg-white border border-slate-300 rounded text-base sm:text-xs font-semibold focus:ring-1 focus:ring-sky-500 focus:outline-none"
                     />
                   </div>
                   {formData.defaultPrice !== '' && !isNaN(formData.defaultPrice) && (
@@ -203,7 +204,7 @@ export default function ServicePackageModal({
                   placeholder="VD: Bao gồm bảo hành 5 năm, miễn phí vệ sinh định kỳ..."
                   value={formData.description}
                   onChange={e => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                  className="w-full px-3 py-2 sm:py-1.5 bg-white border border-slate-300 rounded text-base sm:text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
                 />
               </div>
 
@@ -234,7 +235,7 @@ export default function ServicePackageModal({
 
           {/* Danh sách các gói hiện có */}
           <div>
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-xs text-slate-800">Danh sách gói dịch vụ</span>
                 <span className="px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 font-semibold text-[11px]">
@@ -246,13 +247,13 @@ export default function ServicePackageModal({
                 placeholder="Tìm gói dịch vụ..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="px-2.5 py-1 text-xs border border-slate-300 rounded-md w-48 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                className="w-full sm:w-48 px-2.5 py-1.5 sm:py-1 text-base sm:text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500 bg-white"
               />
             </div>
 
-            <div className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-xs">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+            <div className="border border-slate-200 rounded-lg overflow-x-auto bg-white shadow-xs">
+              <table className="w-full text-xs text-left min-w-[32rem]">
+                <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 whitespace-nowrap">
                   <tr>
                     <th className="py-2.5 px-3">Mã gói</th>
                     <th className="py-2.5 px-4">Tên gói dịch vụ</th>

@@ -165,13 +165,13 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
   }
 
   const containerClass = isModal
-    ? 'relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 sm:p-8'
-    : 'min-h-screen bg-slate-50 flex flex-col justify-center py-8 px-4 sm:px-6 lg:px-8';
+    ? 'relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 sm:p-8 my-auto'
+    : 'min-h-screen bg-slate-50 flex flex-col justify-center py-6 sm:py-8 px-3 sm:px-6 lg:px-8';
 
-  const wrapperClass = isModal ? '' : 'mt-5 sm:mx-auto sm:w-full sm:max-w-lg';
+  const wrapperClass = isModal ? '' : 'mt-4 sm:mt-5 sm:mx-auto sm:w-full sm:max-w-lg';
   const cardClass = isModal
     ? 'space-y-4'
-    : 'bg-white py-6 px-5 shadow-sm border border-slate-200 rounded-xl sm:px-8 space-y-5';
+    : 'bg-white py-5 sm:py-6 px-4 sm:px-8 shadow-xs border border-slate-200 rounded-xl space-y-4 sm:space-y-5';
 
   return (
     <div className={containerClass}>
@@ -248,9 +248,9 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     placeholder="admin@hhdental.vn"
-                    className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-md text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                    className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-md text-base sm:text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
                   />
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
 
@@ -265,9 +265,9 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-md text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                    className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-md text-base sm:text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
                   />
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
 
@@ -403,9 +403,9 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
                       value={fullName}
                       onChange={e => setFullName(e.target.value)}
                       placeholder="VD: Nguyễn Minh Anh"
-                      className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-md text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                      className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-md text-base sm:text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
                     />
-                    <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
                 </div>
 
@@ -420,9 +420,9 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
                       value={phone}
                       onChange={e => setPhone(e.target.value)}
                       placeholder="09xx xxx xxx"
-                      className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-md text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                      className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-md text-base sm:text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
                     />
-                    <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
                 </div>
               </div>
@@ -438,9 +438,9 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     placeholder="email@domain.com"
-                    className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-md text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                    className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-md text-base sm:text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
                   />
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
 
@@ -457,9 +457,9 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
                       value={password}
                       onChange={e => setPassword(e.target.value)}
                       placeholder="Tối thiểu 6 ký tự"
-                      className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-md text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                      className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-md text-base sm:text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
                     />
-                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
                 </div>
 
@@ -475,9 +475,9 @@ export default function LoginScreen({ onLoginSuccess, isModal = false, onClose }
                       value={confirmPassword}
                       onChange={e => setConfirmPassword(e.target.value)}
                       placeholder="Nhập lại mật khẩu"
-                      className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-md text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                      className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-md text-base sm:text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none"
                     />
-                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
                 </div>
               </div>

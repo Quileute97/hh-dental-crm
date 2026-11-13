@@ -71,17 +71,17 @@ export default function AuditLogModal({ isOpen, onClose, logs = [], currentUserR
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
-      <div className="bg-white rounded-xl border border-slate-200 max-w-4xl w-full overflow-hidden shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl border border-slate-200 max-w-4xl w-full overflow-hidden shadow-2xl flex flex-col my-4 sm:my-6 max-h-[94vh] sm:max-h-[90vh] animate-in fade-in zoom-in-95 duration-150">
         
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between shrink-0 bg-slate-50/70">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center shadow-xs">
-              <ClipboardList className="w-5 h-5" />
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 flex items-center justify-between shrink-0 bg-slate-50/70">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-8 sm:w-9 h-8 sm:h-9 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center shadow-xs shrink-0">
+              <ClipboardList className="w-4 sm:w-5 h-4 sm:h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <h3 className="font-bold text-slate-900 text-sm">
                   Nhật Ký Kiểm Toán Hệ Thống (Audit Logs)
                 </h3>
@@ -94,27 +94,28 @@ export default function AuditLogModal({ isOpen, onClose, logs = [], currentUserR
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
                 Ghi vết tự động mọi biến động trên các bảng customers, visits, partners, settlements
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors"
+            className="w-7 sm:w-8 h-7 sm:h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Filter Toolbar */}
-        <div className="p-4 border-b border-slate-200 bg-white grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+        <div className="p-3.5 sm:p-4 border-b border-slate-200 bg-white grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3 text-xs">
           <div>
             <label className="block text-[11px] font-medium text-slate-500 mb-1">Đối tượng (Entity)</label>
             <select
               value={selectedEntity}
               onChange={(e) => setSelectedEntity(e.target.value)}
-              className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-sky-500"
+              className="w-full px-2.5 py-2 sm:py-1.5 border border-slate-300 rounded-lg bg-white text-slate-700 text-base sm:text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
             >
               <option value="ALL">Tất cả đối tượng</option>
               <option value="CUSTOMERS">Khách hàng (customers)</option>
@@ -130,7 +131,7 @@ export default function AuditLogModal({ isOpen, onClose, logs = [], currentUserR
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-slate-700 focus:outline-none focus:ring-1 focus:ring-sky-500"
+              className="w-full px-2.5 py-2 sm:py-1.5 border border-slate-300 rounded-lg text-slate-700 text-base sm:text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
             />
           </div>
 
@@ -140,7 +141,7 @@ export default function AuditLogModal({ isOpen, onClose, logs = [], currentUserR
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-slate-700 focus:outline-none focus:ring-1 focus:ring-sky-500"
+              className="w-full px-2.5 py-2 sm:py-1.5 border border-slate-300 rounded-lg text-slate-700 text-base sm:text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
             />
           </div>
 
@@ -151,7 +152,7 @@ export default function AuditLogModal({ isOpen, onClose, logs = [], currentUserR
               placeholder="Action, ID, Actor..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-slate-700 focus:outline-none focus:ring-1 focus:ring-sky-500"
+              className="w-full px-2.5 py-2 sm:py-1.5 border border-slate-300 rounded-lg text-slate-700 text-base sm:text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
             />
           </div>
         </div>
@@ -177,24 +178,24 @@ export default function AuditLogModal({ isOpen, onClose, logs = [], currentUserR
                   <div key={log.id || index} className="hover:bg-slate-50/70 transition-colors">
                     <div 
                       onClick={() => toggleExpand(index)}
-                      className="px-6 py-3 flex items-center justify-between gap-4 cursor-pointer text-xs"
+                      className="px-3.5 sm:px-6 py-2.5 sm:py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-4 cursor-pointer text-xs"
                     >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <button className="text-slate-400 hover:text-slate-600 shrink-0">
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                        <button type="button" className="text-slate-400 hover:text-slate-600 shrink-0">
                           {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                         </button>
-                        <span className={`px-2 py-0.5 font-mono text-[11px] font-bold rounded border shrink-0 ${getActionBadgeClass(log.action)}`}>
+                        <span className={`px-2 py-0.5 font-mono text-[10px] sm:text-[11px] font-bold rounded border shrink-0 ${getActionBadgeClass(log.action)}`}>
                           {log.action}
                         </span>
                         <span className="font-semibold text-slate-800 shrink-0">
                           {log.entity}
                         </span>
-                        <span className="font-mono text-slate-500 truncate max-w-[140px] text-[11px]" title={entityId}>
+                        <span className="font-mono text-slate-500 truncate max-w-[140px] text-[10px] sm:text-[11px]" title={entityId}>
                           ID: {entityId}
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-4 shrink-0 text-[11px] text-slate-500">
+                      <div className="flex items-center gap-3 sm:gap-4 shrink-0 text-[10px] sm:text-[11px] text-slate-500 pl-6 sm:pl-0">
                         <span className="flex items-center gap-1 text-slate-600 truncate max-w-[150px]" title={actor}>
                           <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                           <span className="truncate">{actor}</span>
@@ -206,7 +207,7 @@ export default function AuditLogModal({ isOpen, onClose, logs = [], currentUserR
                     </div>
 
                     {isExpanded && (
-                      <div className="px-12 py-3 bg-slate-900 text-slate-200 border-t border-slate-800 text-[11px] font-mono overflow-x-auto">
+                      <div className="px-4 sm:px-12 py-3 bg-slate-900 text-slate-200 border-t border-slate-800 text-[11px] font-mono overflow-x-auto">
                         <div className="text-[10px] text-slate-400 mb-1 flex items-center justify-between">
                           <span>Chi tiết thay đổi dữ liệu (Payload):</span>
                           <span>Độ dài: {JSON.stringify(payload).length} ký tự</span>
@@ -224,14 +225,15 @@ export default function AuditLogModal({ isOpen, onClose, logs = [], currentUserR
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50 flex items-center justify-between shrink-0 text-xs text-slate-500">
+        <div className="px-4 sm:px-6 py-3 border-t border-slate-200 bg-slate-50 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0 text-xs text-slate-500">
           <div className="flex items-center gap-2">
             <span>Hiển thị <strong>{filteredLogs.length}</strong> / {logs.length} bản ghi</span>
-            <span>• Bảng <code>audit_logs</code> trên Supabase</span>
+            <span>• <code>audit_logs</code></span>
           </div>
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center justify-end gap-2">
             {isAdmin && (
               <button
+                type="button"
                 onClick={() => exportAuditLogsToCSV(filteredLogs)}
                 disabled={filteredLogs.length === 0}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-sky-700 bg-white border border-sky-300 hover:bg-sky-50 rounded-lg transition-colors shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
@@ -241,6 +243,7 @@ export default function AuditLogModal({ isOpen, onClose, logs = [], currentUserR
               </button>
             )}
             <button
+              type="button"
               onClick={onClose}
               className="px-4 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg transition-colors"
             >

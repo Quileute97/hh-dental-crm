@@ -59,10 +59,10 @@ export default function PartnerSelfProfileModal({ isOpen, onClose, partner, onSa
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 backdrop-blur-xs p-4">
-      <div className="bg-white rounded-xl border border-slate-200 max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-xl animate-in fade-in zoom-in-95 duration-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl border border-slate-200 max-w-2xl w-full my-4 sm:my-6 max-h-[94vh] sm:max-h-[90vh] flex flex-col overflow-hidden shadow-xl animate-in fade-in zoom-in-95 duration-100">
         {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between shrink-0 bg-slate-50/70">
+        <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-200 flex items-center justify-between shrink-0 bg-slate-50/70">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
               <UserCheck className="w-4 h-4" />
@@ -71,7 +71,7 @@ export default function PartnerSelfProfileModal({ isOpen, onClose, partner, onSa
               <h3 className="font-bold text-slate-900 text-sm">
                 Hồ Sơ Đối Tác &amp; Xác Minh CCCD
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
                 Tải lên hình chụp Căn cước công dân và thông tin tài khoản nhận hoa hồng
               </p>
             </div>
@@ -79,14 +79,14 @@ export default function PartnerSelfProfileModal({ isOpen, onClose, partner, onSa
           <button
             type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-200/70"
+            className="w-7 h-7 rounded flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-200/70 shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 text-xs">
-          <div className="p-5 space-y-4 overflow-y-auto flex-1">
+          <div className="p-3.5 sm:p-5 space-y-3.5 sm:space-y-4 overflow-y-auto flex-1">
             {error && (
               <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
@@ -95,22 +95,22 @@ export default function PartnerSelfProfileModal({ isOpen, onClose, partner, onSa
             )}
 
             {/* Thông tin định danh cơ bản (Read-only) */}
-            <div className="p-3.5 bg-sky-50/60 border border-sky-200 rounded-lg grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="p-3.5 bg-sky-50/60 border border-sky-200 rounded-lg grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
               <div>
                 <span className="text-[10px] text-slate-500 block">Họ và tên</span>
-                <span className="font-bold text-slate-900">{partner.name}</span>
+                <span className="font-bold text-slate-900 text-xs sm:text-sm truncate block">{partner.name}</span>
               </div>
               <div>
                 <span className="text-[10px] text-slate-500 block">Mã đối tác</span>
-                <span className="font-mono font-bold text-sky-700">{partner.code}</span>
+                <span className="font-mono font-bold text-sky-700 text-xs sm:text-sm truncate block">{partner.code}</span>
               </div>
               <div>
                 <span className="text-[10px] text-slate-500 block">Số điện thoại</span>
-                <span className="font-medium text-slate-800">{partner.phone || '—'}</span>
+                <span className="font-medium text-slate-800 text-xs truncate block">{partner.phone || '—'}</span>
               </div>
               <div>
                 <span className="text-[10px] text-slate-500 block">Cấp đối tác</span>
-                <span className="font-semibold text-slate-800">
+                <span className="font-semibold text-slate-800 text-xs truncate block">
                   {partner.depth === 0 ? 'F0 (Gốc)' : `Tuyến ${partner.depth ?? 0}`}
                 </span>
               </div>
@@ -139,7 +139,7 @@ export default function PartnerSelfProfileModal({ isOpen, onClose, partner, onSa
                   <select
                     value={formData.bankName}
                     onChange={e => setFormData({ ...formData, bankName: e.target.value })}
-                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded bg-white text-xs"
+                    className="w-full px-2.5 py-2 sm:py-1.5 border border-slate-300 rounded bg-white text-base sm:text-xs"
                   >
                     <option value="Vietcombank">Vietcombank</option>
                     <option value="Techcombank">Techcombank</option>
@@ -157,7 +157,7 @@ export default function PartnerSelfProfileModal({ isOpen, onClose, partner, onSa
                     value={formData.bankAccountNo}
                     onChange={e => setFormData({ ...formData, bankAccountNo: e.target.value })}
                     placeholder="Nhập số tài khoản"
-                    className="w-full px-3 py-1.5 border border-slate-300 rounded font-mono text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none bg-white"
+                    className="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded font-mono text-base sm:text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none bg-white"
                   />
                 </div>
                 <div>
@@ -167,7 +167,7 @@ export default function PartnerSelfProfileModal({ isOpen, onClose, partner, onSa
                     value={formData.bankAccountName}
                     onChange={e => setFormData({ ...formData, bankAccountName: e.target.value.toUpperCase() })}
                     placeholder="NGUYEN VAN A"
-                    className="w-full px-3 py-1.5 border border-slate-300 rounded text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none bg-white uppercase"
+                    className="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded text-base sm:text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none bg-white uppercase"
                   />
                 </div>
               </div>
@@ -199,3 +199,4 @@ export default function PartnerSelfProfileModal({ isOpen, onClose, partner, onSa
     </div>
   );
 }
+

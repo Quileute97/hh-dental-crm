@@ -102,28 +102,29 @@ export default function AddVisitModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl border border-slate-200 max-w-lg w-full my-6 overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-100 flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl border border-slate-200 max-w-lg w-full my-4 sm:my-6 overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-100 flex flex-col max-h-[94vh] sm:max-h-[92vh]">
         {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between shrink-0 bg-slate-50/70">
+        <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-200 flex items-center justify-between shrink-0 bg-slate-50/70">
           <div>
             <h3 className="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-emerald-600" />
+              <DollarSign className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>Ghi Nhận Doanh Thu Đợt Khám (+ Visit)</span>
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
               Cộng dồn doanh thu trọn đời & phân định rõ Gói dịch vụ và Bước điều trị
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs overflow-y-auto flex-1">
+        <form onSubmit={handleSubmit} className="p-3.5 sm:p-5 space-y-3.5 sm:space-y-4 text-xs overflow-y-auto flex-1">
           {error && (
             <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 font-medium">
               {error}
@@ -152,7 +153,7 @@ export default function AddVisitModal({
           {/* ================================================================= */}
           <div className="p-3.5 bg-sky-50/50 rounded-lg border border-sky-200 space-y-2.5">
             <div className="flex items-center gap-1.5 font-bold text-slate-900 text-xs">
-              <div className="w-5 h-5 rounded bg-sky-600 text-white flex items-center justify-center text-[10px]">
+              <div className="w-5 h-5 rounded bg-sky-600 text-white flex items-center justify-center text-[10px] shrink-0">
                 1
               </div>
               <span>PHẦN 1: GÓI DỊCH VỤ ĐIỀU TRỊ</span>
@@ -182,7 +183,7 @@ export default function AddVisitModal({
               </div>
             )}
 
-            <div className="flex items-center justify-between pt-1 text-[11px]">
+            <div className="flex flex-wrap items-center justify-between gap-1 pt-1 text-[11px]">
               <span className="text-slate-600">Gói đang chọn: <strong className="text-slate-800">{selectedService}</strong></span>
               {matchedServiceObj && (
                 <span className="text-sky-700 font-semibold font-mono">
@@ -197,7 +198,7 @@ export default function AddVisitModal({
           {/* ================================================================= */}
           <div className="p-3.5 bg-emerald-50/40 rounded-lg border border-emerald-200 space-y-3">
             <div className="flex items-center gap-1.5 font-bold text-slate-900 text-xs">
-              <div className="w-5 h-5 rounded bg-emerald-600 text-white flex items-center justify-center text-[10px]">
+              <div className="w-5 h-5 rounded bg-emerald-600 text-white flex items-center justify-center text-[10px] shrink-0">
                 2
               </div>
               <span>PHẦN 2: NỘI DUNG ĐIỀU TRỊ (STEP) & CHI PHÍ ĐỢT NÀY</span>
@@ -242,7 +243,7 @@ export default function AddVisitModal({
                 value={step}
                 onChange={e => setStep(e.target.value)}
                 placeholder="VD: Gắn mắc cài, Khám & lấy dấu, Siết răng định kỳ..."
-                className="w-full px-3 py-1.5 border border-slate-300 rounded-md font-semibold text-slate-800 text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                className="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded-md font-semibold text-slate-800 text-base sm:text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:outline-none"
               />
             </div>
 
@@ -260,7 +261,7 @@ export default function AddVisitModal({
                   value={amount}
                   onChange={e => setAmount(e.target.value)}
                   placeholder="VD: 5000000"
-                  className="w-full pl-3 pr-12 py-1.5 border border-slate-300 rounded-md font-bold text-sm bg-white focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                  className="w-full pl-3 pr-12 py-2 sm:py-1.5 border border-slate-300 rounded-md font-bold text-base sm:text-sm bg-white focus:ring-1 focus:ring-emerald-500 focus:outline-none"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-semibold text-[11px]">
                   VNĐ
@@ -284,7 +285,7 @@ export default function AddVisitModal({
                       key={item.id}
                       type="button"
                       onClick={() => setPaymentStatus(item.id)}
-                      className={`py-1 px-2 rounded-md border text-center transition-all text-[11px] font-semibold flex items-center justify-center gap-1 ${
+                      className={`py-1.5 sm:py-1 px-2 rounded-md border text-center transition-all text-[11px] font-semibold flex items-center justify-center gap-1 ${
                         isChosen
                           ? `${item.badgeClass} ring-2 ring-emerald-500/30 shadow-2xs`
                           : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
@@ -306,7 +307,7 @@ export default function AddVisitModal({
                   type="date"
                   value={occurredAt}
                   onChange={e => setOccurredAt(e.target.value)}
-                  className="w-full px-3 py-1.5 border border-slate-300 rounded-md text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                  className="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded-md text-base sm:text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:outline-none"
                 />
               </div>
 
@@ -317,7 +318,7 @@ export default function AddVisitModal({
                   value={note}
                   onChange={e => setNote(e.target.value)}
                   placeholder="Ghi chú lâm sàng..."
-                  className="w-full px-3 py-1.5 border border-slate-300 rounded-md text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                  className="w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded-md text-base sm:text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:outline-none"
                 />
               </div>
             </div>
@@ -334,7 +335,7 @@ export default function AddVisitModal({
             </button>
             <button
               type="submit"
-              className="px-5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors shadow-sm inline-flex items-center gap-1.5"
+              className="px-5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors shadow-xs inline-flex items-center gap-1.5"
             >
               <Check className="w-4 h-4" />
               <span>Lưu đợt điều trị</span>

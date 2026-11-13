@@ -61,7 +61,11 @@ import {
   UserPlus,
   CreditCard,
   ShieldCheck,
-  Upload
+  Upload,
+  LayoutDashboard,
+  Users,
+  Coins,
+  Menu
 } from 'lucide-react';
 
 export default function App() {
@@ -78,6 +82,7 @@ export default function App() {
   const [isServerOnline, setIsServerOnline] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [partnerViewMode, setPartnerViewMode] = useState('tree');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Chọn kỳ đối soát (mặc định tháng thực tế hiện tại)
   const currentMonthStr = useMemo(() => new Date().toISOString().slice(0, 7), []);
@@ -639,13 +644,15 @@ export default function App() {
         settlementStatus={displayedSettlementResult}
         onOpenAuditLogs={handleOpenAuditLogs}
         onOpenLogin={() => setLoginModalOpen(true)}
+        mobileMenuOpen={mobileMenuOpen}
+        onCloseMobileMenu={() => setMobileMenuOpen(false)}
       />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Banner cảnh báo Offline */}
         {!isServerOnline && (
-          <div className="bg-rose-600 text-white px-4 py-2 text-xs font-bold flex items-center justify-between shrink-0 shadow-xs">
+          <div className="bg-rose-600 text-white px-3 sm:px-4 py-2 text-xs font-bold flex items-center justify-between shrink-0 shadow-xs">
             <span>🚨 CẢNH BÁO: Mất kết nối máy chủ Supabase — Vui lòng kiểm tra lại đường truyền mạng!</span>
             <button onClick={loadData} className="underline text-white font-normal hover:text-slate-100 text-xs">
               Thử lại
@@ -661,10 +668,11 @@ export default function App() {
           onOpenNewPartner={() => handleOpenNewPartner()}
           onOpenServicePackages={() => setServicePackageModalOpen(true)}
           isServerOnline={isServerOnline}
+          onToggleMobileMenu={() => setMobileMenuOpen(prev => !prev)}
         />
 
         {/* Dynamic Page Content */}
-        <main className="flex-1 overflow-y-auto p-6 space-y-6">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 pb-20 lg:pb-6">
           {/* Banner xử lý nếu mở liên kết tạo tài khoản khi đang đăng nhập sẵn */}
           {pendingRefCode && (
             <div className="p-3.5 rounded-xl bg-sky-50 border border-sky-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -737,18 +745,18 @@ export default function App() {
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-2 w-full lg:w-auto lg:min-w-[380px]">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto lg:min-w-[380px]">
                         <input
                           type="text"
                           readOnly
                           value={partnerRefUrl}
                           onClick={e => e.target.select()}
-                          className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-mono text-xs text-slate-700 focus:outline-none"
+                          className="w-full sm:flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-mono text-xs text-slate-700 focus:outline-none"
                         />
                         <button
                           type="button"
                           onClick={() => handleCopyPartnerReferralLink(currentPartner)}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-lg transition-colors shrink-0"
+                          className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-lg transition-colors shrink-0"
                         >
                           {copiedDashboardLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                           <span>{copiedDashboardLink ? 'Đã sao chép' : 'Sao chép Link'}</span>
@@ -785,7 +793,7 @@ export default function App() {
                         </p>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-3">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                         <div className="flex items-center gap-2">
                           {[
                             { key: 'front', label: 'Mặt trước', src: currentPartner.idCardFront, valid: hasFront },
@@ -795,7 +803,7 @@ export default function App() {
                               key={slot.key}
                               type="button"
                               onClick={() => setPartnerSelfProfileOpen(true)}
-                              className="relative w-20 aspect-[1.6/1] rounded-lg border border-slate-200 bg-slate-50 hover:border-sky-400 overflow-hidden flex flex-col items-center justify-center transition-colors group"
+                              className="relative w-20 aspect-[1.6/1] rounded-lg border border-slate-200 bg-slate-50 hover:border-sky-400 overflow-hidden flex flex-col items-center justify-center transition-colors group shrink-0"
                               title={`Bấm để tải/xem ảnh CCCD ${slot.label.toLowerCase()}`}
                             >
                               {slot.valid ? (
@@ -813,7 +821,7 @@ export default function App() {
                         <button
                           type="button"
                           onClick={() => setPartnerSelfProfileOpen(true)}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-lg transition-colors shrink-0"
+                          className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-lg transition-colors shrink-0"
                         >
                           <CreditCard className="w-3.5 h-3.5" />
                           <span>{hasFullCccd ? 'Xem & Cập nhật CCCD' : 'Tải ảnh CCCD & Hồ sơ'}</span>
@@ -1002,6 +1010,69 @@ export default function App() {
             )}
           </Suspense>
         </main>
+
+        {/* Mobile Bottom Navigation Bar (< lg) */}
+        <nav
+          aria-label="Thanh điều hướng di động"
+          className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 px-2 py-1.5 flex items-center justify-around text-[10px] text-slate-500 shadow-lg"
+        >
+          <button
+            type="button"
+            onClick={() => setActiveTab('dashboard')}
+            className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-colors ${
+              activeTab === 'dashboard' ? 'text-sky-600 font-bold' : 'hover:text-slate-900'
+            }`}
+          >
+            <LayoutDashboard className="w-4 h-4 shrink-0" />
+            <span>Tổng quan</span>
+          </button>
+
+          {can(role, 'viewCustomers') && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('customers')}
+              className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-colors ${
+                activeTab === 'customers' ? 'text-sky-600 font-bold' : 'hover:text-slate-900'
+              }`}
+            >
+              <Users className="w-4 h-4 shrink-0" />
+              <span>Chuỗi khách</span>
+            </button>
+          )}
+
+          {can(role, 'viewOtherPartners') ? (
+            <button
+              type="button"
+              onClick={() => setActiveTab('partners')}
+              className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-colors ${
+                activeTab === 'partners' ? 'text-sky-600 font-bold' : 'hover:text-slate-900'
+              }`}
+            >
+              <Network className="w-4 h-4 shrink-0" />
+              <span>Cây đối tác</span>
+            </button>
+          ) : can(role, 'settleMonth') ? (
+            <button
+              type="button"
+              onClick={() => setActiveTab('commissions')}
+              className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-colors ${
+                activeTab === 'commissions' ? 'text-sky-600 font-bold' : 'hover:text-slate-900'
+              }`}
+            >
+              <Coins className="w-4 h-4 shrink-0" />
+              <span>Quyết toán</span>
+            </button>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(true)}
+            className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-colors hover:text-slate-900"
+          >
+            <Menu className="w-4 h-4 shrink-0" />
+            <span>Menu</span>
+          </button>
+        </nav>
       </div>
 
       {/* MODALS */}

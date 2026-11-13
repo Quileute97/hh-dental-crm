@@ -33,14 +33,14 @@ export default function ReportsView({
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5">
       {/* 3 Thẻ tải file báo cáo chuẩn UTF-8 BOM */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
         {/* Card 1: Bảng đối soát chốt sổ kế toán tháng */}
-        <div className="bg-white border border-slate-200 rounded-lg p-5 flex flex-col justify-between shadow-xs">
+        <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-5 flex flex-col justify-between shadow-xs">
           <div>
             <div className="flex items-center gap-2.5 text-sky-700">
-              <FileSpreadsheet className="w-5 h-5" />
+              <FileSpreadsheet className="w-5 h-5 shrink-0" />
               <h3 className="font-bold text-sm text-slate-900">
                 Bảng Đối Soát Quyết Toán ({month})
               </h3>
@@ -52,8 +52,9 @@ export default function ReportsView({
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
             <span className="text-[11px] text-slate-400">BOM UTF-8</span>
             <button
+              type="button"
               onClick={handleExportSettlement}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors shadow-xs"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Tải đối soát</span>
@@ -62,10 +63,10 @@ export default function ReportsView({
         </div>
 
         {/* Card 2: Báo cáo chuỗi khách hàng & Doanh thu trọn đời */}
-        <div className="bg-white border border-slate-200 rounded-lg p-5 flex flex-col justify-between shadow-xs">
+        <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-5 flex flex-col justify-between shadow-xs">
           <div>
             <div className="flex items-center gap-2.5 text-emerald-700">
-              <Users className="w-5 h-5" />
+              <Users className="w-5 h-5 shrink-0" />
               <h3 className="font-bold text-sm text-slate-900">
                 Chuỗi Khách Hàng ({customers.length})
               </h3>
@@ -77,8 +78,9 @@ export default function ReportsView({
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
             <span className="text-[11px] text-slate-400">BOM UTF-8</span>
             <button
+              type="button"
               onClick={handleExportCustomers}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md transition-colors shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md transition-colors shadow-xs"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Tải chuỗi khách</span>
@@ -87,10 +89,10 @@ export default function ReportsView({
         </div>
 
         {/* Card 3: Báo cáo lượt khám & Lâm sàng */}
-        <div className="bg-white border border-slate-200 rounded-lg p-5 flex flex-col justify-between shadow-xs">
+        <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-5 flex flex-col justify-between shadow-xs">
           <div>
             <div className="flex items-center gap-2.5 text-purple-700">
-              <Stethoscope className="w-5 h-5" />
+              <Stethoscope className="w-5 h-5 shrink-0" />
               <h3 className="font-bold text-sm text-slate-900">
                 Lượt Khám & Lâm Sàng ({visits.length})
               </h3>
@@ -102,8 +104,9 @@ export default function ReportsView({
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
             <span className="text-[11px] text-slate-400">BOM UTF-8</span>
             <button
+              type="button"
               onClick={handleExportVisits}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-md transition-colors shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-md transition-colors shadow-xs"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Tải lượt khám</span>
@@ -113,31 +116,31 @@ export default function ReportsView({
       </div>
 
       {/* Tóm tắt chỉ tiêu tài chính kỳ đối soát */}
-      <div className="bg-white border border-slate-200 rounded-lg p-5 space-y-4 shadow-xs">
+      <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-5 space-y-3 sm:space-y-4 shadow-xs">
         <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-          <GitFork className="w-4 h-4 text-sky-600" />
+          <GitFork className="w-4 h-4 text-sky-600 shrink-0" />
           <span>Tổng Kết Tài Chính Kỳ Đối Soát {month}</span>
         </h4>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-1">
-          <div className="bg-slate-50 p-3.5 rounded-lg border border-slate-200">
-            <span className="text-[11px] text-slate-500 block">Doanh thu kỳ</span>
-            <span className="text-lg font-bold text-slate-900">{formatVND(periodRevenue)}</span>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 pt-1">
+          <div className="bg-slate-50 p-3 sm:p-3.5 rounded-lg border border-slate-200">
+            <span className="text-[10px] sm:text-[11px] text-slate-500 block">Doanh thu kỳ</span>
+            <span className="text-base sm:text-lg font-bold text-slate-900 truncate block">{formatVND(periodRevenue)}</span>
           </div>
 
-          <div className="bg-emerald-50/60 p-3.5 rounded-lg border border-emerald-200">
-            <span className="text-[11px] text-emerald-700 block">Hoa hồng CTV</span>
-            <span className="text-lg font-bold text-emerald-800">{formatVND(totalCtvCommission)}</span>
+          <div className="bg-emerald-50/60 p-3 sm:p-3.5 rounded-lg border border-emerald-200">
+            <span className="text-[10px] sm:text-[11px] text-emerald-700 block">Hoa hồng CTV</span>
+            <span className="text-base sm:text-lg font-bold text-emerald-800 truncate block">{formatVND(totalCtvCommission)}</span>
           </div>
 
-          <div className="bg-indigo-50/60 p-3.5 rounded-lg border border-indigo-200">
-            <span className="text-[11px] text-indigo-700 block">Phần Nền tảng</span>
-            <span className="text-lg font-bold text-indigo-800">{formatVND(totalPlatformShare)}</span>
+          <div className="bg-indigo-50/60 p-3 sm:p-3.5 rounded-lg border border-indigo-200">
+            <span className="text-[10px] sm:text-[11px] text-indigo-700 block">Phần Nền tảng</span>
+            <span className="text-base sm:text-lg font-bold text-indigo-800 truncate block">{formatVND(totalPlatformShare)}</span>
           </div>
 
-          <div className="bg-amber-50/60 p-3.5 rounded-lg border border-amber-200">
-            <span className="text-[11px] text-amber-700 block">Phí nhánh 1%</span>
-            <span className="text-lg font-bold text-amber-800">{formatVND(totalBranchFee)}</span>
+          <div className="bg-amber-50/60 p-3 sm:p-3.5 rounded-lg border border-amber-200">
+            <span className="text-[10px] sm:text-[11px] text-amber-700 block">Phí nhánh 1%</span>
+            <span className="text-base sm:text-lg font-bold text-amber-800 truncate block">{formatVND(totalBranchFee)}</span>
           </div>
         </div>
 
