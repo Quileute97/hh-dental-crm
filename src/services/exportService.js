@@ -19,7 +19,7 @@ export function exportSettlementToCSV(partnerRows, monthStr) {
     'Sổ khách (VNĐ)',
     'Doanh thu nhánh (VNĐ)',
     'Hoa hồng CTV (VNĐ)',
-    'Phí nhánh 1% (VNĐ)',
+    'Thưởng QL 4% (VNĐ)',
     'Tổng phải trả (VNĐ)',
     'Trạng thái chốt',
     'Ngân hàng',

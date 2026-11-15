@@ -16,16 +16,16 @@
  *    - Độ sâu đối tác (partner.depth): Gốc = 0, con = depth(cha) + 1. Không giới hạn số tầng.
  *    - Sổ khách (ownRevenue): Tổng doanh thu các visit của khách do đối tác sở hữu trong kỳ.
  *    - Doanh thu nhánh (branchRevenue): ownRevenue + tổng branchRevenue của toàn bộ cây con.
- *    - Phí nhánh 1% (branchFee): 1% × tổng branchRevenue của các CON TRỰC TIẾP.
- *      (Cấp trên nhận 1% từ cây của con trực tiếp, 1 đồng ở tầng sâu tạo ra nhiều khoản 1%).
+ *    - Thưởng doanh số cấp quản lí 4% (branchFee): 4% × tổng branchRevenue của các CON TRỰC TIẾP.
+ *      (Cấp trên nhận 4% từ cây của con trực tiếp, 1 đồng ở tầng sâu tạo ra nhiều khoản 4%).
  * 
  * 3. TỔNG CHI TRẢ ĐỐI TÁC TRONG KỲ:
- *    - total = commission (CTV) + branchFee (1% nhánh).
+ *    - total = commission (CTV) + branchFee (4% thưởng quản lý).
  *    - Mọi số tiền làm tròn Math.round, đơn vị VNĐ nguyên.
  */
 
 /**
- * Hằng số chính sách hoa hồng & phí nhánh duy nhất của hệ thống
+ * Hằng số chính sách hoa hồng & thưởng quản lý duy nhất của hệ thống
  */
 export const COMMISSION_POLICY = {
   depth1: 20,
@@ -33,7 +33,7 @@ export const COMMISSION_POLICY = {
   depth3Plus: 5,
   depth2Plus: 10, // Tầng 2+ Hạ tầng
   platform: 0,
-  branchFee: 1
+  branchFee: 4
 };
 
 /**
@@ -269,8 +269,8 @@ export function calculateMonthlySettlement(monthStr, { partners = [], customers 
     branchRevenue[p.id] = computeBranchRevenue(p.id);
   });
 
-  // 4. Tính Phí nhánh 1% (branchFee):
-  // branchFee[partner] = 1% × Σ branchRevenue[các đối tác CON TRỰC TIẾP]
+  // 4. Tính Thưởng doanh số cấp quản lí 4% (branchFee):
+  // branchFee[partner] = 4% × Σ branchRevenue[các đối tác CON TRỰC TIẾP]
   const branchFees = {};
   let totalBranchFee = 0;
 
@@ -280,13 +280,13 @@ export function calculateMonthlySettlement(monthStr, { partners = [], customers 
     for (const childId of childrenIds) {
       childrenBranchSum += (branchRevenue[childId] || 0);
     }
-    const fee = Math.round(childrenBranchSum * 0.01);
+    const fee = Math.round(childrenBranchSum * (COMMISSION_POLICY.branchFee / 100));
     branchFees[p.id] = fee;
     totalBranchFee += fee;
   });
 
   // 5. Tổng chi phí / Doanh thu
-  // Tổng chi phí = Tổng hoa hồng CTV + Phần nền tảng + Tổng phí nhánh 1%
+  // Tổng chi phí = Tổng hoa hồng CTV + Phần nền tảng + Tổng thưởng doanh số cấp quản lí 4%
   const totalCost = totalCtvCommission + totalPlatformShare + totalBranchFee;
   const costPercent = totalPeriodRevenue > 0
     ? Math.round((totalCost / totalPeriodRevenue) * 1000) / 10 // 1 số lẻ (VD: 16.1)

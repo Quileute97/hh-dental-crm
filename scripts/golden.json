@@ -4,9 +4,9 @@
   "periodRevenue": 172000000,
   "totalCtvCommission": 26700000,
   "totalPlatformShare": 0,
-  "totalBranchFee": 1060000,
-  "totalCost": 27760000,
-  "costPercent": 16.1,
+  "totalBranchFee": 4240000,
+  "totalCost": 30940000,
+  "costPercent": 18.0,
   "partnerRows": [
     {
       "partnerId": "P1",
@@ -15,8 +15,8 @@
       "ownRevenue": 86000000,
       "branchRevenue": 172000000,
       "commission": 12300000,
-      "branchFee": 860000,
-      "total": 13160000
+      "branchFee": 3440000,
+      "total": 15740000
     },
     {
       "partnerId": "P2",
@@ -25,8 +25,8 @@
       "ownRevenue": 66000000,
       "branchRevenue": 86000000,
       "commission": 10400000,
-      "branchFee": 200000,
-      "total": 10600000
+      "branchFee": 800000,
+      "total": 11200000
     },
     {
       "partnerId": "P3",

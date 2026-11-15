@@ -46,7 +46,7 @@ export default function ReportsView({
               </h3>
             </div>
             <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-              Trích xuất CSV chuẩn 8 cột: Đối tác, Tên, Cấp trên, Sổ khách, Doanh thu nhánh, Hoa hồng, Phí nhánh 1%, Tổng phải trả.
+              Trích xuất CSV chuẩn 8 cột: Đối tác, Tên, Cấp trên, Sổ khách, Doanh thu nhánh, Hoa hồng, Thưởng QL 4%, Tổng phải trả.
             </p>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
@@ -139,7 +139,7 @@ export default function ReportsView({
           </div>
 
           <div className="bg-amber-50/60 p-3 sm:p-3.5 rounded-lg border border-amber-200">
-            <span className="text-[10px] sm:text-[11px] text-amber-700 block">Thưởng QL 1%</span>
+            <span className="text-[10px] sm:text-[11px] text-amber-700 block">Thưởng QL 4%</span>
             <span className="text-base sm:text-lg font-bold text-amber-800 truncate block">{formatVND(totalBranchFee)}</span>
           </div>
         </div>

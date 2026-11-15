@@ -54,7 +54,7 @@ export default function Sidebar({
       id: 'partners',
       label: 'Cây đối tác & Thưởng quản lí',
       icon: Network,
-      badge: 'Thưởng 1%',
+      badge: 'Thưởng 4%',
       badgeColor: 'sky',
       visible: can(role, 'viewOtherPartners'),
     },

@@ -35,7 +35,7 @@ export default function PartnerTree({
           <div>
             <h3 className="font-bold text-sky-900 text-sm">B. Cây Đối Tác (Không Giới Hạn Tầng - Plan V5)</h3>
             <p className="text-sky-700 mt-0.5">
-              - Thưởng doanh số cấp quản lí: <strong>1%</strong> tính trên toàn bộ cây con trực tiếp. Không giới hạn số tầng.
+              - Thưởng doanh số cấp quản lí: <strong>4%</strong> tính trên toàn bộ cây con trực tiếp. Không giới hạn số tầng.
             </p>
           </div>
         </div>

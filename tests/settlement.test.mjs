@@ -73,19 +73,19 @@ const p3 = res1.partnerRows.find(r => r.partnerId === 'P3');
 assertEqual(res1.periodRevenue, 172000000, 'periodRevenue');
 assertEqual(res1.totalCtvCommission, 26700000, 'totalCtvCommission (T1: 20%, T2: 10%, T3+: 5%)');
 assertEqual(res1.totalPlatformShare, 0, 'totalPlatformShare (Sàn không thu = 0)');
-assertEqual(res1.totalBranchFee, 1060000, 'totalBranchFee');
-assertEqual(res1.totalCost, 27760000, 'totalCost');
-assertEqual(res1.costPercent, 16.1, 'costPercent');
+assertEqual(res1.totalBranchFee, 4240000, 'totalBranchFee (4%)');
+assertEqual(res1.totalCost, 30940000, 'totalCost');
+assertEqual(res1.costPercent, 18.0, 'costPercent');
 
 assertEqual(p1.ownRevenue, 86000000, 'P1 ownRevenue');
 assertEqual(p1.branchRevenue, 172000000, 'P1 branchRevenue');
 assertEqual(p1.commission, 12300000, 'P1 commission (20%×37tr + 10%×49tr)');
-assertEqual(p1.branchFee, 860000, 'P1 branchFee');
+assertEqual(p1.branchFee, 3440000, 'P1 branchFee (4% × 86tr)');
 
 assertEqual(p2.ownRevenue, 66000000, 'P2 ownRevenue');
 assertEqual(p2.branchRevenue, 86000000, 'P2 branchRevenue');
 assertEqual(p2.commission, 10400000, 'P2 commission (20%×38tr + 10%×28tr)');
-assertEqual(p2.branchFee, 200000, 'P2 branchFee');
+assertEqual(p2.branchFee, 800000, 'P2 branchFee (4% × 20tr)');
 
 assertEqual(p3.ownRevenue, 20000000, 'P3 ownRevenue');
 assertEqual(p3.branchRevenue, 20000000, 'P3 branchRevenue');
@@ -120,9 +120,9 @@ const p1_2 = res2.partnerRows.find(r => r.partnerId === 'P1');
 const p2_2 = res2.partnerRows.find(r => r.partnerId === 'P2');
 const p3_2 = res2.partnerRows.find(r => r.partnerId === 'P3');
 
-assertEqual(p3_2.branchFee, 100000, 'P3 branchFee (+100.000)');
-assertEqual(p2_2.branchFee, 300000, 'P2 branchFee (+100.000)');
-assertEqual(p1_2.branchFee, 960000, 'P1 branchFee (+100.000)');
+assertEqual(p3_2.branchFee, 400000, 'P3 branchFee (+400.000)');
+assertEqual(p2_2.branchFee, 1200000, 'P2 branchFee (+1.200.000)');
+assertEqual(p1_2.branchFee, 3840000, 'P1 branchFee (+3.840.000)');
 
 // ----------------------------------------------------
 // TEST 2.1 — KIỂM THỬ ĐỘ SÂU KHÁCH HÀNG: TẦNG 1 (20%), TẦNG 2 (10%), TẦNG 3..N (5%)
@@ -179,7 +179,7 @@ const testRunResult = calculateMonthlySettlement(golden.month, seedDb);
 
 assertEqual(testRunResult.periodRevenue, golden.periodRevenue, `Doanh thu toàn hệ thống khớp chuẩn: ${golden.periodRevenue.toLocaleString('vi-VN')} ₫`);
 assertEqual(testRunResult.totalCtvCommission, golden.totalCtvCommission, `Tổng hoa hồng CTV khớp chuẩn: ${golden.totalCtvCommission.toLocaleString('vi-VN')} ₫`);
-assertEqual(testRunResult.totalBranchFee, golden.totalBranchFee, `Tổng phí nhánh 1% khớp chuẩn: ${golden.totalBranchFee.toLocaleString('vi-VN')} ₫`);
+assertEqual(testRunResult.totalBranchFee, golden.totalBranchFee, `Tổng thưởng quản lý 4% khớp chuẩn: ${golden.totalBranchFee.toLocaleString('vi-VN')} ₫`);
 assertEqual(testRunResult.totalCost, golden.totalCost, `Tổng chi phí hệ thống khớp chuẩn: ${golden.totalCost.toLocaleString('vi-VN')} ₫`);
 assertEqual(testRunResult.costPercent, golden.costPercent, `Tỷ lệ chi phí hệ thống: ${golden.costPercent}%`);
 
@@ -190,7 +190,7 @@ for (const goldenPartner of golden.partnerRows) {
   assertEqual(testedPartner.ownRevenue, goldenPartner.ownRevenue, `Doanh thu trực tiếp ${goldenPartner.partnerId}`);
   assertEqual(testedPartner.branchRevenue, goldenPartner.branchRevenue, `Doanh thu nhánh ${goldenPartner.partnerId}`);
   assertEqual(testedPartner.commission, goldenPartner.commission, `Hoa hồng CTV ${goldenPartner.partnerId}`);
-  assertEqual(testedPartner.branchFee, goldenPartner.branchFee, `Phí nhánh 1% ${goldenPartner.partnerId}`);
+  assertEqual(testedPartner.branchFee, goldenPartner.branchFee, `Thưởng quản lý 4% ${goldenPartner.partnerId}`);
   assertEqual(testedPartner.total, goldenPartner.total, `Tổng thu nhập ${goldenPartner.partnerId}`);
 }
 
