@@ -122,3 +122,4 @@ end $$;
 revoke execute on function compute_month(text) from public;
 revoke execute on function compute_month(text) from anon;
 grant execute on function compute_month(text) to authenticated, service_role;
+

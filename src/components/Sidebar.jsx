@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
-import { 
-  LayoutDashboard, 
-  Network, 
-  Users, 
-  Coins, 
-  FileSpreadsheet, 
+import {
+  LayoutDashboard,
+  Network,
+  Users,
+  Coins,
+  FileSpreadsheet,
   RotateCcw,
   Sparkles,
   ClipboardList,
@@ -19,14 +19,14 @@ import { useAuth } from '../context/AuthContext';
 import { can } from '../config/permissions';
 import { COMMISSION_POLICY } from '../services/commissionEngine';
 
-export default function Sidebar({ 
-  activeTab, 
-  setActiveTab, 
-  settlementStatus, 
+export default function Sidebar({
+  activeTab,
+  setActiveTab,
+  settlementStatus,
   onOpenAuditLogs,
   onOpenLogin,
   mobileMenuOpen = false,
-  onCloseMobileMenu = () => {}
+  onCloseMobileMenu = () => { }
 }) {
   const { user, profile, role, logout } = useAuth();
 
@@ -108,22 +108,21 @@ export default function Sidebar({
     <>
       {/* Backdrop overlay mờ cho mobile / tablet */}
       {mobileMenuOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-xs lg:hidden transition-opacity"
           onClick={onCloseMobileMenu}
           aria-hidden="true"
         />
       )}
 
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white border-r border-slate-200 flex flex-col shrink-0 h-full transition-transform duration-200 ease-in-out lg:static lg:w-64 lg:h-screen lg:translate-x-0 ${
-        mobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'
-      }`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white border-r border-slate-200 flex flex-col shrink-0 h-full transition-transform duration-200 ease-in-out lg:static lg:w-64 lg:h-screen lg:translate-x-0 ${mobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'
+        }`}>
         {/* Brand logo & mobile close button */}
         <div className="h-16 px-4 border-b border-slate-200 flex items-center justify-between bg-white shrink-0">
           <div className="flex items-center gap-2.5">
-            <img 
-              src="/logo.png" 
-              alt="HH Dental Clinic Logo" 
+            <img
+              src="/logo.png"
+              alt="HH Dental Clinic Logo"
               className="h-11 w-auto object-contain mix-blend-multiply"
             />
             <div className="border-l border-slate-200 pl-2.5">
@@ -164,26 +163,24 @@ export default function Sidebar({
                   setActiveTab(item.id);
                   onCloseMobileMenu();
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-colors text-left ${
-                  isActive
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-colors text-left ${isActive
                     ? 'bg-sky-50 text-sky-700 font-semibold'
                     : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-2.5">
                   <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-sky-600' : 'text-slate-500'}`} />
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
-                    item.badgeColor === 'amber'
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${item.badgeColor === 'amber'
                       ? 'bg-amber-100 text-amber-800'
                       : item.badgeColor === 'emerald'
-                      ? 'bg-emerald-100 text-emerald-800'
-                      : item.badgeColor === 'sky'
-                      ? 'bg-sky-100 text-sky-800'
-                      : 'bg-slate-100 text-slate-600'
-                  }`}>
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : item.badgeColor === 'sky'
+                          ? 'bg-sky-100 text-sky-800'
+                          : 'bg-slate-100 text-slate-600'
+                    }`}>
                     {item.badge}
                   </span>
                 )}
@@ -207,79 +204,79 @@ export default function Sidebar({
           )}
         </nav>
 
-      {/* Policy card: Plan V5 Two Independent Systems */}
-      <div className="p-3 mx-3 my-2 rounded-lg bg-slate-50 border border-slate-200 text-xs">
-        <div className="font-semibold text-slate-900 flex items-center justify-between mb-2">
-          <span className="flex items-center gap-1.5 font-bold">
-            <GitFork className="w-3.5 h-3.5 text-sky-600" />
-            <span>Chính sách chiết khấu</span>
-          </span>
-          <span className="text-[10px] text-sky-700 bg-white px-1.5 py-0.5 rounded border border-sky-300 font-bold">Plan V5</span>
-        </div>
-        
-        {/* A. Chuỗi khách: */}
-        <div className="space-y-1.5 text-[11px] text-slate-600 border-b border-slate-200 pb-2 mb-2">
-          <div className="font-bold text-slate-800 text-[11px]">A. Chuỗi khách:</div>
-          <div className="flex justify-between pl-1">
-            <span>1. KH trực tiếp:</span>
-            <span className="font-bold text-sky-700">{COMMISSION_POLICY.depth1}%</span>
+        {/* Policy card: Plan V5 Two Independent Systems */}
+        <div className="p-3 mx-3 my-2 rounded-lg bg-slate-50 border border-slate-200 text-xs">
+          <div className="font-semibold text-slate-900 flex items-center justify-between mb-2">
+            <span className="flex items-center gap-1.5 font-bold">
+              <GitFork className="w-3.5 h-3.5 text-sky-600" />
+              <span>Chính sách chiết khấu</span>
+            </span>
+            <span className="text-[10px] text-sky-700 bg-white px-1.5 py-0.5 rounded border border-sky-300 font-bold">Plan V5</span>
           </div>
-          <div className="flex justify-between pl-1">
-            <span>2. KH gián tiếp 1:</span>
-            <span className="font-bold text-sky-700">{COMMISSION_POLICY.depth2}%</span>
-          </div>
-          <div className="flex justify-between pl-1">
-            <span>3. KH gián tiếp 2 và mở rộng :</span>
-            <span className="font-bold text-sky-700">{COMMISSION_POLICY.depth3Plus}%</span>
-          </div>
-        </div>
 
-        {/* B. Cây đối tác: */}
-        <div className="space-y-1.5 text-[11px] text-slate-600">
-          <div className="font-bold text-slate-800 text-[11px]">B. Cây đối tác:</div>
-          <div className="flex justify-between font-semibold text-emerald-800 pl-1">
-            <span>- Thưởng doanh số cấp quản lí:</span>
-            <span className="bg-emerald-100 text-emerald-800 px-1 rounded font-bold">{COMMISSION_POLICY.branchFee}%.</span>
-          </div>
-        </div>
-      </div>
-
-      {/* User profile & Switcher / Logout */}
-      <div className="p-3 border-t border-slate-200 bg-slate-50/50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-7 h-7 rounded-full bg-sky-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
-              {(profile?.full_name || role)?.charAt(0).toUpperCase()}
+          {/* A. Chuỗi khách: */}
+          <div className="space-y-1.5 text-[11px] text-slate-600 border-b border-slate-200 pb-2 mb-2">
+            <div className="font-bold text-slate-800 text-[11px]">A. Chuỗi khách:</div>
+            <div className="flex justify-between pl-1">
+              <span>1. KH trực tiếp:</span>
+              <span className="font-bold text-sky-700">{COMMISSION_POLICY.depth1}%</span>
             </div>
-            <div className="min-w-0">
-              <div className="font-bold text-slate-800 text-xs truncate">
-                {profile?.full_name || (user ? user.email : 'Quản Trị Viên')}
-              </div>
-              <div className="text-[10px] text-slate-500 truncate">
-                Role: <strong>{role}</strong>
-              </div>
+            <div className="flex justify-between pl-1">
+              <span>2. KH gián tiếp 1:</span>
+              <span className="font-bold text-sky-700">{COMMISSION_POLICY.depth2}%</span>
+            </div>
+            <div className="flex justify-between pl-1">
+              <span>3. KH gián tiếp 2 và mở rộng :</span>
+              <span className="font-bold text-sky-700">{COMMISSION_POLICY.depth3Plus}%</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => onOpenLogin && onOpenLogin()}
-              className="p-1 rounded text-slate-400 hover:text-sky-600 hover:bg-slate-100 transition-colors"
-              title="Chuyển đổi tài khoản / Role"
-            >
-              <UserCheck className="w-4 h-4" />
-            </button>
-            <button
-              onClick={logout}
-              className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-slate-100 transition-colors"
-              title="Đăng xuất"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
+          {/* B. Cây đối tác: */}
+          <div className="space-y-1.5 text-[11px] text-slate-600">
+            <div className="font-bold text-slate-800 text-[11px]">B. Cây đối tác:</div>
+            <div className="flex justify-between font-semibold text-emerald-800 pl-1">
+              <span>- Thưởng doanh số cấp quản lí:</span>
+              <span className="bg-emerald-100 text-emerald-800 px-1 rounded font-bold">{COMMISSION_POLICY.branchFee}%.</span>
+            </div>
           </div>
         </div>
-      </div>
-    </aside>
+
+        {/* User profile & Switcher / Logout */}
+        <div className="p-3 border-t border-slate-200 bg-slate-50/50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-full bg-sky-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                {(profile?.full_name || role)?.charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <div className="font-bold text-slate-800 text-xs truncate">
+                  {profile?.full_name || (user ? user.email : 'Quản Trị Viên')}
+                </div>
+                <div className="text-[10px] text-slate-500 truncate">
+                  Role: <strong>{role}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => onOpenLogin && onOpenLogin()}
+                className="p-1 rounded text-slate-400 hover:text-sky-600 hover:bg-slate-100 transition-colors"
+                title="Chuyển đổi tài khoản / Role"
+              >
+                <UserCheck className="w-4 h-4" />
+              </button>
+              <button
+                onClick={logout}
+                className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-slate-100 transition-colors"
+                title="Đăng xuất"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </aside>
     </>
   );
 }
