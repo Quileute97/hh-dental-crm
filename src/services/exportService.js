@@ -180,6 +180,7 @@ function translateCustomerStatus(status) {
   switch (status) {
     case 'lead': return 'Tiếp nhận mới (Lead)';
     case 'arrived': return 'Đã đến khám';
+    case 'treating': return 'Đang điều trị';
     case 'completed': return 'Đã hoàn thành điều trị';
     default: return status || 'Mới';
   }

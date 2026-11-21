@@ -49,7 +49,7 @@ create table if not exists customers (
   referrer_customer_id uuid references customers(id),
   depth int not null default 1,
   treatment text,
-  status text not null default 'lead' check (status in ('lead','arrived','completed')),
+  status text not null default 'lead' check (status in ('lead','arrived','treating','completed')),
   created_at timestamptz not null default now()
 );
 create index if not exists idx_customers_owner on customers(owner_partner_id);
