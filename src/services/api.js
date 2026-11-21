@@ -575,7 +575,16 @@ export async function apiSaveCustomer(customer, initialVisit = null) {
       status: customer.status || 'completed'
     };
 
-    const { data: savedCust, error: errCust } = await supabase.from('customers').upsert(custRecord).select().single();
+    let { data: savedCust, error: errCust } = await supabase.from('customers').upsert(custRecord).select().single();
+
+    // Fallback tự động sang 'arrived' nếu status 'treating' bị check constraint (23514)
+    if (errCust && (errCust.code === '23514' || (errCust.message || '').includes('customers_status_check'))) {
+      custRecord.status = (custRecord.status === 'treating' ? 'arrived' : custRecord.status);
+      const retry = await supabase.from('customers').upsert(custRecord).select().single();
+      savedCust = retry.data;
+      errCust = retry.error;
+    }
+
     if (errCust) {
       console.error('[apiSaveCustomer error]:', errCust);
       return { ok: false, error: errCust.message };

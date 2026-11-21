@@ -102,6 +102,7 @@ export default function App() {
   const [partnerSelfProfileOpen, setPartnerSelfProfileOpen] = useState(false);
 
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
+  const [customerModalLead, setCustomerModalLead] = useState(null);
   const [customerProfileModalOpen, setCustomerProfileModalOpen] = useState(false);
   const [selectedCustomerForProfile, setSelectedCustomerForProfile] = useState(null);
   const [servicePackageModalOpen, setServicePackageModalOpen] = useState(false);
@@ -514,7 +515,13 @@ export default function App() {
       visits: savedVisit ? [savedVisit, ...prev.visits.filter(v => v.id !== savedVisit.id)] : prev.visits
     }));
 
+    setCustomerModalLead(null);
     showToast(`Đã tiếp nhận khách hàng ${savedCust.name} (Tầng ${savedCust.depth})!`);
+  }
+
+  function handleAcceptLead(leadCustomer) {
+    setCustomerModalLead(leadCustomer);
+    setCustomerModalOpen(true);
   }
 
   async function handleUpdateCustomerStatus(customerId, nextStatus) {
@@ -687,7 +694,10 @@ export default function App() {
         <Header
           selectedMonth={selectedMonth}
           onMonthChange={setSelectedMonth}
-          onOpenNewCustomer={() => setCustomerModalOpen(true)}
+          onOpenNewCustomer={() => {
+            setCustomerModalLead(null);
+            setCustomerModalOpen(true);
+          }}
           onOpenNewPartner={() => handleOpenNewPartner()}
           onOpenServicePackages={() => setServicePackageModalOpen(true)}
           isServerOnline={isServerOnline}
@@ -876,6 +886,7 @@ export default function App() {
                     customers={displayedCustomers}
                     partners={data.partners || []}
                     onViewCustomerProfile={handleViewCustomerProfile}
+                    onAcceptLead={handleAcceptLead}
                     onUpdateStatus={handleUpdateCustomerStatus}
                     onNavigateTab={setActiveTab}
                   />
@@ -959,7 +970,10 @@ export default function App() {
                   customers={displayedCustomers}
                   visits={data.visits}
                   partners={displayedPartners}
-                  onNewCustomer={() => setCustomerModalOpen(true)}
+                  onNewCustomer={() => {
+                    setCustomerModalLead(null);
+                    setCustomerModalOpen(true);
+                  }}
                   onOpenAddVisit={handleOpenAddVisit}
                   onViewCustomerProfile={handleViewCustomerProfile}
                 />
@@ -1128,7 +1142,11 @@ export default function App() {
 
       <CustomerModal
         isOpen={customerModalOpen}
-        onClose={() => setCustomerModalOpen(false)}
+        initialData={customerModalLead}
+        onClose={() => {
+          setCustomerModalOpen(false);
+          setCustomerModalLead(null);
+        }}
         onSaveCustomer={handleSaveCustomer}
         partners={data.partners}
         customers={data.customers}

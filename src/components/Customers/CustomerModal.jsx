@@ -11,7 +11,8 @@ export default function CustomerModal({
   partners,
   customers,
   services,
-  onOpenManageServices
+  onOpenManageServices,
+  initialData = null
 }) {
   const defaultService = services[0] || { name: 'Niềng răng trong suốt Invisalign', defaultPrice: 45000000 };
   const initialSteps = getPresetStepsForService(defaultService.name);
@@ -26,7 +27,7 @@ export default function CustomerModal({
     paymentStatus: 'paid', // 'paid' | 'partial' | 'pending'
     ownerPartnerId: partners[0]?.id || '',
     referrerCustomerId: '',
-    status: 'completed',
+    status: 'treating',
     note: ''
   });
 
@@ -36,26 +37,65 @@ export default function CustomerModal({
 
   useEffect(() => {
     if (isOpen) {
-      const s = services[0] || { name: 'Niềng răng trong suốt Invisalign', defaultPrice: 45000000 };
-      const steps = getPresetStepsForService(s.name);
-      setFormData({
-        name: '',
-        phone: '',
-        treatment: s.name,
-        packagePrice: s.defaultPrice || 0,
-        step: steps[0]?.name || 'Khám & Tư vấn phác đồ',
-        initialAmount: String(Math.round((s.defaultPrice || 20000000) * 0.3)),
-        paymentStatus: 'paid',
-        ownerPartnerId: partners[0]?.id || '',
-        referrerCustomerId: '',
-        status: 'completed',
-        note: ''
-      });
+      if (initialData) {
+        // Tách gói điều trị và thông tin đặt lịch hẹn từ chuỗi treatment của lead
+        const rawTreatment = initialData.treatment || '';
+        const bracketIndex = rawTreatment.indexOf('[');
+        let cleanTreatment = rawTreatment;
+        let appointmentDetail = '';
+
+        if (bracketIndex !== -1) {
+          cleanTreatment = rawTreatment.substring(0, bracketIndex).trim();
+          appointmentDetail = rawTreatment.substring(bracketIndex).trim();
+        }
+
+        // Tìm dịch vụ nha khoa phù hợp nhất trong danh mục services
+        const matchedService = (services || []).find(s =>
+          (s.name || '').toLowerCase() === cleanTreatment.toLowerCase() ||
+          cleanTreatment.toLowerCase().includes((s.name || '').toLowerCase()) ||
+          (s.name || '').toLowerCase().includes(cleanTreatment.toLowerCase())
+        ) || services[0] || { name: cleanTreatment || 'Tư vấn nha khoa', defaultPrice: 0 };
+
+        const steps = getPresetStepsForService(matchedService.name);
+        const price = matchedService.defaultPrice || 0;
+        const defaultStep = steps[0]?.name || 'Khám & Tư vấn phác đồ';
+        const estimatedFirstPayment = Math.round(price * (steps[0]?.defaultShare || 0.3));
+
+        setFormData({
+          name: initialData.name || '',
+          phone: initialData.phone || '',
+          treatment: matchedService.name,
+          packagePrice: price,
+          step: defaultStep,
+          initialAmount: String(estimatedFirstPayment > 0 ? estimatedFirstPayment : price),
+          paymentStatus: 'paid',
+          ownerPartnerId: initialData.ownerPartnerId || partners[0]?.id || '',
+          referrerCustomerId: initialData.referrerCustomerId || '',
+          status: 'treating',
+          note: appointmentDetail ? `Thông tin đặt hẹn: ${appointmentDetail}` : ''
+        });
+      } else {
+        const s = services[0] || { name: 'Niềng răng trong suốt Invisalign', defaultPrice: 45000000 };
+        const steps = getPresetStepsForService(s.name);
+        setFormData({
+          name: '',
+          phone: '',
+          treatment: s.name,
+          packagePrice: s.defaultPrice || 0,
+          step: steps[0]?.name || 'Khám & Tư vấn phác đồ',
+          initialAmount: String(Math.round((s.defaultPrice || 20000000) * 0.3)),
+          paymentStatus: 'paid',
+          ownerPartnerId: partners[0]?.id || '',
+          referrerCustomerId: '',
+          status: 'treating',
+          note: ''
+        });
+      }
       setReferrerSearch('');
       setPartnerSearch('');
       setError('');
     }
-  }, [isOpen, partners, services]);
+  }, [isOpen, partners, services, initialData]);
 
   // Bộ lọc tìm kiếm nhanh Khách hàng giới thiệu cho Lễ tân
   const filteredReferrerCustomers = useMemo(() => {
@@ -170,14 +210,14 @@ export default function CustomerModal({
       ? customers.find(c => c.id === formData.referrerCustomerId)
       : null;
 
-    const computedDepth = parentCust ? (parentCust.depth || 1) + 1 : 1;
+    const computedDepth = parentCust ? (parentCust.depth || 1) + 1 : (initialData?.depth || 1);
     const finalOwnerPartnerId = parentCust ? parentCust.ownerPartnerId : formData.ownerPartnerId;
 
-    const newCustomerId = generateUuid();
-    const code = `KH-${new Date().getFullYear()}-${String(customers.length + 1).padStart(4, '0')}`;
+    const customerId = initialData?.id || generateUuid();
+    const code = initialData?.code || `KH-${new Date().getFullYear()}-${String(customers.length + 1).padStart(4, '0')}`;
 
     const newCustomer = {
-      id: newCustomerId,
+      id: customerId,
       code,
       name: formData.name.trim(),
       phone: formData.phone.trim(),
@@ -186,8 +226,8 @@ export default function CustomerModal({
       depth: computedDepth,
       treatment: formData.treatment,
       currentStep: formData.step.trim(),
-      status: formData.status,
-      createdAt: new Date().toISOString()
+      status: formData.status || 'treating',
+      createdAt: initialData?.createdAt || new Date().toISOString()
     };
 
     const statusLabel = formData.paymentStatus === 'paid'
@@ -198,17 +238,22 @@ export default function CustomerModal({
 
     const composedNote = `[${formData.step.trim()}] ${formData.treatment} - ${statusLabel}${formData.note ? ` • Ghi chú: ${formData.note.trim()}` : ''}`;
 
-    const initialVisit = {
-      id: generateUuid(),
-      customerId: newCustomerId,
-      amount: parseInt(formData.initialAmount, 10) || 0,
-      package: formData.treatment,
-      step: formData.step.trim(),
-      paymentStatus: formData.paymentStatus,
-      status: formData.paymentStatus,
-      note: composedNote,
-      occurredAt: new Date().toISOString()
-    };
+    const initialAmountNum = parseInt(formData.initialAmount, 10) || 0;
+    let initialVisit = null;
+
+    if (initialAmountNum > 0 || formData.step) {
+      initialVisit = {
+        id: generateUuid(),
+        customerId: customerId,
+        amount: initialAmountNum,
+        package: formData.treatment,
+        step: formData.step.trim(),
+        paymentStatus: formData.paymentStatus,
+        status: formData.paymentStatus,
+        note: composedNote,
+        occurredAt: new Date().toISOString()
+      };
+    }
 
     onSaveCustomer(newCustomer, initialVisit);
     onClose();
@@ -226,10 +271,17 @@ export default function CustomerModal({
           <div>
             <h3 className="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2">
               <Users className="w-4 h-4 text-sky-600 shrink-0" />
-              <span>Tiếp Nhận Khách Hàng & Chỉ Định Gói Điều Trị</span>
+              <span>{initialData ? 'Tiếp Nhận Khách Đặt Hẹn' : 'Tiếp Nhận Khách Hàng & Chỉ Định Gói Điều Trị'}</span>
+              {initialData && (
+                <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full border border-blue-200">
+                  Lịch hẹn: {initialData.code || initialData.phone}
+                </span>
+              )}
             </h3>
             <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
-              Tách biệt Gói tổng thể & Bước điều trị lâm sàng theo buổi khám (Step)
+              {initialData
+                ? 'Thông tin đặt hẹn đã được điền sẵn — Lễ tân kiểm tra và bổ sung thông tin lâm sàng'
+                : 'Tách biệt Gói tổng thể & Bước điều trị lâm sàng theo buổi khám (Step)'}
             </p>
           </div>
           <button
@@ -639,7 +691,7 @@ export default function CustomerModal({
               className="px-5 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-lg transition-colors shadow-xs inline-flex items-center gap-1.5"
             >
               <Check className="w-4 h-4" />
-              <span>Tiếp nhận khách hàng</span>
+              <span>{initialData ? 'Hoàn tất tiếp nhận' : 'Tiếp nhận khách hàng'}</span>
             </button>
           </div>
         </form>

@@ -6,6 +6,7 @@ export default function BookedAppointments({
   customers = [],
   partners = [],
   onViewCustomerProfile,
+  onAcceptLead,
   onUpdateStatus,
   onNavigateTab
 }) {
@@ -19,14 +20,13 @@ export default function BookedAppointments({
 
   const partnerMap = new Map((partners || []).map(p => [p.id, p]));
 
-  async function handleAccept(cust, e) {
+  function handleAccept(cust, e) {
     e.stopPropagation();
-    if (!onUpdateStatus) return;
-    setUpdatingId(cust.id);
-    try {
-      await onUpdateStatus(cust.id, 'treating');
-    } finally {
-      setUpdatingId(null);
+    if (onAcceptLead) {
+      onAcceptLead(cust);
+    } else if (onUpdateStatus) {
+      setUpdatingId(cust.id);
+      onUpdateStatus(cust.id, 'treating').finally(() => setUpdatingId(null));
     }
   }
 
@@ -108,16 +108,16 @@ export default function BookedAppointments({
                     )}
                   </div>
 
-                  {onUpdateStatus && (
+                  {(onAcceptLead || onUpdateStatus) && (
                     <button
                       type="button"
-                      disabled={isProcessing}
+                      disabled={updatingId === c.id}
                       onClick={(e) => handleAccept(c, e)}
-                      className="px-2.5 py-1 text-[11px] font-semibold rounded bg-sky-600 hover:bg-sky-700 text-white inline-flex items-center gap-1 shrink-0 transition-colors shadow-xs"
-                      title="Tiếp nhận khách vào điều trị"
+                      className="px-2.5 py-1 text-[11px] font-semibold rounded bg-sky-600 hover:bg-sky-700 text-white inline-flex items-center gap-1 shrink-0 transition-colors shadow-xs cursor-pointer"
+                      title="Mở form tiếp nhận khách hàng"
                     >
-                      <UserCheck className="w-3 h-3" />
-                      <span>{isProcessing ? 'Đang lưu...' : 'Tiếp nhận'}</span>
+                      <UserCheck className="w-3.5 h-3.5" />
+                      <span>{updatingId === c.id ? 'Đang mở...' : 'Tiếp nhận'}</span>
                     </button>
                   )}
                 </div>
