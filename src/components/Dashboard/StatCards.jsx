@@ -1,23 +1,23 @@
 import React, { useMemo } from 'react';
-import { 
-  DollarSign, 
-  Percent, 
-  TrendingUp, 
-  GitFork, 
-  Award, 
-  Users, 
-  CalendarCheck, 
-  AlertCircle, 
-  Gift 
+import {
+  DollarSign,
+  Percent,
+  TrendingUp,
+  GitFork,
+  Award,
+  Users,
+  CalendarCheck,
+  AlertCircle,
+  Gift
 } from 'lucide-react';
 import { formatVND } from '../../utils/formatters';
 import { useAuth } from '../../context/AuthContext';
 import { can } from '../../config/permissions';
 
-export default function StatCards({ 
-  settlementResult = {}, 
-  customers = [], 
-  visits = [] 
+export default function StatCards({
+  settlementResult = {},
+  customers = [],
+  visits = []
 }) {
   const { role, isPartner, isFrontdesk } = useAuth();
   const {
@@ -142,7 +142,7 @@ export default function StatCards({
     <div className="space-y-3 sm:space-y-4">
       {/* Hàng KPI chính */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        
+
         {/* Chỉ số 1: Doanh thu */}
         <div className="bg-white border border-slate-200 rounded-lg p-3.5 sm:p-4 shadow-xs">
           <div className="flex items-center justify-between">

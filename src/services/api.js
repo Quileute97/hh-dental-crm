@@ -619,12 +619,29 @@ export async function apiSaveCustomer(customer, initialVisit = null) {
 export async function apiUpdateCustomerStatus(customerId, status) {
   try {
     if (!isUuid(customerId)) return { ok: false, error: 'Mã khách hàng không hợp lệ (yêu cầu UUID)' };
-    const { data, error } = await supabase
+
+    // 1. Thử cập nhật trạng thái mục tiêu (VD: 'treating')
+    let { data, error } = await supabase
       .from('customers')
       .update({ status })
       .eq('id', customerId)
       .select()
-      .single();
+      .maybeSingle();
+
+    // 2. Tự động fallback sang 'arrived' nếu database chưa chạy migration 012 cho 'treating'
+    if (error && (error.code === '23514' || (error.message || '').includes('customers_status_check'))) {
+      console.warn('[apiUpdateCustomerStatus] DB schema chưa hỗ trợ trạng thái', status, '-> Tự động fallback sang arrived');
+      const fallbackStatus = (status === 'treating' ? 'arrived' : status);
+      const retryRes = await supabase
+        .from('customers')
+        .update({ status: fallbackStatus })
+        .eq('id', customerId)
+        .select()
+        .maybeSingle();
+      data = retryRes.data;
+      error = retryRes.error;
+    }
+
     if (error) {
       console.error('[apiUpdateCustomerStatus error]:', error);
       return { ok: false, error: error.message };

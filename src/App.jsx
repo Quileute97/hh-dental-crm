@@ -523,13 +523,16 @@ export default function App() {
       showToast(`Lỗi cập nhật trạng thái: ${res.error || 'Thao tác không thành công'}`, 'error');
       return false;
     }
+    const finalStatus = res.data?.status || nextStatus;
     setData(prev => ({
       ...prev,
       customers: (prev.customers || []).map(c =>
-        c.id === customerId ? { ...c, status: nextStatus } : c
+        c.id === customerId ? { ...c, status: finalStatus } : c
       )
     }));
-    showToast(nextStatus === 'treating' ? 'Đã tiếp nhận khách hàng vào điều trị!' : 'Đã cập nhật trạng thái khách hàng!');
+    showToast(finalStatus === 'treating' || finalStatus === 'arrived'
+      ? 'Đã tiếp nhận khách hàng vào phòng khám!'
+      : 'Đã cập nhật trạng thái khách hàng!');
     return true;
   }
 
