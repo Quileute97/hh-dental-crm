@@ -36,7 +36,7 @@ import {
   apiFetchAuditLogs,
   apiComputeMonth
 } from './services/api';
-import { calculateMonthlySettlement, COMMISSION_POLICY } from './services/commissionEngine';
+import { calculateMonthlySettlement, COMMISSION_POLICY, isDesignatedManager } from './services/commissionEngine';
 import { useAuth } from './context/AuthContext';
 import { formatVND } from './utils/formatters';
 import { isValidImageSource } from './utils/imageUpload';
@@ -299,13 +299,16 @@ export default function App() {
     const updatedPartnerRows = (local.partnerRows || []).map(row => {
       const rpc = rpcMap.get(row.partnerId);
       if (!rpc) return row;
+      const partnerObj = (data.partners || []).find(p => p.id === row.partnerId);
+      const isDesignated = isDesignatedManager(partnerObj || row);
+      const effectiveBranchFee = isDesignated ? (rpc.branchFee !== undefined ? rpc.branchFee : row.branchFee) : 0;
       return {
         ...row,
         ownRevenue: rpc.ownRevenue,
         branchRevenue: rpc.branchRevenue,
         commission: row.commission,
-        branchFee: rpc.branchFee,
-        total: row.commission + rpc.branchFee
+        branchFee: effectiveBranchFee,
+        total: row.commission + effectiveBranchFee
       };
     });
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, AlertTriangle, Check, Link2, Copy } from 'lucide-react';
-import { validateParentAssignment } from '../../services/commissionEngine';
+import { validateParentAssignment, isDesignatedManager } from '../../services/commissionEngine';
 import { generateUuid, isUuid } from '../../utils/uuid';
 import { buildPartnerReferralLink } from '../../utils/referral';
 import PartnerIdCardUploader from './PartnerIdCardUploader';
@@ -39,6 +39,9 @@ export default function PartnerModal({ isOpen, onClose, onSave, partnerToEdit, p
         parentId: partnerToEdit.parentId || '',
         depth: partnerToEdit.depth !== undefined ? partnerToEdit.depth : 0,
         status: partnerToEdit.status || 'ACTIVE',
+        isDesignatedManager: partnerToEdit.isDesignatedManager !== undefined
+          ? Boolean(partnerToEdit.isDesignatedManager)
+          : isDesignatedManager(partnerToEdit),
         bankName: partnerToEdit.bankName || 'Vietcombank',
         bankAccountNo: partnerToEdit.bankAccountNo || '',
         bankAccountName: partnerToEdit.bankAccountName || '',
@@ -58,6 +61,7 @@ export default function PartnerModal({ isOpen, onClose, onSave, partnerToEdit, p
         parentId: defaultParentId || '',
         depth: computedDepth,
         status: 'ACTIVE',
+        isDesignatedManager: false,
         bankName: 'Vietcombank',
         bankAccountNo: '',
         bankAccountName: '',
@@ -274,13 +278,13 @@ export default function PartnerModal({ isOpen, onClose, onSave, partnerToEdit, p
                   Chỉ định hưởng Thưởng doanh số cấp quản lí (4%)
                 </label>
                 <p className="text-[10px] text-slate-500 mt-0.5">
-                  Chính sách nội bộ cho CTV được chỉ định (được ẩn trên giao diện chung).
+                  Chính sách nội bộ: Chỉ áp dụng cho CTV được chỉ định (mặc định: Nguyễn Minh Đạt &amp; Thân Thái Đức).
                 </p>
               </div>
               <input
                 id="isDesignatedManager"
                 type="checkbox"
-                checked={Boolean(formData.isDesignatedManager ?? formData.isManager ?? formData.hasManagementBonus ?? (formData.depth === 0))}
+                checked={Boolean(formData.isDesignatedManager)}
                 onChange={e => setFormData({ ...formData, isDesignatedManager: e.target.checked })}
                 className="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500 cursor-pointer"
               />

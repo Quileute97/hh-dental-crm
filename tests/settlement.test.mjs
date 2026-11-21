@@ -159,6 +159,35 @@ assertEqual(p2Des.branchFee, 0, 'P2 có nhánh nhưng isDesignatedManager: false
 assertEqual(p1Des.branchFee, 2000000, 'P1 isDesignatedManager: true -> branchFee = 2.000.000 (4% * 50tr)');
 assertEqual(p3Des.branchFee, 0, 'P3 không có nhánh con -> branchFee = 0');
 
+// Kiểm thử mặc định: Chỉ Nguyễn Minh Đạt & Thân Thái Đức được hưởng 4%
+console.log('\n--- TEST 2.0.1: MẶC ĐỊNH CHỈ NGUYỄN MINH ĐẠT & THÂN THÁI ĐỨC HƯỞNG 4% ---');
+const realPartnersTest = [
+  { id: 'dat', code: 'REF-N5JY', name: 'Nguyễn Minh Đạt', parentId: null },
+  { id: 'duc', code: 'REF-YRW43C', name: 'Thân Thái  Đức', parentId: null },
+  { id: 'khanh', code: 'REF-PTZSUL', name: 'Nguyễn Quốc Khanh', parentId: 'duc' },
+  { id: 'ctv_sub', code: 'REF-SUB', name: 'CTV Tuyến Dưới', parentId: 'khanh' }
+];
+const realCustomersTest = [
+  { id: 'ckhanh', ownerPartnerId: 'khanh', depth: 1 },
+  { id: 'csub', ownerPartnerId: 'ctv_sub', depth: 1 }
+];
+const realVisitsTest = [
+  { id: 'vkhanh', customerId: 'ckhanh', amount: 50000000, occurredAt: '2026-11-05T10:00:00Z' },
+  { id: 'vsub', customerId: 'csub', amount: 20000000, occurredAt: '2026-11-05T10:00:00Z' }
+];
+const resReal = calculateMonthlySettlement('2026-11', {
+  partners: realPartnersTest,
+  customers: realCustomersTest,
+  visits: realVisitsTest,
+  settlements: []
+});
+const ducRow = resReal.partnerRows.find(r => r.partnerId === 'duc');
+const khanhRow = resReal.partnerRows.find(r => r.partnerId === 'khanh');
+// Thân Thái Đức có con là Nguyễn Quốc Khanh (doanh thu nhánh 70tr) -> nhận 4% * 70tr = 2.800.000
+assertEqual(ducRow.branchFee, 2800000, 'Thân Thái Đức được hưởng 4% thưởng quản lý: 2.800.000 ₫');
+// Nguyễn Quốc Khanh có con là ctv_sub (doanh thu nhánh 20tr), nhưng KHÔNG phải Đạt hay Đức -> branchFee = 0
+assertEqual(khanhRow.branchFee, 0, 'Nguyễn Quốc Khanh không nằm trong danh sách chỉ định -> branchFee = 0 ₫');
+
 // ----------------------------------------------------
 // TEST 2.1 — KIỂM THỬ ĐỘ SÂU KHÁCH HÀNG: TẦNG 1 (20%), TẦNG 2 (10%), TẦNG 3..N (5%)
 // ----------------------------------------------------

@@ -15,6 +15,7 @@ import {
   compressIdCardImage,
   buildPartnerDocumentPath
 } from '../utils/imageUpload.js';
+import { isDesignatedManager } from './commissionEngine.js';
 
 export function mapPartnerRow(p, docFallback = null) {
   if (!p) return null;
@@ -22,6 +23,12 @@ export function mapPartnerRow(p, docFallback = null) {
   const hasNativeBack = Object.prototype.hasOwnProperty.call(p, 'id_card_back');
   const rawFront = hasNativeFront ? p.id_card_front : (docFallback?.idCardFront ?? null);
   const rawBack = hasNativeBack ? p.id_card_back : (docFallback?.idCardBack ?? null);
+
+  const isDesignated = p.is_designated_manager !== undefined
+    ? Boolean(p.is_designated_manager)
+    : (p.isDesignatedManager !== undefined
+      ? Boolean(p.isDesignatedManager)
+      : isDesignatedManager(p));
 
   return {
     id: p.id,
@@ -33,6 +40,7 @@ export function mapPartnerRow(p, docFallback = null) {
     parentId: p.parent_id,
     depth: p.depth,
     status: p.status,
+    isDesignatedManager: isDesignated,
     bankName: p.bank_name,
     bankAccountNo: p.bank_account_no,
     bankAccountName: p.bank_account_name,
@@ -373,6 +381,9 @@ export async function apiSavePartner(partner) {
     const isEdit = isUuid(partner.id);
     const parentIdValid = isUuid(partner.parentId) ? partner.parentId : null;
     const hasCardFields = partner.idCardFront !== undefined || partner.idCardBack !== undefined;
+    const isDesignated = partner.isDesignatedManager !== undefined
+      ? Boolean(partner.isDesignatedManager)
+      : isDesignatedManager(partner);
 
     const record = {
       ...(isEdit ? { id: partner.id } : { id: generateUuid() }),
@@ -387,6 +398,7 @@ export async function apiSavePartner(partner) {
       bank_name: partner.bankName || null,
       bank_account_no: partner.bankAccountNo || null,
       bank_account_name: partner.bankAccountName || null,
+      is_designated_manager: isDesignated,
       ...(partner.idCardFront !== undefined ? { id_card_front: partner.idCardFront || null } : {}),
       ...(partner.idCardBack !== undefined ? { id_card_back: partner.idCardBack || null } : {})
     };
@@ -394,10 +406,11 @@ export async function apiSavePartner(partner) {
     let { data, error } = await supabase.from('partners').upsert(record).select().single();
     let docFallback = null;
 
-    if (error && hasCardFields && isMissingColumnError(error)) {
+    if (error && isMissingColumnError(error)) {
       const fallbackRecord = { ...record };
       delete fallbackRecord.id_card_front;
       delete fallbackRecord.id_card_back;
+      delete fallbackRecord.is_designated_manager;
 
       const retryRes = await supabase.from('partners').upsert(fallbackRecord).select().single();
       data = retryRes.data;
