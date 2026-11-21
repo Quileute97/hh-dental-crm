@@ -868,10 +868,10 @@ export default function App() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h2 className="text-base font-bold text-slate-900">
-                        B. Cây Đối Tác & Thưởng Doanh Số Cấp Quản Lí 4% (Kỳ {selectedMonth})
+                        Cây Đối Tác (Kỳ {selectedMonth})
                       </h2>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        Mạng lưới đối tác không giới hạn độ sâu — Thưởng doanh số cấp quản lí 4% tính trên toàn bộ cây con trực tiếp
+                        Mạng lưới đối tác không giới hạn độ sâu — Tự động phân nhánh theo cây con
                       </p>
                     </div>
 
@@ -925,9 +925,9 @@ export default function App() {
             {activeTab === 'customers' && (
               <div className="space-y-4">
                 <div>
-                  <h2 className="text-base font-bold text-slate-900">A. Chuỗi Khách Hàng & Doanh Thu Trọn Đời</h2>
+                  <h2 className="text-base font-bold text-slate-900">Chuỗi Khách Hàng & Doanh Thu Trọn Đời</h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    1. KH trực tiếp ({COMMISSION_POLICY.depth1}%) &bull; 2. KH gián tiếp 1 ({COMMISSION_POLICY.depth2}%) &bull; 3. KH gián tiếp 2 và mở rộng ({COMMISSION_POLICY.depth3Plus}%) &bull; Thưởng doanh số cấp quản lí ({COMMISSION_POLICY.branchFee}%)
+                    1. KH trực tiếp ({COMMISSION_POLICY.depth1}%) &bull; 2. KH gián tiếp 1 ({COMMISSION_POLICY.depth2}%) &bull; 3. KH gián tiếp 2 và mở rộng ({COMMISSION_POLICY.depth3Plus}%)
                   </p>
                 </div>
 

@@ -33,9 +33,9 @@ export default function PartnerTree({
             <Network className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="font-bold text-sky-900 text-sm">B. Cây Đối Tác (Không Giới Hạn Tầng - Plan V5)</h3>
+            <h3 className="font-bold text-sky-900 text-sm">Cây Phả Hệ Đối Tác Không Giới Hạn Tầng (Plan V5)</h3>
             <p className="text-sky-700 mt-0.5">
-              - Thưởng doanh số cấp quản lí: <strong>4%</strong> tính trên toàn bộ cây con trực tiếp. Không giới hạn số tầng.
+              Hệ thống mạng lưới đối tác đa cấp trực tiếp — Tự động phân nhánh theo cây con.
             </p>
           </div>
         </div>

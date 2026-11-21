@@ -52,10 +52,9 @@ export default function Sidebar({
     },
     {
       id: 'partners',
-      label: 'Cây đối tác & Thưởng quản lí',
+      label: 'Cây đối tác',
       icon: Network,
-      badge: 'Thưởng 4%',
-      badgeColor: 'sky',
+      badge: null,
       visible: can(role, 'viewOtherPartners'),
     },
     {
@@ -215,7 +214,7 @@ export default function Sidebar({
           </div>
 
           {/* A. Chuỗi khách: */}
-          <div className="space-y-1.5 text-[11px] text-slate-600 border-b border-slate-200 pb-2 mb-2">
+          <div className="space-y-1.5 text-[11px] text-slate-600">
             <div className="font-bold text-slate-800 text-[11px]">A. Chuỗi khách:</div>
             <div className="flex justify-between pl-1">
               <span>1. KH trực tiếp:</span>
@@ -228,15 +227,6 @@ export default function Sidebar({
             <div className="flex justify-between pl-1">
               <span>3. KH gián tiếp 2 và mở rộng :</span>
               <span className="font-bold text-sky-700">{COMMISSION_POLICY.depth3Plus}%</span>
-            </div>
-          </div>
-
-          {/* B. Cây đối tác: */}
-          <div className="space-y-1.5 text-[11px] text-slate-600">
-            <div className="font-bold text-slate-800 text-[11px]">B. Cây đối tác:</div>
-            <div className="flex justify-between font-semibold text-emerald-800 pl-1">
-              <span>- Thưởng doanh số cấp quản lí:</span>
-              <span className="bg-emerald-100 text-emerald-800 px-1 rounded font-bold">{COMMISSION_POLICY.branchFee}%.</span>
             </div>
           </div>
         </div>

@@ -267,6 +267,25 @@ export default function PartnerModal({ isOpen, onClose, onSave, partnerToEdit, p
               </div>
             </div>
 
+            {/* Chỉ định hưởng Thưởng quản lý 4% (Chính sách nội bộ chỉ định) */}
+            <div className="p-3 bg-amber-50/60 border border-amber-200 rounded-lg flex items-center justify-between gap-3">
+              <div>
+                <label className="font-semibold text-slate-800 text-xs block cursor-pointer" htmlFor="isDesignatedManager">
+                  Chỉ định hưởng Thưởng doanh số cấp quản lí (4%)
+                </label>
+                <p className="text-[10px] text-slate-500 mt-0.5">
+                  Chính sách nội bộ cho CTV được chỉ định (được ẩn trên giao diện chung).
+                </p>
+              </div>
+              <input
+                id="isDesignatedManager"
+                type="checkbox"
+                checked={Boolean(formData.isDesignatedManager ?? formData.isManager ?? formData.hasManagementBonus ?? (formData.depth === 0))}
+                onChange={e => setFormData({ ...formData, isDesignatedManager: e.target.checked })}
+                className="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500 cursor-pointer"
+              />
+            </div>
+
             {/* Link Giới Thiệu (Referral Link) */}
             {referralUrl && (
               <div className="p-3 bg-sky-50/70 border border-sky-200 rounded-lg space-y-1.5">

@@ -125,6 +125,41 @@ assertEqual(p2_2.branchFee, 1200000, 'P2 branchFee (+1.200.000)');
 assertEqual(p1_2.branchFee, 3840000, 'P1 branchFee (+3.840.000)');
 
 // ----------------------------------------------------
+// TEST 2.0 — CHỈ ĐỊNH CTV ĐƯỢC THƯỞNG QUẢN LÝ (isDesignatedManager)
+// ----------------------------------------------------
+console.log('\n--- TEST 2.0: CHỈ ĐỊNH CTV ĐƯỢC THƯỞNG QUẢN LÝ (isDesignatedManager) ---');
+const partnersTestDesignation = [
+  { id: 'P1', code: 'REF-P1', name: 'P1', parentId: null, isDesignatedManager: true },
+  { id: 'P2', code: 'REF-P2', name: 'P2', parentId: 'P1', isDesignatedManager: false },
+  { id: 'P3', code: 'REF-P3', name: 'P3', parentId: 'P2', isDesignatedManager: false }
+];
+const customersTestDesignation = [
+  { id: 'c1', ownerPartnerId: 'P1', depth: 1 },
+  { id: 'c2', ownerPartnerId: 'P2', depth: 1 },
+  { id: 'c3', ownerPartnerId: 'P3', depth: 1 }
+];
+const visitsTestDesignation = [
+  { id: 'v1', customerId: 'c1', amount: 10000000, occurredAt: '2026-11-05T10:00:00Z' },
+  { id: 'v2', customerId: 'c2', amount: 20000000, occurredAt: '2026-11-05T10:00:00Z' },
+  { id: 'v3', customerId: 'c3', amount: 30000000, occurredAt: '2026-11-05T10:00:00Z' }
+];
+const resDesignation = calculateMonthlySettlement('2026-11', {
+  partners: partnersTestDesignation,
+  customers: customersTestDesignation,
+  visits: visitsTestDesignation,
+  settlements: []
+});
+const p1Des = resDesignation.partnerRows.find(r => r.partnerId === 'P1');
+const p2Des = resDesignation.partnerRows.find(r => r.partnerId === 'P2');
+const p3Des = resDesignation.partnerRows.find(r => r.partnerId === 'P3');
+
+// P2 có nhánh P3 (30tr), nhưng isDesignatedManager = false -> branchFee phải bằng 0
+assertEqual(p2Des.branchFee, 0, 'P2 có nhánh nhưng isDesignatedManager: false -> branchFee = 0');
+// P1 có nhánh P2 + P3 (50tr), isDesignatedManager = true -> branchFee = 4% * 50tr = 2.000.000
+assertEqual(p1Des.branchFee, 2000000, 'P1 isDesignatedManager: true -> branchFee = 2.000.000 (4% * 50tr)');
+assertEqual(p3Des.branchFee, 0, 'P3 không có nhánh con -> branchFee = 0');
+
+// ----------------------------------------------------
 // TEST 2.1 — KIỂM THỬ ĐỘ SÂU KHÁCH HÀNG: TẦNG 1 (20%), TẦNG 2 (10%), TẦNG 3..N (5%)
 // ----------------------------------------------------
 console.log('\n--- TEST 2.1: TỶ LỆ HOA HỒNG TẦNG 1 (20%), TẦNG 2 (10%), TẦNG 3..N (5%) ---');

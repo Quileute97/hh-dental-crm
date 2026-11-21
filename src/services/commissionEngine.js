@@ -270,11 +270,28 @@ export function calculateMonthlySettlement(monthStr, { partners = [], customers 
   });
 
   // 4. Tính Thưởng doanh số cấp quản lí 4% (branchFee):
-  // branchFee[partner] = 4% × Σ branchRevenue[các đối tác CON TRỰC TIẾP]
+  // Chỉ áp dụng với Cộng tác viên được chỉ định:
+  // branchFee[partner] = 4% × Σ branchRevenue[các đối tác CON TRỰC TIẾP] (nếu được chỉ định)
   const branchFees = {};
   let totalBranchFee = 0;
 
   partners.forEach(p => {
+    // Chỉ áp dụng với CTV được chỉ định (nếu bị set false thì không hưởng; mặc định true cho các cấp quản lý hiện có):
+    const isDesignated = p.isDesignatedManager !== undefined
+      ? Boolean(p.isDesignatedManager)
+      : (p.isDesignated !== undefined
+        ? Boolean(p.isDesignated)
+        : (p.isManager !== undefined
+          ? Boolean(p.isManager)
+          : (p.hasManagementBonus !== undefined
+            ? Boolean(p.hasManagementBonus)
+            : true)));
+
+    if (!isDesignated) {
+      branchFees[p.id] = 0;
+      return;
+    }
+
     const childrenIds = directChildrenMap.get(p.id) || [];
     let childrenBranchSum = 0;
     for (const childId of childrenIds) {
