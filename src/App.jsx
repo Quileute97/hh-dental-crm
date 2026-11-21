@@ -3,7 +3,7 @@ import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import StatCards from './components/Dashboard/StatCards';
 import RecentReferrals from './components/Dashboard/RecentReferrals';
-import TopPartners from './components/Dashboard/TopPartners';
+import BookedAppointments from './components/Dashboard/BookedAppointments';
 import PartnerModal from './components/Partners/PartnerModal';
 import PartnerSelfProfileModal from './components/Partners/PartnerSelfProfileModal';
 import CustomerModal from './components/Customers/CustomerModal';
@@ -29,6 +29,7 @@ import {
   apiUpdateMyPartnerKyc,
   apiTogglePartnerStatus,
   apiSaveCustomer,
+  apiUpdateCustomerStatus,
   apiAddVisit,
   apiSaveService,
   apiDeleteService,
@@ -516,6 +517,22 @@ export default function App() {
     showToast(`Đã tiếp nhận khách hàng ${savedCust.name} (Tầng ${savedCust.depth})!`);
   }
 
+  async function handleUpdateCustomerStatus(customerId, nextStatus) {
+    const res = await apiUpdateCustomerStatus(customerId, nextStatus);
+    if (!res.ok) {
+      showToast(`Lỗi cập nhật trạng thái: ${res.error || 'Thao tác không thành công'}`, 'error');
+      return false;
+    }
+    setData(prev => ({
+      ...prev,
+      customers: (prev.customers || []).map(c =>
+        c.id === customerId ? { ...c, status: nextStatus } : c
+      )
+    }));
+    showToast(nextStatus === 'treating' ? 'Đã tiếp nhận khách hàng vào điều trị!' : 'Đã cập nhật trạng thái khách hàng!');
+    return true;
+  }
+
   function handleViewCustomerProfile(customer) {
     setSelectedCustomerForProfile(customer);
     setCustomerProfileModalOpen(true);
@@ -843,7 +860,7 @@ export default function App() {
               />
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className={can(role, 'viewOtherPartners') ? "lg:col-span-2" : "lg:col-span-3"}>
+                <div className="lg:col-span-2">
                   <RecentReferrals
                     settlementResult={displayedSettlementResult}
                     onNavigateTab={setActiveTab}
@@ -851,14 +868,15 @@ export default function App() {
                     customers={displayedCustomers}
                   />
                 </div>
-                {can(role, 'viewOtherPartners') && (
-                  <div className="lg:col-span-1">
-                    <TopPartners
-                      settlementResult={displayedSettlementResult}
-                      onNavigateTab={setActiveTab}
-                    />
-                  </div>
-                )}
+                <div className="lg:col-span-1">
+                  <BookedAppointments
+                    customers={displayedCustomers}
+                    partners={data.partners || []}
+                    onViewCustomerProfile={handleViewCustomerProfile}
+                    onUpdateStatus={handleUpdateCustomerStatus}
+                    onNavigateTab={setActiveTab}
+                  />
+                </div>
               </div>
             </div>
           )}

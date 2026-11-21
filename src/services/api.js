@@ -616,6 +616,26 @@ export async function apiSaveCustomer(customer, initialVisit = null) {
   }
 }
 
+export async function apiUpdateCustomerStatus(customerId, status) {
+  try {
+    if (!isUuid(customerId)) return { ok: false, error: 'Mã khách hàng không hợp lệ (yêu cầu UUID)' };
+    const { data, error } = await supabase
+      .from('customers')
+      .update({ status })
+      .eq('id', customerId)
+      .select()
+      .single();
+    if (error) {
+      console.error('[apiUpdateCustomerStatus error]:', error);
+      return { ok: false, error: error.message };
+    }
+    return { ok: true, data };
+  } catch (err) {
+    console.error('[apiUpdateCustomerStatus exception]:', err);
+    return { ok: false, error: err?.message || 'Không thể cập nhật trạng thái khách hàng' };
+  }
+}
+
 export async function apiAddVisit(visit) {
   try {
     const isEdit = isUuid(visit.id);

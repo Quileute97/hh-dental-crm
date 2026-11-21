@@ -380,10 +380,10 @@ export default function PartnerModal({ isOpen, onClose, onSave, partnerToEdit, p
               {isUploadingIdCard
                 ? 'Đang tải ảnh CCCD...'
                 : isSaving
-                ? 'Đang lưu...'
-                : partnerToEdit
-                ? 'Cập nhật đối tác'
-                : 'Lưu đối tác mới'}
+                  ? 'Đang lưu...'
+                  : partnerToEdit
+                    ? 'Cập nhật đối tác'
+                    : 'Lưu đối tác mới'}
             </button>
           </div>
         </form>

@@ -151,18 +151,6 @@ export default function SettlementView({
         </div>
       </div>
 
-      {/* 2.4 Dòng Credit đã phát cho khách giới thiệu */}
-      <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
-        <div className="flex items-center gap-2">
-          <Gift className="w-4 h-4 text-amber-600 shrink-0" />
-          <span className="font-semibold text-amber-900">Credit đã phát cho khách giới thiệu:</span>
-          <span className="font-bold text-amber-800 text-sm">{formatVND(totalCredit)}</span>
-        </div>
-        <span className="text-[11px] text-amber-700 italic">
-          (Credit dịch vụ ưu đãi cho khách giới thiệu, không trừ vào hoa hồng đối tác)
-        </span>
-      </div>
-
       {/* Bảng Biên Bản Chốt Sổ Chi Tiết Từng Đối Tác */}
       <div className="bg-white border border-slate-200 rounded-lg shadow-xs overflow-hidden">
         <div className="p-3.5 sm:p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2">

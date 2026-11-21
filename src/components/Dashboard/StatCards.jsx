@@ -32,13 +32,17 @@ export default function StatCards({
   } = settlementResult || {};
 
   // Tính toán các chỉ số vận hành lâm sàng & công nợ
-  const { todayCustomers, todayVisits, debtAmount, totalCredits } = useMemo(() => {
+  const { todayCustomers, todayVisits, debtAmount, leadCustomersCount } = useMemo(() => {
     const todayStr = new Date().toISOString().slice(0, 10);
 
     let custCount = 0;
+    let leadCount = 0;
     (customers || []).forEach(c => {
       if (c.createdAt && c.createdAt.slice(0, 10) === todayStr) {
         custCount++;
+      }
+      if (c.status === 'lead') {
+        leadCount++;
       }
     });
 
@@ -59,9 +63,9 @@ export default function StatCards({
       todayCustomers: custCount,
       todayVisits: visitCount,
       debtAmount: debt,
-      totalCredits: summary.totalCredit || 0
+      leadCustomersCount: leadCount
     };
-  }, [customers, visits, summary]);
+  }, [customers, visits]);
 
   // --------------------------------------------------------------------------
   // 1. GIAO DIỆN LỄ TÂN (FRONTDESK): CHỈ HIỂN THỊ KPI VẬN HÀNH & CÔNG NỢ
@@ -113,17 +117,17 @@ export default function StatCards({
             </div>
           </div>
 
-          {/* KPI 4: Credit giới thiệu đã phát */}
+          {/* KPI 4: Khách đặt hẹn (Thay cho Credit đã phát) */}
           <div className="bg-white border border-slate-200 rounded-lg p-3.5 sm:p-4 shadow-xs">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider">Credit đã phát</span>
-              <div className="w-8 h-8 rounded-md bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
-                <Gift className="w-4 h-4" />
+              <span className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider">Khách đặt hẹn</span>
+              <div className="w-8 h-8 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                <CalendarCheck className="w-4 h-4" />
               </div>
             </div>
             <div className="mt-2.5 sm:mt-3">
-              <div className="text-xl sm:text-2xl font-bold text-purple-700 truncate">{formatVND(totalCredits)}</div>
-              <p className="text-[10px] sm:text-[11px] text-purple-600 font-medium mt-1">Thưởng khách giới thiệu khách</p>
+              <div className="text-xl sm:text-2xl font-bold text-blue-700">{leadCustomersCount}</div>
+              <p className="text-[10px] sm:text-[11px] text-blue-600 font-medium mt-1">Chờ tiếp nhận điều trị</p>
             </div>
           </div>
         </div>
